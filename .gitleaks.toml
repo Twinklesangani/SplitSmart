@@ -1,0 +1,10 @@
+title = "SplitSmart secret scanning"
+[extend]
+useDefault = true
+
+[[allowlists]]
+description = "Exact synthetic H2 test-profile JWT fixture; never valid for runtime"
+condition = "AND"
+paths = ['''(?:^|/)backend/src/main/resources/application-test\.properties$''']
+regexTarget = "line"
+regexes = ['''^app\.security\.jwt\.secret=MDEyMzQ1Njc4OWFiY2RlZjAxMjM0NTY3ODlhYmNkZWY=\r?$''']

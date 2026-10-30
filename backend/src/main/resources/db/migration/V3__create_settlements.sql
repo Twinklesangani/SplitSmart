@@ -1,0 +1,23 @@
+CREATE TABLE settlements (
+    id BIGINT NOT NULL AUTO_INCREMENT,
+    group_id BIGINT NOT NULL,
+    from_user_id BIGINT NOT NULL,
+    to_user_id BIGINT NOT NULL,
+    amount DECIMAL(19,2) NOT NULL,
+    recorded_by_user_id BIGINT NOT NULL,
+    request_id VARCHAR(36) NOT NULL,
+    note VARCHAR(200),
+    created_at TIMESTAMP(6) NOT NULL DEFAULT CURRENT_TIMESTAMP(6),
+    CONSTRAINT pk_settlements PRIMARY KEY (id),
+    CONSTRAINT fk_settlements_group FOREIGN KEY (group_id) REFERENCES expense_groups (id),
+    CONSTRAINT fk_settlements_from_user FOREIGN KEY (from_user_id) REFERENCES users (id),
+    CONSTRAINT fk_settlements_to_user FOREIGN KEY (to_user_id) REFERENCES users (id),
+    CONSTRAINT fk_settlements_recorded_by_user FOREIGN KEY (recorded_by_user_id) REFERENCES users (id),
+    CONSTRAINT chk_settlements_amount_positive CHECK (amount > 0),
+    CONSTRAINT chk_settlements_distinct_users CHECK (from_user_id <> to_user_id),
+    CONSTRAINT uk_settlements_group_request UNIQUE (group_id, request_id),
+    INDEX idx_settlements_group_id_id (group_id, id),
+    INDEX idx_settlements_from_user_id (from_user_id),
+    INDEX idx_settlements_to_user_id (to_user_id),
+    INDEX idx_settlements_recorded_by_user_id (recorded_by_user_id)
+) ENGINE=InnoDB;
