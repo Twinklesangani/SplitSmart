@@ -26,8 +26,9 @@ runtime checks verified issued signatures and invalid-token rejection. Private l
 operational reports, credentials, recovery files and raw logs are excluded from publication.
 
 The fixed H2 test-profile signing fixture is synthetic and differs from the live
-runtime key. `.gitleaks.toml` extends default rules and permits only that exact line
-in that exact file; production authentication and all other scanning remain enabled.
+runtime key. `.gitleaks.toml` extends default rules and permits only that exact
+fixture value (encoded or decoded) in that exact file; production authentication
+and all other scanning remain enabled, including Git-history scans.
 Never deploy using the test profile or reuse its fixture.
 
 CI is a local draft until run on GitHub. MySQL integration is a manual option pending

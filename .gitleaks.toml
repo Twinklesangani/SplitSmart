@@ -2,9 +2,12 @@ title = "SplitSmart secret scanning"
 [extend]
 useDefault = true
 
-[[allowlists]]
-description = "Exact synthetic H2 test-profile JWT fixture; never valid for runtime"
+[[rules]]
+id = "generic-api-key"
+
+[[rules.allowlists]]
+description = "Exact synthetic H2 fixture and its Base64-decoded value; never valid for runtime"
 condition = "AND"
 paths = ['''(?:^|/)backend/src/main/resources/application-test\.properties$''']
-regexTarget = "line"
-regexes = ['''^app\.security\.jwt\.secret=MDEyMzQ1Njc4OWFiY2RlZjAxMjM0NTY3ODlhYmNkZWY=\r?$''']
+regexTarget = "secret"
+regexes = ['''^MDEyMzQ1Njc4OWFiY2RlZjAxMjM0NTY3ODlhYmNkZWY=$''', '''^0123456789abcdef0123456789abcdef$''']

@@ -193,7 +193,9 @@ class SplitSmartMySqlIT {
 			assertFalse(jdbcUrl.contains("splitsmart_dev"));
 			assertEquals("MySQL", metadata.getDatabaseProductName());
 			assertEquals(DATABASE_NAME, jdbcTemplate.queryForObject("SELECT DATABASE()", String.class));
-			assertTrue(jdbcTemplate.queryForObject("SELECT VERSION()", String.class).startsWith("8.4."));
+			String mysqlVersion = jdbcTemplate.queryForObject("SELECT VERSION()", String.class);
+			assertNotNull(mysqlVersion);
+			assertTrue(mysqlVersion.startsWith("8.4."));
 		}
 
 		assertEquals(12, jdbcTemplate.queryForObject(
@@ -380,13 +382,13 @@ class SplitSmartMySqlIT {
 				.when(expenseSplitRepositorySpy)
 				.saveAllAndFlush(any());
 
-		assertThrows(
+		assertNotNull(assertThrows(
 				org.springframework.dao.DataIntegrityViolationException.class,
 				() -> expenseService.updateExpense(
 						fixture.groupId(),
 						original.id(),
 						ids.get(0).toString(),
-						replacement));
+						replacement)));
 
 		ExpenseResponse persisted = expenseService.getExpense(
 				fixture.groupId(),
