@@ -2,14 +2,15 @@ package com.splitsmart.service;
 
 import java.math.BigDecimal;
 import java.util.List;
+import java.util.Objects;
 import java.util.UUID;
 
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.context.SpringBootTest;
-import org.springframework.boot.test.mock.mockito.SpyBean;
 import org.springframework.dao.DataIntegrityViolationException;
 import org.springframework.http.HttpStatus;
+import org.springframework.test.context.bean.override.mockito.MockitoSpyBean;
 import org.springframework.test.context.ActiveProfiles;
 import org.springframework.transaction.PlatformTransactionManager;
 import org.springframework.transaction.support.TransactionTemplate;
@@ -30,6 +31,7 @@ import com.splitsmart.repository.GroupMemberRepository;
 import com.splitsmart.repository.UserRepository;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertNotNull;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.Mockito.clearInvocations;
@@ -61,10 +63,10 @@ class ExpenseTransactionTest {
 	@Autowired
 	private PlatformTransactionManager transactionManager;
 
-	@SpyBean
+	@MockitoSpyBean
 	private ExpenseSplitRepository splitRepositorySpy;
 
-	@SpyBean
+	@MockitoSpyBean
 	private ExpenseGroupRepository groupRepositorySpy;
 
 	@Test
@@ -80,13 +82,13 @@ class ExpenseTransactionTest {
 	void expenseMutationsAcquireTheSharedGroupLock() {
 		TransactionTemplate transactions = new TransactionTemplate(transactionManager);
 		String suffix = UUID.randomUUID().toString();
-		User creator = transactions.execute(status -> userRepository.saveAndFlush(
-				new User("Lock Creator", "lock.creator." + suffix + "@example.com", "{bcrypt}test")));
-		ExpenseGroup group = transactions.execute(status -> {
+		User creator = Objects.requireNonNull(transactions.execute(status -> userRepository.saveAndFlush(
+				new User("Lock Creator", "lock.creator." + suffix + "@example.com", "{bcrypt}test"))));
+		ExpenseGroup group = Objects.requireNonNull(transactions.execute(status -> {
 			ExpenseGroup saved = expenseGroupRepository.saveAndFlush(new ExpenseGroup("Lock " + suffix, creator));
 			groupMemberRepository.saveAndFlush(new GroupMember(saved, creator));
 			return saved;
-		});
+		}));
 		CreateExpenseRequest request = new CreateExpenseRequest(
 				"Lock verification",
 				new BigDecimal("1.00"),
@@ -124,13 +126,13 @@ class ExpenseTransactionTest {
 	@Test
 	void splitPersistenceFailureRollsBackExpenseAndEverySplit() {
 		TransactionTemplate transactions = new TransactionTemplate(transactionManager);
-		User creator = transactions.execute(status -> userRepository.saveAndFlush(
-				new User("Rollback Creator", "rollback.creator@example.com", "{bcrypt}test")));
-		ExpenseGroup group = transactions.execute(status -> {
+		User creator = Objects.requireNonNull(transactions.execute(status -> userRepository.saveAndFlush(
+				new User("Rollback Creator", "rollback.creator@example.com", "{bcrypt}test"))));
+		ExpenseGroup group = Objects.requireNonNull(transactions.execute(status -> {
 			ExpenseGroup saved = expenseGroupRepository.saveAndFlush(new ExpenseGroup("Rollback", creator));
 			groupMemberRepository.saveAndFlush(new GroupMember(saved, creator));
 			return saved;
-		});
+		}));
 		CreateExpenseRequest request = new CreateExpenseRequest(
 				"Rollback expense",
 				new BigDecimal("1.00"),
@@ -141,8 +143,8 @@ class ExpenseTransactionTest {
 		doThrow(new DataIntegrityViolationException("Simulated split persistence failure"))
 				.when(splitRepositorySpy).saveAllAndFlush(any());
 		try {
-			assertThrows(DataIntegrityViolationException.class,
-					() -> expenseService.createExpense(group.getId(), creator.getId().toString(), request));
+			assertNotNull(assertThrows(DataIntegrityViolationException.class,
+					() -> expenseService.createExpense(group.getId(), creator.getId().toString(), request)));
 			assertEquals(0, expenseRepository.countByGroup_Id(group.getId()));
 			assertEquals(0, expenseSplitRepository.countByExpense_Group_Id(group.getId()));
 		} finally {
@@ -165,13 +167,13 @@ class ExpenseTransactionTest {
 	void replacementSplitFailureRollsBackExpenseAndPreviousShares() {
 		TransactionTemplate transactions = new TransactionTemplate(transactionManager);
 		String suffix = UUID.randomUUID().toString();
-		User creator = transactions.execute(status -> userRepository.saveAndFlush(
-				new User("Update Rollback Creator", "update.rollback." + suffix + "@example.com", "{bcrypt}test")));
-		ExpenseGroup group = transactions.execute(status -> {
+		User creator = Objects.requireNonNull(transactions.execute(status -> userRepository.saveAndFlush(
+				new User("Update Rollback Creator", "update.rollback." + suffix + "@example.com", "{bcrypt}test"))));
+		ExpenseGroup group = Objects.requireNonNull(transactions.execute(status -> {
 			ExpenseGroup saved = expenseGroupRepository.saveAndFlush(new ExpenseGroup("Update rollback " + suffix, creator));
 			groupMemberRepository.saveAndFlush(new GroupMember(saved, creator));
 			return saved;
-		});
+		}));
 		CreateExpenseRequest original = new CreateExpenseRequest(
 				"Original before failed update",
 				new BigDecimal("1.00"),
@@ -189,9 +191,9 @@ class ExpenseTransactionTest {
 		doThrow(new DataIntegrityViolationException("Simulated replacement split persistence failure"))
 				.when(splitRepositorySpy).saveAllAndFlush(any());
 		try {
-			assertThrows(DataIntegrityViolationException.class,
+			assertNotNull(assertThrows(DataIntegrityViolationException.class,
 					() -> expenseService.updateExpense(
-							group.getId(), originalResponse.id(), creator.getId().toString(), replacement));
+							group.getId(), originalResponse.id(), creator.getId().toString(), replacement)));
 			transactions.executeWithoutResult(status -> {
 				Expense unchanged = expenseRepository.findById(originalResponse.id()).orElseThrow();
 				assertEquals("Original before failed update", unchanged.getDescription());

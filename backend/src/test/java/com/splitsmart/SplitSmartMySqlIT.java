@@ -33,7 +33,6 @@ import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.context.SpringBootTest;
-import org.springframework.boot.test.mock.mockito.SpyBean;
 import org.springframework.boot.test.web.server.LocalServerPort;
 import org.springframework.jdbc.core.JdbcTemplate;
 import org.springframework.security.oauth2.jose.jws.MacAlgorithm;
@@ -41,6 +40,7 @@ import org.springframework.security.oauth2.jwt.JwtClaimsSet;
 import org.springframework.security.oauth2.jwt.JwtEncoder;
 import org.springframework.security.oauth2.jwt.JwtEncoderParameters;
 import org.springframework.security.oauth2.jwt.JwsHeader;
+import org.springframework.test.context.bean.override.mockito.MockitoSpyBean;
 import org.springframework.test.context.ActiveProfiles;
 import org.springframework.test.context.DynamicPropertyRegistry;
 import org.springframework.test.context.DynamicPropertySource;
@@ -54,8 +54,6 @@ import com.splitsmart.dto.CreateExpenseSplitRequest;
 import com.splitsmart.dto.ExpenseResponse;
 import com.splitsmart.dto.GroupBalanceResponse;
 import com.splitsmart.dto.MemberBalanceResponse;
-import com.splitsmart.dto.SettlementSuggestionResponse;
-import com.splitsmart.entity.Expense;
 import com.splitsmart.entity.ExpenseGroup;
 import com.splitsmart.entity.ExpenseSplit;
 import com.splitsmart.entity.GroupMember;
@@ -144,7 +142,7 @@ class SplitSmartMySqlIT {
 	@Autowired
 	private PlatformTransactionManager transactionManager;
 
-	@SpyBean
+	@MockitoSpyBean
 	private ExpenseSplitRepository expenseSplitRepositorySpy;
 
 	private final HttpClient httpClient = HttpClient.newBuilder()
