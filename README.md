@@ -49,7 +49,9 @@ A failing test fails its job; no `continue-on-error` hides failures.
 Manual execution remains available through Actions → CI → Run workflow: set
 `mysql_integration` to true to include MySQL tests (false runs backend/frontend only).
 Pushes to `main` run backend/frontend checks. No real database credentials, deployment
-or AI review are enabled. Automatic PR integration behavior awaits its first PR run.
+or AI review are enabled. Automatic PR integration passed in
+[CI run 41126007661](https://github.com/Twinklesangani/SplitSmart/actions/runs/41126007661),
+including 83 backend tests, 10 MySQL integration tests, 76 frontend tests, lint and build.
 Running a job is distinct from enforcing it as a merge requirement; branch protection
 or rulesets must be configured separately where the repository plan permits them.
 

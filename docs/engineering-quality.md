@@ -33,7 +33,8 @@ Never deploy using the test profile or reuse its fixture.
 
 Hosted CI has passed 83 backend tests, 76 frontend tests and 10 real MySQL
 Testcontainers tests. Pull requests targeting main are configured to include MySQL
-integration automatically; that new PR trigger still needs its first hosted PR run.
+integration automatically; [PR CI run 41126007661](https://github.com/Twinklesangani/SplitSmart/actions/runs/41126007661)
+verified that trigger and passed all three jobs, including frontend lint and build.
 Manual integration execution remains available. Merge-blocking enforcement is a
 separate repository-plan and branch-protection decision. Production deployment needs HTTPS, managed
 secrets, migration credentials separate from runtime, backups/recovery, monitoring,
