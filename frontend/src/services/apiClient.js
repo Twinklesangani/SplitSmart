@@ -31,6 +31,8 @@ function resolveApiUrl(path) {
 }
 
 function messageForHttpError(status, code, path) {
+  if (status === 429) return 'Too many requests. Please wait before trying again.'
+  if (status === 413) return 'This request is too large. Reduce its size and try again.'
   if (status === 401) {
     return path === '/api/auth/login'
       ? 'Invalid email or password.'

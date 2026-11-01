@@ -31,7 +31,9 @@ class AuthServiceTest {
 		authService = new AuthService(
 				userRepository,
 				PasswordEncoderFactories.createDelegatingPasswordEncoder(),
-				mock(JwtEncoder.class));
+				mock(JwtEncoder.class),
+                new com.splitsmart.config.AuthAttemptLimiter(4096, 60, java.time.Clock.systemUTC()),
+                new com.splitsmart.config.RequestProtectionProperties(60, 60, 10, 10, 4096, 4096, 65536, 2048, 50, ""));
 	}
 
 	@Test

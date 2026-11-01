@@ -1,4 +1,4 @@
-param([ValidateSet('smoke', 'all')][string]$Suite = 'smoke')
+param([ValidateSet('smoke', 'auth', 'all')][string]$Suite = 'smoke')
 $ErrorActionPreference = 'Stop'
 
 $repositoryRoot = Split-Path -Parent $PSScriptRoot
@@ -319,7 +319,8 @@ try {
 
 	Push-Location $frontendRoot
 	try {
-		if ($Suite -eq 'smoke') { & node node_modules/@playwright/test/cli.js test smoke.spec.js }
+		if ($Suite -eq 'auth') { & node node_modules/@playwright/test/cli.js test authentication.spec.js auth-resource-limits.spec.js smoke.spec.js }
+        elseif ($Suite -eq 'smoke') { & node node_modules/@playwright/test/cli.js test smoke.spec.js }
 		else { & node node_modules/@playwright/test/cli.js test }
 		$playwrightExitCode = $LASTEXITCODE
 	} finally {

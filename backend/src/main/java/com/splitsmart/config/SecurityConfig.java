@@ -31,6 +31,7 @@ import org.springframework.web.cors.UrlBasedCorsConfigurationSource;
 import com.splitsmart.dto.ApiErrorResponse;
 
 @Configuration
+@org.springframework.boot.context.properties.EnableConfigurationProperties(RequestProtectionProperties.class)
 public class SecurityConfig {
 
 	@Bean
@@ -42,12 +43,22 @@ public class SecurityConfig {
 		return registration;
 	}
 
+    @Bean
+    AuthAttemptLimiter authAttemptLimiter(RequestProtectionProperties limits) {
+        return new AuthAttemptLimiter(limits.maxLimiterEntries(), limits.limitWindowSeconds(), java.time.Clock.systemUTC());
+    }
+
 	@Bean
 	SecurityFilterChain securityFilterChain(
 			HttpSecurity http,
 			ObjectMapper objectMapper,
-			CorsConfigurationSource corsConfigurationSource) throws Exception {
-		AuthenticationEntryPoint authenticationEntryPoint = (request, response, exception) ->
+			CorsConfigurationSource corsConfigurationSource,
+            RequestProtectionProperties limits, AuthAttemptLimiter limiter,
+            @Value("${server.forward-headers-strategy:NONE}") String forwardedStrategy) throws Exception {
+		if (!"NONE".equalsIgnoreCase(forwardedStrategy)) {
+            throw new IllegalStateException("Forwarded headers must be handled by the explicit trusted proxy policy.");
+        }
+        AuthenticationEntryPoint authenticationEntryPoint = (request, response, exception) ->
 				writeError(objectMapper, request, response, HttpStatus.UNAUTHORIZED,
 						"unauthorized", "Authentication is required.");
 		AccessDeniedHandler accessDeniedHandler = (request, response, exception) ->
@@ -58,6 +69,8 @@ public class SecurityConfig {
 				// Stateless bearer-token APIs do not authenticate with cookies or server sessions.
 				.csrf(csrf -> csrf.disable())
 				.cors(cors -> cors.configurationSource(corsConfigurationSource))
+                .addFilterBefore(new RequestProtectionFilter(limits, limiter, objectMapper),
+                        org.springframework.security.oauth2.server.resource.web.authentication.BearerTokenAuthenticationFilter.class)
 				.sessionManagement(session -> session.sessionCreationPolicy(SessionCreationPolicy.STATELESS))
 				.authorizeHttpRequests(authorize -> authorize
 						// Allow Spring to preserve API error statuses without exposing direct /error requests.

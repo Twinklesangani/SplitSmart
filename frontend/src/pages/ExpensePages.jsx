@@ -300,7 +300,8 @@ function ExpenseForm({ group, members, initialExpense, onSubmit, submitLabel }) 
     }
 
     const uniqueIds = new Set(selectedIds)
-    if (selectedIds.length === 0) nextErrors.participants = 'Choose at least one participant.'
+    if (selectedIds.length > 128) nextErrors.participants = 'Choose at most 128 participants for one expense.'
+    else if (selectedIds.length === 0) nextErrors.participants = 'Choose at least one participant.'
     else if (uniqueIds.size !== selectedIds.length || selectedIds.some((id) => !members.some((member) => String(member.userId) === id))) {
       nextErrors.participants = 'Choose valid group members without duplicates.'
     }

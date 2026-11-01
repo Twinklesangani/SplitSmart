@@ -43,7 +43,11 @@ public class AuthController {
 					content = @Content(schema = @Schema(implementation = ApiErrorResponse.class))),
 			@ApiResponse(responseCode = "409", description = "Email already registered",
 					content = @Content(schema = @Schema(implementation = ApiErrorResponse.class))),
-			@ApiResponse(responseCode = "500", description = "Unexpected server error",
+			@ApiResponse(responseCode = "429", description = "Too many requests. Retry after the indicated delay.",
+                    content = @Content(schema = @Schema(implementation = ApiErrorResponse.class))),
+            @ApiResponse(responseCode = "413", description = "Request body exceeds the supported size.",
+                    content = @Content(schema = @Schema(implementation = ApiErrorResponse.class))),
+            @ApiResponse(responseCode = "500", description = "Unexpected server error",
 					content = @Content(schema = @Schema(implementation = ApiErrorResponse.class)))
 	})
 	public ResponseEntity<RegisterResponse> register(@Valid @RequestBody RegisterRequest request) {
@@ -58,7 +62,11 @@ public class AuthController {
 					content = @Content(schema = @Schema(implementation = ApiErrorResponse.class))),
 			@ApiResponse(responseCode = "401", description = "Invalid credentials",
 					content = @Content(schema = @Schema(implementation = ApiErrorResponse.class))),
-			@ApiResponse(responseCode = "500", description = "Unexpected server error",
+			@ApiResponse(responseCode = "429", description = "Too many requests. Retry after the indicated delay.",
+                    content = @Content(schema = @Schema(implementation = ApiErrorResponse.class))),
+            @ApiResponse(responseCode = "413", description = "Request body exceeds the supported size.",
+                    content = @Content(schema = @Schema(implementation = ApiErrorResponse.class))),
+            @ApiResponse(responseCode = "500", description = "Unexpected server error",
 					content = @Content(schema = @Schema(implementation = ApiErrorResponse.class)))
 	})
 	public LoginResponse login(@Valid @RequestBody LoginRequest request) {

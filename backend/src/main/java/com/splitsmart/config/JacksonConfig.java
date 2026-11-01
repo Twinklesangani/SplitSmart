@@ -21,6 +21,8 @@ public class JacksonConfig {
                             generator.writeString(value.toPlainString());
                         }
                     }));
+            objectMapper.getFactory().setStreamReadConstraints(com.fasterxml.jackson.core.StreamReadConstraints.builder()
+                    .maxNestingDepth(32).maxStringLength(4096).maxNumberLength(64).build());
             var textualCoercion = objectMapper.coercionConfigFor(LogicalType.Textual);
 			textualCoercion.setCoercion(CoercionInputShape.Integer, CoercionAction.Fail);
 			textualCoercion.setCoercion(CoercionInputShape.Float, CoercionAction.Fail);

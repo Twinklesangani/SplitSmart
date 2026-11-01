@@ -11,7 +11,7 @@ public record LoginRequest(
 		@NotBlank @Email @Size(min = 1, max = 255)
 		@Schema(minLength = 1, maxLength = 255, pattern = "\\S")
 		String email,
-		@NotBlank @Schema(minLength = 1, pattern = "\\S")
+		@NotBlank @Size(max = 72) @Schema(minLength = 1, maxLength = 72, pattern = "\\S")
 		String password) {
 
 	public LoginRequest {

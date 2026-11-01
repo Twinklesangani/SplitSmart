@@ -77,7 +77,7 @@ import static org.junit.jupiter.api.Assertions.assertTrue;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.Mockito.doThrow;
 
-@SpringBootTest(webEnvironment = SpringBootTest.WebEnvironment.RANDOM_PORT)
+@SpringBootTest(webEnvironment = SpringBootTest.WebEnvironment.RANDOM_PORT, properties = "app.security.login-target-limit=2")
 @ActiveProfiles("mysql-it")
 class SplitSmartMySqlIT {
 
@@ -559,6 +559,23 @@ class SplitSmartMySqlIT {
 				settlementSuggestionService.getSuggestions(fixture.groupId(), ids.get(0).toString())
 						.totalSuggestedAmount());
 	}
+
+
+    @Test
+    void mysqlCollationAliasesCannotBypassAccountTargetLimit() throws Exception {
+        String suffix = UUID.randomUUID().toString();
+        String email = "resume." + suffix + "@example.test";
+        User account = userRepository.saveAndFlush(new User("Alias synthetic", email,
+                org.springframework.security.crypto.factory.PasswordEncoderFactories.createDelegatingPasswordEncoder()
+                        .encode("CorrectPass123!")));
+        String[] aliases = {email, "résumé." + suffix + "@example.test", "resumé." + suffix + "@example.test"};
+        for (int index = 0; index < aliases.length; index++) {
+            assertEquals(account.getId(), userRepository.findByEmail(aliases[index]).orElseThrow().getId());
+            var response = send("POST", "/api/auth/login", null,
+                    Map.of("email", aliases[index], "password", "IncorrectPass123!"));
+            assertEquals(index < 2 ? 401 : 429, response.statusCode(), response.body());
+        }
+    }
 
 	private Fixture createFixture(String label, int memberCount) {
 		TransactionTemplate transaction = new TransactionTemplate(transactionManager);

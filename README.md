@@ -707,3 +707,85 @@ status 409 is the application's documented policy for changed payloads. This
 implementation waits on the database group lock for concurrent requests rather
 than returning an in-progress receipt. Lock failures remain errors and are safe
 to retry with the same key. Reference [IETF draft](https://datatracker.ietf.org/doc/draft-ietf-httpapi-idempotency-key-header/).
+
+## Authentication and request resource protection
+
+This configuration supports one application instance. All attempts count, including
+successful authentication. Denials do not extend the fixed window, and successful
+authentication does not reset source or account budgets. There are no permanent
+account locks. A caller waits for the current window to expire.
+
+| Property | Default | Purpose |
+| --- | --- | --- |
+| app.security.limit-window-seconds | 60 | Independent fixed windows from first use |
+| app.security.login-source-limit | 60 | Login requests per direct/trusted source |
+| app.security.login-target-limit | 10 | Login requests per resolved account across sources |
+| app.security.registration-source-limit | 10 | Registration requests per source |
+| app.security.max-limiter-entries | 4096 | Total source and target windows |
+| app.security.auth-body-bytes | 4096 | Login/registration body bytes |
+| app.security.api-body-bytes | 65536 | Other API body bytes |
+| app.security.max-query-chars | 2048 | Raw query length |
+| app.security.max-query-parameters | 50 | Raw query parameter count |
+| app.security.trusted-proxies | empty | Exact literal proxy IP addresses, comma separated |
+
+The auth body allowance fits maximum name, email and password fields even with
+JSON Unicode escapes. General request size accommodates at most 128 expense
+participants/shares, 19-digit IDs and exact decimal amounts with substantial
+encoding headroom. New create/update requests enforce 1–128 participants where
+the relevant list is supplied. Existing records remain readable. These size
+and cardinality limits also apply to retries of older requests. A rejected large
+retry must not be turned into a fresh creation key automatically.
+
+Bodies with a declared excessive length return 413 before body reads. Unknown
+length and chunked bodies are read up to the selected cap plus one byte before
+413. Allowed bodies are replayed as unchanged bytes to MVC. Jackson also limits
+nesting to 32, strings to 4096 characters and numeric tokens to 64 characters.
+These parser bounds are additional to DTO validation. Tomcat bounds total
+request headers at 16 KB, form posts and discarded bodies at 64 KB, and parameter
+count at 50. Its connection/read and keep-alive timeouts are 10 seconds, with
+50 worker threads, 200 connections and an accept backlog of 50. JSON body
+limits are enforced by the application guard, independently of form-post limits.
+
+429 replies have generic JSON feedback and Retry-After seconds. The UI waits
+for the user to retry and does not schedule authentication requests. Password
+input is limited to the existing registration capability of 72 UTF-8 bytes.
+Overlong login input is rejected before password hashing.
+
+The limiter stores only bounded ephemeral source addresses, account IDs and
+hashed nonexistent-account targets. After the bounded source check and DTO
+validation, login resolves the account through its existing database lookup.
+Existing accounts are keyed by user ID so MySQL-equivalent email aliases share
+one budget. Nonexistent targets use the normalized email hash. Both receive the
+same quota and generic denial response, before password verification.
+Expired entries are reclaimed lazily on the next authentication request.
+A full map rejects new keys with 429 rather than evicting active counters.
+This trades temporary availability for bounded memory and protection from
+counter-reset bypass. Repeated blocked requests never prolong an existing window.
+An active attacker can still exhaust subsequent windows, and per-account
+protection can temporarily affect a legitimate user's login.
+
+By default all forwarding headers are ignored. Keep
+server.forward-headers-strategy=NONE, which is enforced at startup. A future
+reverse proxy must strip/replace untrusted client forwarding data and be listed
+as an exact literal IP in app.security.trusted-proxies. The application walks
+X-Forwarded-For from the socket peer right to left, stopping at the first
+untrusted address. Malformed, repeated or oversized forwarding data falls back
+to the socket peer. Forwarded and X-Real-IP are ignored. Unknown hosting proxy
+ranges must not be configured as wildcard trust.
+
+Counters reset on process restart and are not shared across replicas. The
+account-target budget covers multiple source addresses reaching this instance.
+A replicated deployment requires a reviewed shared limiter or an upstream
+shared control before these thresholds can be claimed across the deployment.
+MySQL is not used for per-attempt counter writes in this single-instance design.
+Host-level protection is still needed against volumetric attacks and slow clients.
+
+The isolated bulk backend fixture profiles explicitly use larger auth budgets.
+Dedicated abuse tests override them with small limits and a controllable clock
+tests expiration and concurrency. Run the focused real-browser auth checks with
+scripts/run-final-release-e2e.ps1 -Suite auth. Bulk browser scenarios may require
+explicit synthetic-workload quotas or separate runs, since their signup burst is
+intentionally subject to the same configured limits.
+
+Design references are the [OWASP authentication guidance](https://cheatsheetseries.owasp.org/cheatsheets/Authentication_Cheat_Sheet.html)
+and [OWASP anti-automation guidance](https://cheatsheetseries.owasp.org/cheatsheets/Bot_Management_and_Anti-Automation_Cheat_Sheet.html).
