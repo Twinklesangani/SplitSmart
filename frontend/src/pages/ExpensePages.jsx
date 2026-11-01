@@ -46,6 +46,7 @@ function RequestError({ error, onRetry }) {
 }
 
 function useExpenseList(groupId, userId, groupStatus) {
+  const moreRef = useRef(null)
   const [attempt, setAttempt] = useState(0)
   const [result, setResult] = useState({ scope: '', status: 'loading', expenses: [], error: '' })
   const scope = `${userId}:${groupId}:${attempt}`
@@ -56,8 +57,8 @@ function useExpenseList(groupId, userId, groupStatus) {
     const controller = new AbortController()
     async function load() {
       try {
-        const expenses = await listExpenses(groupId, { signal: controller.signal })
-        if (!controller.signal.aborted) setResult({ scope, status: 'success', expenses, error: '' })
+        const page = await listExpenses(groupId, { signal: controller.signal })
+        if (!controller.signal.aborted) setResult({ scope, status: 'success', expenses: page.items, nextBefore: page.nextBefore, error: '' })
       } catch (error) {
         if (controller.signal.aborted) return
         setResult({
@@ -76,13 +77,38 @@ function useExpenseList(groupId, userId, groupStatus) {
         setResult({ scope, status: 'error', expenses: [], error: 'Expenses could not be loaded. Please try again.' })
       }
     })
-    return () => controller.abort()
+    return () => {
+      controller.abort()
+      moreRef.current?.abort()
+      moreRef.current = null
+    }
   }, [groupId, groupStatus, scope])
 
   const current = result.scope === scope
     ? result
     : { status: groupStatus === 'success' ? 'loading' : 'error', expenses: [], error: '' }
-  return { ...current, reload: () => setAttempt((value) => value + 1) }
+  async function loadMore() {
+    if (!current.nextBefore || moreRef.current) return
+    const controller = new AbortController()
+    moreRef.current = controller
+    setResult(previous => ({ ...previous, loadingMore: true, moreError: '' }))
+    try {
+      const page = await listExpenses(groupId, { before: current.nextBefore, signal: controller.signal })
+      if (controller.signal.aborted) return
+      setResult(previous => {
+        if (previous.scope !== scope) return previous
+        const byId = new Map(previous.expenses.map(item => [String(item.id), item]))
+        for (const item of page.items) byId.set(String(item.id), item)
+        return { ...previous, expenses: [...byId.values()], nextBefore: page.nextBefore, loadingMore: false, moreError: '' }
+      })
+    } catch (error) {
+      if (!controller.signal.aborted) setResult(previous => previous.scope === scope
+        ? { ...previous, loadingMore: false, moreError: error.message || 'More expenses could not be loaded.' } : previous)
+    } finally {
+      if (moreRef.current === controller) moreRef.current = null
+    }
+  }
+  return { ...current, loadMore, reload: () => setAttempt((value) => value + 1) }
 }
 
 function useExpenseRecord(groupId, expenseId, userId, groupStatus) {
@@ -149,6 +175,7 @@ function ExpenseListContent({ group, members, userId }) {
     return (
       <>
         {notice && <p className="inline-notice" role="status">{notice}</p>}
+        <Button type="button" variant="secondary" onClick={result.reload}>Refresh expenses</Button>
         <Card>
           <EmptyState
             icon="receipt"
@@ -164,6 +191,7 @@ function ExpenseListContent({ group, members, userId }) {
   return (
     <>
       {notice && <p className="inline-notice" role="status">{notice}<button type="button" className="notice-dismiss" onClick={clearNotice} aria-label="Dismiss confirmation">Dismiss</button></p>}
+      <Button type="button" variant="secondary" onClick={result.reload}>Refresh expenses</Button>
       <div className="expense-list" aria-label="Group expenses">
         {result.expenses.map((expense) => (
           <Card className="expense-list-card" key={expense.id}>
@@ -183,6 +211,9 @@ function ExpenseListContent({ group, members, userId }) {
           </Card>
         ))}
       </div>
+      {result.moreError && <RequestError error={result.moreError} onRetry={result.loadMore} />}
+      {result.nextBefore && <Button type="button" onClick={result.loadMore} disabled={result.loadingMore}
+        aria-busy={Boolean(result.loadingMore)}>{result.loadingMore ? 'Loading more expenses…' : 'Load more expenses'}</Button>}
     </>
   )
 }

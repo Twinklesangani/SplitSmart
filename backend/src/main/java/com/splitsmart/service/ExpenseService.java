@@ -29,6 +29,7 @@ import com.splitsmart.dto.CreateExpenseRequest;
 import com.splitsmart.dto.CreateExpenseSplitRequest;
 import com.splitsmart.dto.CreateExpenseRequest.SplitType;
 import com.splitsmart.dto.GroupBalanceResponse;
+import com.splitsmart.dto.HistoryPage;
 import com.splitsmart.dto.MemberBalanceResponse;
 import com.splitsmart.dto.ExpenseResponse;
 import com.splitsmart.dto.ExpenseSplitResponse;
@@ -226,14 +227,20 @@ public class ExpenseService {
 	}
 
 	@Transactional(readOnly = true)
-	public List<ExpenseResponse> listExpenses(Long groupId, String subject) {
+	public HistoryPage<ExpenseResponse> listExpenses(Long groupId, String subject, Long before, int limit) {
 		User requester = loadUser(subject);
 		loadGroup(groupId);
 		requireMembership(groupId, requester.getId());
 
-		return expenseRepository.findAllWithDetailsByGroupIdOrderByIdDesc(groupId).stream()
-				.map(expense -> toResponse(expense, expense.getSplits()))
-				.toList();
+        HistoryPage.validate(before, limit);
+        List<Long> fetched = expenseRepository.findHistoryIds(groupId, before,
+                org.springframework.data.domain.PageRequest.of(0, limit + 1));
+        boolean more = fetched.size() > limit;
+        List<Long> ids = more ? fetched.subList(0, limit) : fetched;
+        List<ExpenseResponse> items = ids.isEmpty() ? List.of()
+                : expenseRepository.findHistoryDetails(groupId, ids).stream()
+                    .map(expense -> toResponse(expense, expense.getSplits())).toList();
+        return new HistoryPage<>(items, more ? ids.get(ids.size() - 1) : null);
 	}
 
 	@Transactional(readOnly = true)

@@ -147,7 +147,7 @@ export async function apiRequest(page, path, { method = 'GET', body, authenticat
     } catch {
       responseBody = null
     }
-    return { status: response.status, body: responseBody }
+    return { status: response.status, body: responseBody, nextBefore: response.headers.get('X-Next-Before') }
   }, {
     apiUrl: API_URL,
     requestPath: path,

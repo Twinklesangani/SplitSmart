@@ -77,6 +77,8 @@ import static org.junit.jupiter.api.Assertions.assertTrue;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.Mockito.doThrow;
 
+@org.springframework.context.annotation.Import(SplitSmartMySqlIT.HistorySqlConfig.class)
+@org.junit.jupiter.api.parallel.Execution(org.junit.jupiter.api.parallel.ExecutionMode.SAME_THREAD)
 @SpringBootTest(webEnvironment = SpringBootTest.WebEnvironment.RANDOM_PORT, properties = "app.security.login-target-limit=2")
 @ActiveProfiles("mysql-it")
 class SplitSmartMySqlIT {
@@ -575,6 +577,203 @@ class SplitSmartMySqlIT {
                     Map.of("email", aliases[index], "password", "IncorrectPass123!"));
             assertEquals(index < 2 ? 401 : 429, response.statusCode(), response.body());
         }
+    }
+
+
+
+    @Autowired private HistorySqlCapture historySql;
+    @Autowired private jakarta.persistence.EntityManagerFactory entityManagerFactory;
+
+    static class HistorySqlCapture implements org.hibernate.resource.jdbc.spi.StatementInspector {
+        volatile boolean recording;
+        final java.util.List<String> statements = new java.util.concurrent.CopyOnWriteArrayList<>();
+        public String inspect(String sql) {
+            if (recording) statements.add(sql.toLowerCase(java.util.Locale.ROOT).replaceAll("\\s+", " "));
+            return sql;
+        }
+    }
+
+    @org.springframework.boot.test.context.TestConfiguration(proxyBeanMethods = false)
+    static class HistorySqlConfig {
+        @org.springframework.context.annotation.Bean
+        HistorySqlCapture historySqlCapture() { return new HistorySqlCapture(); }
+        @org.springframework.context.annotation.Bean
+        org.springframework.boot.autoconfigure.orm.jpa.HibernatePropertiesCustomizer historySqlCustomizer(HistorySqlCapture capture) {
+            return properties -> properties.put("hibernate.session_factory.statement_inspector", capture);
+        }
+    }
+
+    @Test
+    void expenseHistoryIsBoundedAtTheDatabaseAndBalancesUseTheWholeLedger() throws Exception {
+        Fixture fixture = createFixture("history-page", 2);
+        seedExpenseHistory(fixture, 26);
+        jdbcTemplate.update("UPDATE expenses SET created_at = '2026-01-01 00:00:00' WHERE group_id = ?", fixture.groupId());
+        List<Long> ids = jdbcTemplate.queryForList("SELECT id FROM expenses WHERE group_id = ? ORDER BY id DESC",
+                Long.class, fixture.groupId());
+        var statistics = entityManagerFactory.unwrap(org.hibernate.SessionFactory.class).getStatistics();
+        boolean statisticsWereEnabled = statistics.isStatisticsEnabled();
+        statistics.setStatisticsEnabled(true);
+        statistics.clear();
+        historySql.statements.clear();
+        historySql.recording = true;
+        HttpResponse<String> response;
+        try {
+            response = send("GET", expensesPath(fixture.groupId()) + "?limit=5", token(fixture.memberIds().get(0)), null);
+        } finally {
+            historySql.recording = false;
+            statistics.setStatisticsEnabled(statisticsWereEnabled);
+        }
+        assertEquals(200, response.statusCode(), response.body());
+        var rows = objectMapper.readTree(response.body());
+        assertEquals(5, rows.size());
+        for (int index = 0; index < 5; index++) {
+            assertEquals(ids.get(index).longValue(), rows.get(index).path("id").asLong());
+            assertEquals("1.00", rows.get(index).path("amount").asText());
+            assertTrue(rows.get(index).path("amount").isTextual());
+        }
+        long loaded = statistics.getEntityStatistics(com.splitsmart.entity.Expense.class.getName()).getLoadCount();
+        assertEquals(5, loaded);
+        var historyQueries = historySql.statements.stream().filter(sql -> sql.contains("from expenses ")).toList();
+        assertEquals(2, historyQueries.size(), historyQueries.toString());
+        assertTrue(historySql.statements.size() <= 6, historySql.statements.toString());
+        assertTrue(historyQueries.get(0).contains("limit"), historyQueries.toString());
+        assertFalse(historyQueries.get(0).contains("join expense_splits"), historyQueries.toString());
+        assertTrue(java.util.regex.Pattern.compile("\\bin\\s*\\(").matcher(historyQueries.get(1)).find(), historyQueries.toString());
+        assertFalse(historyQueries.stream().anyMatch(sql -> sql.contains("count(")));
+        String cursor = response.headers().firstValue("X-Next-Before").orElseThrow();
+        assertEquals(ids.get(4).toString(), cursor);
+        seedExpenseHistory(fixture, 1);
+        var second = send("GET", expensesPath(fixture.groupId()) + "?limit=5&before=" + cursor,
+                token(fixture.memberIds().get(0)), null);
+        var secondRows = objectMapper.readTree(second.body());
+        for (int index = 0; index < 5; index++) assertEquals(ids.get(index + 5).longValue(), secondRows.get(index).path("id").asLong());
+        expenseService.deleteExpense(fixture.groupId(), ids.get(10), fixture.memberIds().get(0).toString());
+        var third = send("GET", expensesPath(fixture.groupId()) + "?limit=5&before="
+                + second.headers().firstValue("X-Next-Before").orElseThrow(), token(fixture.memberIds().get(0)), null);
+        assertEquals(ids.get(11).longValue(), objectMapper.readTree(third.body()).get(0).path("id").asLong());
+        var balances = read(send("GET", balancesPath(fixture.groupId()), token(fixture.memberIds().get(0)), null),
+                GroupBalanceResponse.class);
+        assertEquals(new BigDecimal("26.00"), balances.totalExpenseAmount());
+        var plan = jdbcTemplate.queryForMap(
+                "EXPLAIN SELECT id FROM expenses WHERE group_id = ? AND (? IS NULL OR id < ?) ORDER BY id DESC LIMIT 6",
+                fixture.groupId(), ids.get(4), ids.get(4));
+        assertTrue(String.valueOf(plan.get("possible_keys")).contains("idx_expenses_group_id_id"), plan.toString());
+        System.out.println("EXPENSE_HISTORY_ENTITY_LOADS=" + loaded + " SQL_COUNT=" + historyQueries.size() + " INCLUDING_ACCESS_CHECKS=" + historySql.statements.size());
+        System.out.println("EXPENSE_HISTORY_PLAN=" + plan);
+    }
+
+    @Test
+    void historyBoundariesAndPrivacyRejectUnboundedOrAmbiguousParameters() throws Exception {
+        Fixture fixture = createFixture("history-boundary", 2);
+        String auth = token(fixture.memberIds().get(0));
+        String[] paths = {expensesPath(fixture.groupId()), "/api/groups/" + fixture.groupId() + "/settlements"};
+        for (String path : paths) {
+            var empty = send("GET", path, auth, null);
+            assertEquals(0, objectMapper.readTree(empty.body()).size());
+            assertTrue(empty.headers().firstValue("X-Next-Before").isEmpty());
+            for (String query : List.of("limit=0", "limit=-1", "limit=101", "limit=bad", "limit=1.5",
+                    "limit=", "before=0", "before=-1", "before=bad", "before=", "offset=0", "offset=-1",
+                    "page=1", "sort=id", "limit=1&limit=2")) {
+                assertEquals(400, send("GET", path + "?" + query, auth, null).statusCode(), query);
+            }
+        }
+        seedExpenseHistory(fixture, 5);
+        var exact = send("GET", paths[0] + "?limit=5", auth, null);
+        assertEquals(5, objectMapper.readTree(exact.body()).size());
+        assertTrue(exact.headers().firstValue("X-Next-Before").isEmpty());
+        var fewer = send("GET", paths[0] + "?limit=100", auth, null);
+        assertEquals(5, objectMapper.readTree(fewer.body()).size());
+        assertTrue(fewer.headers().firstValue("X-Next-Before").isEmpty());
+        Fixture other = createFixture("history-other", 2);
+        seedExpenseHistory(other, 1);
+        for (String path : paths) {
+            var hidden = send("GET", path + "?limit=1", token(other.memberIds().get(0)), null);
+            assertEquals(404, hidden.statusCode());
+            assertTrue(hidden.headers().firstValue("X-Next-Before").isEmpty());
+        }
+        long otherCursor = jdbcTemplate.queryForObject("SELECT MAX(id) FROM expenses WHERE group_id = ?", Long.class, other.groupId());
+        var scoped = send("GET", paths[0] + "?before=" + otherCursor, auth, null);
+        for (var row : objectMapper.readTree(scoped.body())) assertEquals(fixture.groupId(), row.path("groupId").asLong());
+    }
+
+    @Test
+    void largeExpenseHistoryHasStrictMaximumWithoutTruncatingBalancesOrSuggestions() throws Exception {
+        Fixture fixture = createFixture("history-large", 2);
+        seedExpenseHistory(fixture, 120);
+        String auth = token(fixture.memberIds().get(0));
+        var first = send("GET", expensesPath(fixture.groupId()), auth, null);
+        assertEquals(25, objectMapper.readTree(first.body()).size());
+        var maximum = send("GET", expensesPath(fixture.groupId()) + "?limit=100", auth, null);
+        assertEquals(100, objectMapper.readTree(maximum.body()).size());
+        var last = send("GET", expensesPath(fixture.groupId()) + "?limit=100&before="
+                + maximum.headers().firstValue("X-Next-Before").orElseThrow(), auth, null);
+        assertEquals(20, objectMapper.readTree(last.body()).size());
+        assertTrue(last.headers().firstValue("X-Next-Before").isEmpty());
+        var balances = read(send("GET", balancesPath(fixture.groupId()), auth, null), GroupBalanceResponse.class);
+        assertEquals(new BigDecimal("120.00"), balances.totalExpenseAmount());
+        assertEquals(new BigDecimal("120.00"),
+                settlementSuggestionService.getSuggestions(fixture.groupId(), fixture.memberIds().get(0).toString()).totalSuggestedAmount());
+    }
+
+    @Test
+    void settlementPagesKeepFullBalancesAndRecoverAnOlderRequestByItsUniqueKey() throws Exception {
+        Fixture fixture = createFixture("settlement-history", 2);
+        seedExpenseHistory(fixture, 1);
+        var ids = fixture.memberIds();
+        String oldestRequest = UUID.randomUUID().toString();
+        for (int index = 0; index < 26; index++) {
+            var response = settlementRequest(fixture, ids.get(1), ids.get(0), "0.01",
+                    index == 0 ? oldestRequest : UUID.randomUUID().toString()).call();
+            assertEquals(201, response.statusCode(), response.body());
+        }
+        jdbcTemplate.update("UPDATE settlements SET created_at = '2026-01-01 00:00:00' WHERE group_id = ?", fixture.groupId());
+        String path = "/api/groups/" + fixture.groupId() + "/settlements";
+        String auth = token(ids.get(0));
+        var first = send("GET", path, auth, null);
+        assertEquals(25, objectMapper.readTree(first.body()).size());
+        var last = send("GET", path + "?before=" + first.headers().firstValue("X-Next-Before").orElseThrow(), auth, null);
+        assertEquals(1, objectMapper.readTree(last.body()).size());
+        assertTrue(last.headers().firstValue("X-Next-Before").isEmpty());
+        historySql.statements.clear();
+        historySql.recording = true;
+        HttpResponse<String> found;
+        try { found = send("GET", path + "?requestId=" + oldestRequest, auth, null); }
+        finally { historySql.recording = false; }
+        var matching = objectMapper.readTree(found.body());
+        assertEquals(1, matching.size());
+        assertEquals(oldestRequest, matching.get(0).path("requestId").asText());
+        assertEquals("0.01", matching.get(0).path("amount").asText());
+        assertEquals(1, historySql.statements.stream().filter(sql -> sql.contains("from settlements ")).count());
+        assertTrue(historySql.statements.stream().anyMatch(sql -> sql.contains("from settlements ") && sql.contains("limit")));
+        assertEquals(400, send("GET", path + "?requestId=bad", auth, null).statusCode());
+        assertEquals(400, send("GET", path + "?requestId=" + oldestRequest + "&before=1", auth, null).statusCode());
+        Fixture other = createFixture("settlement-history-outsider", 2);
+        assertEquals(404, send("GET", path + "?requestId=" + oldestRequest, token(other.memberIds().get(0)), null).statusCode());
+        var absent = send("GET", "/api/groups/" + other.groupId() + "/settlements?requestId=" + oldestRequest,
+                token(other.memberIds().get(0)), null);
+        assertEquals(0, objectMapper.readTree(absent.body()).size());
+        var balances = read(send("GET", balancesPath(fixture.groupId()), auth, null), GroupBalanceResponse.class);
+        assertEquals(new BigDecimal("0.26"), balanceFor(balances, ids.get(1)).totalSentSettlements());
+        assertEquals(new BigDecimal("-0.74"), balanceFor(balances, ids.get(1)).netBalance());
+        var plan = jdbcTemplate.queryForMap(
+                "EXPLAIN SELECT id FROM settlements WHERE group_id = ? AND (? IS NULL OR id < ?) "
+                        + "AND (? IS NULL OR request_id = ?) ORDER BY id DESC LIMIT 26",
+                fixture.groupId(), null, null, oldestRequest, oldestRequest);
+        assertEquals("uk_settlements_group_request", plan.get("key"));
+        System.out.println("SETTLEMENT_LOOKUP_PLAN=" + plan);
+    }
+
+    private void seedExpenseHistory(Fixture fixture, int count) {
+        new TransactionTemplate(transactionManager).executeWithoutResult(status -> {
+            var group = expenseGroupRepository.findById(fixture.groupId()).orElseThrow();
+            var payer = userRepository.getReferenceById(fixture.memberIds().get(0));
+            var borrower = userRepository.getReferenceById(fixture.memberIds().get(1));
+            for (int index = 0; index < count; index++) {
+                var expense = expenseRepository.saveAndFlush(new com.splitsmart.entity.Expense(
+                        group, "History-" + index, new BigDecimal("1.00"), "INR", payer, payer));
+                expenseSplitRepository.saveAndFlush(new ExpenseSplit(expense, borrower, new BigDecimal("1.00")));
+            }
+        });
     }
 
 	private Fixture createFixture(String label, int memberCount) {

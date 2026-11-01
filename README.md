@@ -789,3 +789,54 @@ intentionally subject to the same configured limits.
 
 Design references are the [OWASP authentication guidance](https://cheatsheetseries.owasp.org/cheatsheets/Authentication_Cheat_Sheet.html)
 and [OWASP anti-automation guidance](https://cheatsheetseries.owasp.org/cheatsheets/Bot_Management_and_Anti-Automation_Cheat_Sheet.html).
+
+## Bounded group financial history
+
+GET /api/groups/{groupId}/expenses and GET /api/groups/{groupId}/settlements now
+return one page. Their JSON bodies remain arrays. The default is 25 records and
+the maximum is 100. Callers must no longer assume that one array is the complete
+history. The bundled UI reads the new metadata and offers manual Load More.
+
+Use limit and before as canonical positive decimal integers. before is an
+exclusive record-ID boundary and records are ordered by ID descending.
+Unsupported parameters, repeated parameters, empty values, negative values,
+malformed cursors and limits above 100 return 400. Offset, page and arbitrary
+sort parameters are unsupported.
+
+When another page exists, X-Next-Before contains the oldest returned record ID
+as a decimal string. Send that string as before on the next request. The header
+is exposed through CORS and absent on the last page. Keep cursors as strings to
+avoid JavaScript integer conversion. There is no total-count query.
+
+New records above an existing cursor appear on refresh, which starts again at
+the newest page. Deletions do not invalidate numeric cursor boundaries. This is
+a traversal of changing data, with no frozen snapshot across requests. Refresh
+after concurrent edits or deletions to see the latest state. Load More preserves
+loaded rows on failure, retries the same cursor and merges by record ID. Group
+or account changes cancel stale requests and clear the displayed scope.
+
+Expense history first selects at most limit+1 IDs in SQL, then fetches complete
+expense details/splits for at most limit selected IDs. Collection fetch joins
+are never paginated directly. Settlement history applies the SQL limit to its
+root query with to-one fetches. Existing group/ID indexes support these seeks.
+
+GET /api/groups/{groupId}/settlements?requestId=UUID returns at most one matching
+repayment from the authorized group. It cannot be combined with before. The
+UI uses this indexed lookup when reconciling an uncertain repayment, including
+a receipt older than the first history page. The same group-authorization rules
+apply, with no cross-group count or existence metadata.
+
+Balances and suggestions continue to use full-ledger database aggregates and
+the complete member roster. History pages are never used as authoritative
+financial totals. Exact decimal strings, BigInt paise and the expense-creation
+Idempotency-Key contract are preserved.
+
+The maximum bounds history roots per request. Selected legacy expenses still
+include their complete splits. Member rosters, group directories and aggregate
+work over a complete ledger have separate scaling considerations. The UI can
+grow its displayed history through deliberate Load More clicks. No automatic
+infinite scrolling, new dependency, index or migration is introduced.
+
+Run the isolated relevant browser journeys with
+scripts/run-final-release-e2e.ps1 -Suite history. They use synthetic data and the
+existing resource-ownership and cleanup checks.

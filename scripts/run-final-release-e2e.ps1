@@ -1,4 +1,4 @@
-param([ValidateSet('smoke', 'auth', 'all')][string]$Suite = 'smoke')
+param([ValidateSet('smoke', 'auth', 'history', 'all')][string]$Suite = 'smoke')
 $ErrorActionPreference = 'Stop'
 
 $repositoryRoot = Split-Path -Parent $PSScriptRoot
@@ -319,7 +319,8 @@ try {
 
 	Push-Location $frontendRoot
 	try {
-		if ($Suite -eq 'auth') { & node node_modules/@playwright/test/cli.js test authentication.spec.js auth-resource-limits.spec.js smoke.spec.js }
+		if ($Suite -eq 'history') { & node node_modules/@playwright/test/cli.js test financial-workflow.spec.js history-pagination.spec.js monetary-precision.spec.js }
+        elseif ($Suite -eq 'auth') { & node node_modules/@playwright/test/cli.js test authentication.spec.js auth-resource-limits.spec.js smoke.spec.js }
         elseif ($Suite -eq 'smoke') { & node node_modules/@playwright/test/cli.js test smoke.spec.js }
 		else { & node node_modules/@playwright/test/cli.js test }
 		$playwrightExitCode = $LASTEXITCODE
@@ -449,3 +450,4 @@ if ($failure) {
 "ISOLATED_LOG_CREDENTIAL_CHECK=PASS"
 "TEST_OWNED_CONTAINER_REMOVED=$containerRemoved"
 "TEST_OWNED_VOLUME_REMOVED=$volumeRemoved"
+exit 0

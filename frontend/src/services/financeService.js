@@ -1,4 +1,4 @@
-import { ApiError, apiRequest } from './apiClient.js'
+import { ApiError, apiRequest, apiHistory } from './apiClient.js'
 
 const MONEY_PATTERN = /^(-?)(0|[1-9]\d*)(?:\.(\d{1,2}))?$/
 const UUID_PATTERN = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i
@@ -182,8 +182,9 @@ export async function getSettlementSuggestions(groupId, { signal } = {}) {
   return requireSuggestions(response, groupId)
 }
 
-export async function listSettlements(groupId, { signal } = {}) {
-  return requireSettlements(await apiRequest(groupPath(groupId, 'settlements'), { signal }), groupId)
+export async function listSettlements(groupId, options = {}) {
+  const page = await apiHistory(groupPath(groupId, 'settlements'), options)
+  return { ...page, items: requireSettlements(page.items, groupId) }
 }
 
 export async function createSettlement(groupId, payload) {

@@ -28,7 +28,7 @@ it('reads large and small expenses through the actual JSON client', async () => 
     expense(1, '70368744177664.01'), expense(2, '0.60'),
   ]), { headers: { 'Content-Type': 'application/json' } })))
   try {
-    const items = await listExpenses(1)
+    const { items } = await listExpenses(1)
     expect(items.map(item => formatInr(item.amount))).toEqual(['₹70368744177664.01', '₹0.60'])
   } finally { vi.unstubAllGlobals() }
 })
@@ -46,4 +46,19 @@ it('rejects corrupt list data explicitly instead of displaying an incomplete led
 it('rejects large numeric money whose original decimal text is already lost', () => {
   expect(parseMoneyToPaise(JSON.parse('70368744177664.01'))).toBeNull()
   expect(formatFinancialInr(JSON.parse('70368744177664.01'))).toBe('Amount unavailable')
+})
+
+it('rejects a history cursor that repeats or moves toward newer records', async () => {
+  const { vi } = await import('vitest')
+  const { apiHistory } = await import('../services/apiClient.js')
+  try {
+    for (const cursor of ['5', '6']) {
+      vi.stubGlobal('fetch', vi.fn().mockResolvedValue(new Response('[{}]', {
+        headers: { 'Content-Type': 'application/json', 'X-Next-Before': cursor },
+      })))
+      await expect(apiHistory('/api/groups/1/expenses', { before: '5' })).rejects.toMatchObject({
+        code: 'invalid_response', message: 'History pagination did not advance. Refresh and try again.',
+      })
+    }
+  } finally { vi.unstubAllGlobals() }
 })

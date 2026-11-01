@@ -1,6 +1,11 @@
 package com.splitsmart.controller;
 
 import java.util.List;
+import java.util.Set;
+import org.springframework.util.MultiValueMap;
+import org.springframework.web.bind.annotation.RequestParam;
+import com.splitsmart.dto.HistoryPage;
+import io.swagger.v3.oas.annotations.headers.Header;
 
 import jakarta.validation.Valid;
 
@@ -70,8 +75,9 @@ public class ExpenseController {
 	@Operation(summary = "List expenses in a group")
 	@ApiResponses({
 			@ApiResponse(responseCode = "200", description = "Group expenses",
+                    headers = @Header(name = "X-Next-Before", description = "Exclusive cursor for the next page. Absent at the end.", schema = @Schema(type = "string")),
 					content = @Content(array = @ArraySchema(schema = @Schema(implementation = ExpenseResponse.class)))),
-			@ApiResponse(responseCode = "400", description = "Invalid group ID",
+			@ApiResponse(responseCode = "400", description = "Invalid group ID or history parameters",
 					content = @Content(schema = @Schema(implementation = ApiErrorResponse.class))),
 			@ApiResponse(responseCode = "401", description = "Authentication is required or invalid",
 					content = @Content(schema = @Schema(implementation = ApiErrorResponse.class))),
@@ -80,11 +86,17 @@ public class ExpenseController {
 			@ApiResponse(responseCode = "500", description = "Unexpected server error",
 					content = @Content(schema = @Schema(implementation = ApiErrorResponse.class)))
 	})
-	public List<ExpenseResponse> listExpenses(
-			@PathVariable Long groupId,
-			@AuthenticationPrincipal Jwt jwt) {
-		return expenseService.listExpenses(groupId, jwt.getSubject());
-	}
+    public ResponseEntity<List<ExpenseResponse>> listExpenses(
+            @PathVariable Long groupId,
+            @Parameter(description = "Exclusive descending record-ID cursor.", schema = @Schema(minimum = "1"))
+            @RequestParam(required = false) Long before,
+            @Parameter(description = "Maximum records per page.", schema = @Schema(minimum = "1", maximum = "100", defaultValue = "25"))
+            @RequestParam(defaultValue = "25") int limit,
+            @Parameter(hidden = true) @RequestParam MultiValueMap<String, String> parameters,
+            @AuthenticationPrincipal Jwt jwt) {
+        HistoryPage.validateParameters(parameters, Set.of("limit", "before"));
+        return expenseService.listExpenses(groupId, jwt.getSubject(), before, limit).response();
+    }
 
 	@GetMapping("/{expenseId}")
 	@Operation(summary = "Get a group expense")

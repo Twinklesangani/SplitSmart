@@ -80,7 +80,7 @@ function isAbortError(error) {
   return error?.name === 'AbortError' || error?.name === 'TimeoutError'
 }
 
-export async function apiRequest(path, { method = 'GET', body, token, signal, expectedStatus, operationKey } = {}) {
+export async function apiRequest(path, { method = 'GET', body, token, signal, expectedStatus, operationKey, includeCursor = false } = {}) {
   const url = resolveApiUrl(path)
   let requestToken = token
   if (requestToken === undefined && path.startsWith('/api/groups')) {
@@ -153,9 +153,33 @@ export async function apiRequest(path, { method = 'GET', body, token, signal, ex
         code: 'invalid_response',
       })
     }
+    if (includeCursor) {
+      const nextBefore = response.headers?.get('X-Next-Before') || null
+      if (nextBefore !== null && (!/^[1-9]\d{0,18}$/.test(nextBefore) || BigInt(nextBefore) > 9223372036854775807n)) {
+        throw new ApiError('The service returned invalid history pagination data.', { code: 'invalid_response' })
+      }
+      return { items: responseBody, nextBefore }
+    }
     return responseBody
   } finally {
     clearTimeout(timeoutId)
     signal?.removeEventListener('abort', abortFromCaller)
   }
+}
+
+
+export async function apiHistory(path, { signal, before, limit, requestId } = {}) {
+  const query = new URLSearchParams()
+  if (before !== undefined && before !== null) query.set('before', before)
+  if (limit !== undefined) query.set('limit', String(limit))
+  if (requestId !== undefined) query.set('requestId', requestId)
+  const suffix = query.size ? '?' + query.toString() : ''
+  const page = await apiRequest(path + suffix, { signal, includeCursor: true })
+  if (!Array.isArray(page.items) || page.items.length > 100 || page.nextBefore && page.items.length === 0) {
+    throw new ApiError('The service returned invalid history data.', { code: 'invalid_response' })
+  }
+  if (before && page.nextBefore && BigInt(page.nextBefore) >= BigInt(before)) {
+    throw new ApiError('History pagination did not advance. Refresh and try again.', { code: 'invalid_response' })
+  }
+  return page
 }

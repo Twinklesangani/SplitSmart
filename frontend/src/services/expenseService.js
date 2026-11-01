@@ -1,4 +1,4 @@
-import { ApiError, apiRequest } from './apiClient.js'
+import { ApiError, apiRequest, apiHistory } from './apiClient.js'
 
 const MAX_AMOUNT_PAISE = 9999999999999999999n
 const MONEY_PATTERN = /^(0|[1-9]\d{0,16})(?:\.(\d{1,2}))?$/
@@ -82,8 +82,9 @@ function expensePath(groupId, expenseId) {
   return `/api/groups/${encodeURIComponent(groupId)}/expenses${expenseId === undefined ? '' : `/${encodeURIComponent(expenseId)}`}`
 }
 
-export async function listExpenses(groupId, { signal } = {}) {
-  return requireExpenses(await apiRequest(expensePath(groupId), { signal }), groupId)
+export async function listExpenses(groupId, options = {}) {
+  const page = await apiHistory(expensePath(groupId), options)
+  return { ...page, items: requireExpenses(page.items, groupId) }
 }
 
 export async function getExpense(groupId, expenseId, { signal } = {}) {
