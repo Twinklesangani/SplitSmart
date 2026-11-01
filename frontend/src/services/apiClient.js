@@ -47,6 +47,7 @@ function messageForHttpError(status, code, path) {
     if (/\/api\/groups\/[^/]+\/settlements(?:\/|$)/.test(path)) {
       return 'This repayment request conflicts with an existing record. Refresh settlement history before trying again.'
     }
+    if (/^\/api\/groups\/[^/]+\/expenses$/.test(path)) return 'This operation was already used with different details. Check expense history before starting a separate expense.'
     if (path.startsWith('/api/groups')) return 'This person is already a group member or the request conflicts with current group data.'
     return 'This request conflicts with existing data.'
   }
@@ -77,7 +78,7 @@ function isAbortError(error) {
   return error?.name === 'AbortError' || error?.name === 'TimeoutError'
 }
 
-export async function apiRequest(path, { method = 'GET', body, token, signal, expectedStatus } = {}) {
+export async function apiRequest(path, { method = 'GET', body, token, signal, expectedStatus, operationKey } = {}) {
   const url = resolveApiUrl(path)
   let requestToken = token
   if (requestToken === undefined && path.startsWith('/api/groups')) {
@@ -97,6 +98,7 @@ export async function apiRequest(path, { method = 'GET', body, token, signal, ex
   else signal?.addEventListener('abort', abortFromCaller, { once: true })
 
   const headers = { Accept: 'application/json' }
+  if (operationKey) headers['Idempotency-Key'] = '"' + operationKey + '"'
   if (body !== undefined) headers['Content-Type'] = 'application/json'
   if (requestToken) headers.Authorization = `Bearer ${requestToken}`
 

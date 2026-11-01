@@ -230,7 +230,7 @@ class SettlementControllerTest {
 		String request = """
 				{"description":"%s","amount":%s,"paidByUserId":%d,%s}
 				""".formatted(description, amount, payer.getId(), splitFields);
-		mockMvc.perform(post("/api/groups/{groupId}/expenses", groupId)
+		mockMvc.perform(post("/api/groups/{groupId}/expenses", groupId).header("Idempotency-Key", "\"" + java.util.UUID.randomUUID() + "\"")
 						.header("Authorization", bearerToken(payer))
 						.contentType(MediaType.APPLICATION_JSON)
 						.content(request))

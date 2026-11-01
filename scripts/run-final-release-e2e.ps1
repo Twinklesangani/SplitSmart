@@ -289,17 +289,17 @@ try {
 	$apiListener = @(Get-NetTCPConnection -LocalPort $apiPort -State Listen)
 	if ($apiListener.Count -ne 1 -or $apiListener[0].OwningProcess -ne $apiProcess.Id -or $apiListener[0].LocalAddress -ne '127.0.0.1') { throw 'API listener ownership mismatch.' }
 
-	$emptyCounts = Invoke-TestDatabaseQuery 'SELECT (SELECT COUNT(*) FROM users), (SELECT COUNT(*) FROM expense_groups), (SELECT COUNT(*) FROM group_members), (SELECT COUNT(*) FROM expenses), (SELECT COUNT(*) FROM expense_splits), (SELECT COUNT(*) FROM settlements)'
-	if ($emptyCounts -ne "0`t0`t0`t0`t0`t0") {
+	$emptyCounts = Invoke-TestDatabaseQuery 'SELECT (SELECT COUNT(*) FROM users), (SELECT COUNT(*) FROM expense_groups), (SELECT COUNT(*) FROM group_members), (SELECT COUNT(*) FROM expenses), (SELECT COUNT(*) FROM expense_splits), (SELECT COUNT(*) FROM settlements), (SELECT COUNT(*) FROM expense_creation_operations)'
+	if ($emptyCounts -ne "0`t0`t0`t0`t0`t0`t0") {
 		throw 'The isolated database contained unexpected data before browser scenarios began.'
 	}
 	$flywayVersions = Invoke-TestDatabaseQuery "SELECT GROUP_CONCAT(version ORDER BY installed_rank SEPARATOR ',') FROM flyway_schema_history"
-	if ($flywayVersions -ne '1,2,3') {
-		throw 'The isolated database did not apply exactly the existing Flyway V1-V3 migrations.'
+	if ($flywayVersions -ne '1,2,3,4') {
+		throw 'The isolated database did not apply exactly the existing Flyway V1-V4 migrations.'
 	}
 	$flywayChecksums = Invoke-TestDatabaseQuery "SELECT GROUP_CONCAT(checksum ORDER BY installed_rank SEPARATOR ',') FROM flyway_schema_history"
-	if ($flywayChecksums -ne '1632565820,-1885547116,-722028687') {
-		throw 'The isolated database migration checksums did not match the established V1-V3 baseline.'
+	if ($flywayChecksums -ne '1632565820,-1885547116,-722028687,-1841320934') {
+		throw 'The isolated database migration checksums did not match the established V1-V4 baseline.'
 	}
 
 	$node = (Get-Command node -ErrorAction Stop).Source
@@ -331,13 +331,13 @@ try {
 
 	$precisionRows = Invoke-TestDatabaseQuery "SELECT description, CAST(amount AS CHAR) FROM expenses WHERE description LIKE 'Precision-%' ORDER BY id"
 	"ISOLATED_PRECISION_ROWS=$precisionRows"
-	$finalCounts = Invoke-TestDatabaseQuery 'SELECT (SELECT COUNT(*) FROM users), (SELECT COUNT(*) FROM expense_groups), (SELECT COUNT(*) FROM group_members), (SELECT COUNT(*) FROM expenses), (SELECT COUNT(*) FROM expense_splits), (SELECT COUNT(*) FROM settlements)'
+	$finalCounts = Invoke-TestDatabaseQuery 'SELECT (SELECT COUNT(*) FROM users), (SELECT COUNT(*) FROM expense_groups), (SELECT COUNT(*) FROM group_members), (SELECT COUNT(*) FROM expenses), (SELECT COUNT(*) FROM expense_splits), (SELECT COUNT(*) FROM settlements), (SELECT COUNT(*) FROM expense_creation_operations)'
 	$finalFlywayVersions = Invoke-TestDatabaseQuery "SELECT GROUP_CONCAT(version ORDER BY installed_rank SEPARATOR ',') FROM flyway_schema_history"
-	if ($finalFlywayVersions -ne '1,2,3') {
+	if ($finalFlywayVersions -ne '1,2,3,4') {
 		throw 'The E2E scenarios altered the disposable Flyway history.'
 	}
 	$finalFlywayChecksums = Invoke-TestDatabaseQuery "SELECT GROUP_CONCAT(checksum ORDER BY installed_rank SEPARATOR ',') FROM flyway_schema_history"
-	if ($finalFlywayChecksums -ne '1632565820,-1885547116,-722028687') {
+	if ($finalFlywayChecksums -ne '1632565820,-1885547116,-722028687,-1841320934') {
 		throw 'The E2E scenarios altered the disposable Flyway migration checksums.'
 	}
 	"ISOLATED_E2E_RUN=$runId"

@@ -391,3 +391,29 @@ describe('expense editing and deletion', () => {
     expect(fetch.mock.calls.some(([url, options]) => url.endsWith('/api/groups/42/expenses/501') && options.method === 'DELETE')).toBe(true)
   })
 })
+
+describe('expense operation recovery', () => {
+  it('keeps the same operation key after an uncertain response and clears it after success', async () => {
+    const user = userEvent.setup()
+    renderApp('/groups/42/expenses/new', [
+      ...groupSetup(),
+      () => Promise.reject(new TypeError('Synthetic lost response')),
+      jsonResponse(expense(), 201),
+      ...expenseDetailSetup(),
+    ])
+    const form = await screen.findByRole('form', { name: 'Create expense' })
+    await user.type(within(form).getByLabelText(/Description/), 'Retry meal')
+    await user.type(within(form).getByLabelText(/Total amount/), '30')
+    await user.click(within(form).getByRole('button', { name: 'Save expense' }))
+    expect(await screen.findByRole('alert')).toHaveTextContent('outcome is uncertain')
+    const first = fetch.mock.calls.find(([, options]) => options?.method === 'POST')
+    const operation = first[1].headers['Idempotency-Key']
+    expect(operation).toMatch(/^"[0-9a-f-]{36}"$/)
+    expect(window.sessionStorage.getItem('splitsmart.expenseOperation.8.42')).toBe(operation.slice(1, -1))
+    await user.click(within(form).getByRole('button', { name: 'Save expense' }))
+    expect(await screen.findByRole('heading', { name: 'Dinner', level: 2 })).toBeInTheDocument()
+    const posts = fetch.mock.calls.filter(([, options]) => options?.method === 'POST')
+    expect(posts[1][1].headers['Idempotency-Key']).toBe(operation)
+    expect(window.sessionStorage.getItem('splitsmart.expenseOperation.8.42')).toBeNull()
+  })
+})

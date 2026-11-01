@@ -90,9 +90,10 @@ export async function getExpense(groupId, expenseId, { signal } = {}) {
   return requireExpense(await apiRequest(expensePath(groupId, expenseId), { signal }), groupId, expenseId)
 }
 
-export async function createExpense(groupId, payload, { signal } = {}) {
+export async function createExpense(groupId, payload, { signal, operationKey } = {}) {
   const expense = await apiRequest(expensePath(groupId), {
     method: 'POST',
+    operationKey,
     body: payload,
     expectedStatus: 201,
     signal,

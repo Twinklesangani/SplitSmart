@@ -73,7 +73,7 @@ class ExpenseTransactionTest {
 	void missingAuthenticatedSubjectIsRejectedBeforeExpenseLookup() {
 		ResponseStatusException exception = assertThrows(
 				ResponseStatusException.class,
-				() -> expenseService.createExpense(1L, null, null));
+				() -> expenseService.createExpense(1L, null, null, "\"" + UUID.randomUUID() + "\""));
 
 		assertEquals(HttpStatus.UNAUTHORIZED, exception.getStatusCode());
 	}
@@ -97,7 +97,7 @@ class ExpenseTransactionTest {
 				List.of(new CreateExpenseSplitRequest(creator.getId(), new BigDecimal("1.00"))));
 
 		try {
-			ExpenseResponse created = expenseService.createExpense(group.getId(), creator.getId().toString(), request);
+			ExpenseResponse created = expenseService.createExpense(group.getId(), creator.getId().toString(), request, "\"" + UUID.randomUUID() + "\"");
 			verify(groupRepositorySpy).findByIdForUpdate(group.getId());
 			clearInvocations(groupRepositorySpy);
 
@@ -144,7 +144,7 @@ class ExpenseTransactionTest {
 				.when(splitRepositorySpy).saveAllAndFlush(any());
 		try {
 			assertNotNull(assertThrows(DataIntegrityViolationException.class,
-					() -> expenseService.createExpense(group.getId(), creator.getId().toString(), request)));
+					() -> expenseService.createExpense(group.getId(), creator.getId().toString(), request, "\"" + UUID.randomUUID() + "\"")));
 			assertEquals(0, expenseRepository.countByGroup_Id(group.getId()));
 			assertEquals(0, expenseSplitRepository.countByExpense_Group_Id(group.getId()));
 		} finally {
@@ -180,7 +180,7 @@ class ExpenseTransactionTest {
 				creator.getId(),
 				null,
 				List.of(new CreateExpenseSplitRequest(creator.getId(), new BigDecimal("1.00"))));
-		ExpenseResponse originalResponse = expenseService.createExpense(group.getId(), creator.getId().toString(), original);
+		ExpenseResponse originalResponse = expenseService.createExpense(group.getId(), creator.getId().toString(), original, "\"" + UUID.randomUUID() + "\"");
 		CreateExpenseRequest replacement = new CreateExpenseRequest(
 				"Replacement that fails",
 				new BigDecimal("2.00"),

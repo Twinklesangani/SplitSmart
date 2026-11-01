@@ -793,6 +793,7 @@ class ExpenseControllerTest {
 
 	private ResultActions postExpense(Long groupId, String token, String body) throws Exception {
 		return mockMvc.perform(post("/api/groups/{groupId}/expenses", groupId)
+				.header("Idempotency-Key", "\"" + java.util.UUID.randomUUID() + "\"")
 				.header("Authorization", token)
 				.contentType(MediaType.APPLICATION_JSON)
 				.content(body));

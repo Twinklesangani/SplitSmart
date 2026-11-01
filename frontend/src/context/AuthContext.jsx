@@ -48,6 +48,9 @@ function removeSessionToken() {
   try {
     window.sessionStorage.removeItem(SESSION_TOKEN_KEY)
     window.sessionStorage.removeItem(SESSION_EXPIRY_KEY)
+    for (const key of Object.keys(window.sessionStorage)) {
+      if (key.startsWith('splitsmart.expenseOperation.')) window.sessionStorage.removeItem(key)
+    }
   } catch {
     throw storageError()
   }

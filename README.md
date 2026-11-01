@@ -379,6 +379,7 @@ Create an expense with `POST /api/groups/{groupId}/expenses`:
 
 ```http
 POST /api/groups/5/expenses
+Idempotency-Key: "00000000-0000-4000-8000-000000000001"
 Authorization: Bearer <JWT>
 Content-Type: application/json
 
@@ -668,3 +669,41 @@ Aggregate balances can exceed the individual amount maximum. The browser uses
 BigInt for paise arithmetic. Legacy numeric browser fixtures are accepted only
 below 10^12 INR, where decimal text retains paise. Larger numeric responses are
 rejected explicitly because precision may already have been lost.
+
+
+## Expense creation operation keys
+
+POST /api/groups/{groupId}/expenses requires Idempotency-Key containing one
+quoted canonical UUID, for example "00000000-0000-4000-8000-000000000001".
+This is an explicit creation-contract change. Existing API callers must add it.
+The bundled UI, browser helpers and local audit request helpers send the header.
+Generate a cryptographically random UUID for each intentional new expense and
+reuse it for every retry of that operation. Missing or malformed keys return 400.
+
+The operation is scoped to authenticated user and group. Successful creation and
+the stored receipt commit in the same transaction, with database-enforced
+uniqueness and the existing group lock. Concurrent identical calls serialize and
+return the same 201 receipt. A key reused with different validated logical details
+returns 409. Amount scale, default INR/EXACT, and participant order are normalized
+for fingerprinting. Split mode, description, payer, total and resolved participant
+shares are material. Membership and validation are checked before replay.
+
+The original receipt is retained even if its expense is edited or deleted.
+Replay confirms that creation occurred and does not restore or overwrite that
+expense. Its ID may now refer to a changed or deleted resource. Keys have no
+time expiry. Receipts remain for the lifetime of their group/account and are
+removed only if that parent is deleted. No automatic retention cleanup is added.
+
+The UI stores only an operation UUID in sessionStorage, scoped by user and group.
+It survives same-tab reloads. Re-enter the same details to recover the original
+receipt. Payloads are not stored. Logout/expiry clears operation IDs. Recovery
+across logout, a closed tab, storage deletion or another device requires a caller
+to retain the original key. Review expense history before starting a separate
+expense. The explicit separate-expense action generates a new key on submission,
+even if content is identical. A request with an uncertain result retains its key.
+
+The header follows the structured-string format in the IETF draft. Conflict
+status 409 is the application's documented policy for changed payloads. This
+implementation waits on the database group lock for concurrent requests rather
+than returning an in-progress receipt. Lock failures remain errors and are safe
+to retry with the same key. Reference [IETF draft](https://datatracker.ietf.org/doc/draft-ietf-httpapi-idempotency-key-header/).

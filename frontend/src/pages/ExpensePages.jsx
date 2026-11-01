@@ -271,6 +271,7 @@ function ExpenseForm({ group, members, initialExpense, onSubmit, submitLabel }) 
   const [requestError, setRequestError] = useState('')
   const [isSubmitting, setIsSubmitting] = useState(false)
   const submitLock = useRef(false)
+  const operationStorageKey = 'splitsmart.expenseOperation.' + user.id + '.' + group.id
   const amountPaise = parseMoneyToPaise(amount)
 
   const exactTotal = useMemo(() => selectedIds.reduce((total, id) => {
@@ -365,10 +366,19 @@ function ExpenseForm({ group, members, initialExpense, onSubmit, submitLabel }) 
     submitLock.current = true
     setIsSubmitting(true)
     try {
-      await onSubmit(payload)
+      let operationKey
+      if (!isEditing) {
+        operationKey = window.sessionStorage.getItem(operationStorageKey)
+        if (!operationKey) {
+          operationKey = window.crypto.randomUUID()
+          window.sessionStorage.setItem(operationStorageKey, operationKey)
+        }
+      }
+      await onSubmit(payload, operationKey)
+      if (!isEditing) window.sessionStorage.removeItem(operationStorageKey)
     } catch (error) {
-      if (error instanceof ApiError && error.code === 'timeout') {
-        setRequestError('The request timed out. The expense may have been saved; refresh the expense list before submitting again.')
+      if (error instanceof ApiError && ['timeout', 'network_error', 'invalid_response'].includes(error.code)) {
+        setRequestError('The outcome is uncertain. Retry the same details to safely recover this expense, or check expense history.')
       } else {
         setRequestError(error instanceof ApiError
           ? error.message
@@ -382,8 +392,15 @@ function ExpenseForm({ group, members, initialExpense, onSubmit, submitLabel }) 
 
   return (
     <Card className="expense-form-card">
+      {!isEditing && <p>Retries reuse this expense operation, including after a same-tab reload.
+        Re-enter the same details after reload. Check expense history before starting a separate expense.</p>}
+      {!isEditing && <Button type="button" variant="secondary" disabled={isSubmitting}
+        onClick={() => {
+          window.sessionStorage.removeItem(operationStorageKey)
+          setRequestError('A separate expense will use a new operation. Confirm the earlier expense in history first.')
+        }}>Start a separate expense</Button>}
       <form className="expense-form" aria-label={isEditing ? 'Edit expense' : 'Create expense'} onSubmit={handleSubmit} noValidate>
-        {requestError && <div className="request-error" role="alert"><p>{requestError}</p>{requestError.startsWith('The request timed out.') && <Link className="text-link" to={`/groups/${group.id}/expenses`}>Refresh expense list before trying again</Link>}</div>}
+        {requestError && <div className="request-error" role="alert"><p>{requestError}</p>{!isEditing && <Link className="text-link" to={`/groups/${group.id}/expenses`}>Review expense history</Link>}</div>}
         <div className="form-field">
           <label htmlFor="expense-description">Description <span aria-hidden="true">*</span></label>
           <input
@@ -494,8 +511,8 @@ export function ExpenseCreatePage() {
         group={data.group}
         members={data.members}
         submitLabel="Save expense"
-        onSubmit={async (payload) => {
-          const expense = await createExpense(data.group.id, payload)
+        onSubmit={async (payload, operationKey) => {
+          const expense = await createExpense(data.group.id, payload, { operationKey })
           navigate(`/groups/${data.group.id}/expenses/${expense.id}`, {
             replace: true,
             state: { expenseNotice: 'Expense created successfully.' },

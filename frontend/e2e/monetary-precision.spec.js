@@ -68,3 +68,46 @@ test('large monetary strings survive browser input, API, persistence, balances a
   const settlements = await apiRequest(page, '/api/groups/' + group + '/settlements')
   expect(settlements.body[0].amount).toBe(exact)
 })
+
+test('a committed expense with a lost response is recovered after reload without duplication', async ({ page }) => {
+  const account = newAccount('Expense retry')
+  await registerAndLogin(page, account)
+  const group = await createGroup(page, 'Retry ledger')
+  const path = '/api/groups/' + group + '/expenses'
+  const keys = []
+  let originalId
+  let dropResponse = true
+  await page.route('**' + path, async route => {
+    if (route.request().method() !== 'POST') return route.continue()
+    keys.push(route.request().headers()['idempotency-key'])
+    const response = await route.fetch()
+    if (dropResponse) {
+      expect(response.status()).toBe(201)
+      originalId = (await response.json()).id
+      dropResponse = false
+      await route.abort('failed')
+    } else {
+      await route.fulfill({ response })
+    }
+  })
+  const fill = async () => {
+    await page.getByLabel('Description').fill('Same logical expense')
+    await page.getByLabel('Total amount (INR)').fill('70368744177664.01')
+    await page.getByRole('button', { name: 'Save expense', exact: true }).click()
+  }
+  await page.goto('/groups/' + group + '/expenses/new')
+  await fill()
+  await expect(page.getByRole('alert')).toContainText('outcome is uncertain')
+  const firstList = await apiRequest(page, path)
+  expect(firstList.body).toHaveLength(1)
+  await page.reload()
+  await fill()
+  await expect(page).toHaveURL(new RegExp('/expenses/' + originalId + '$'))
+  expect(keys).toHaveLength(2)
+  expect(keys[0]).toBe(keys[1])
+  expect((await apiRequest(page, path)).body).toHaveLength(1)
+  await createExpense(page, group, 'Same logical expense', '70368744177664.01')
+  expect(keys).toHaveLength(3)
+  expect(keys[2]).not.toBe(keys[0])
+  expect((await apiRequest(page, path)).body).toHaveLength(2)
+})

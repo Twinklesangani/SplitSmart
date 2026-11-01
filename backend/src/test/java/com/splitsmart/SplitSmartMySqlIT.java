@@ -176,7 +176,7 @@ class SplitSmartMySqlIT {
 	void flywayAndHibernateUseTheIsolatedMySqlSchema() throws Exception {
 		assertTrue(MYSQL.isRunning());
 		assertNotNull(MYSQL.getContainerId());
-		assertEquals(3, flyway.info().applied().length);
+		assertEquals(4, flyway.info().applied().length);
 		assertEquals(MigrationState.SUCCESS, flyway.info().applied()[0].getState());
 		assertEquals("1", flyway.info().applied()[0].getVersion().getVersion());
 		assertEquals(MigrationState.SUCCESS, flyway.info().applied()[1].getState());
@@ -198,7 +198,7 @@ class SplitSmartMySqlIT {
 			assertTrue(mysqlVersion.startsWith("8.4."));
 		}
 
-		assertEquals(12, jdbcTemplate.queryForObject(
+		assertEquals(14, jdbcTemplate.queryForObject(
 				"SELECT COUNT(*) FROM information_schema.table_constraints "
 						+ "WHERE constraint_schema = DATABASE() AND constraint_type = 'FOREIGN KEY'",
 				Integer.class));
@@ -665,12 +665,133 @@ class SplitSmartMySqlIT {
 		}
 	}
 
+
+    @Test
+    void expenseRetryAfterLostResponseReturnsOriginalRecord() throws Exception {
+        Fixture fixture = createFixture("expense-retry", 2);
+        var ids = fixture.memberIds();
+        var payload = exactExpenseRequest("Lost response", new BigDecimal("70368744177664.01"),
+                ids.get(0), List.of(split(ids.get(1), "70368744177664.01")));
+        String key = UUID.randomUUID().toString();
+        var first = sendExpense(fixture.groupId(), token(ids.get(0)), payload, key);
+        var retry = sendExpense(fixture.groupId(), token(ids.get(0)), payload, key);
+        assertEquals(201, first.statusCode());
+        assertEquals(201, retry.statusCode());
+        assertEquals(read(first, ExpenseResponse.class).id(), read(retry, ExpenseResponse.class).id());
+        assertEquals(first.body(), retry.body());
+        assertEquals(new BigDecimal("70368744177664.01"), read(retry, ExpenseResponse.class).amount());
+        assertEquals(1, jdbcTemplate.queryForObject(
+                "SELECT COUNT(*) FROM expenses WHERE group_id = ?", Integer.class, fixture.groupId()));
+    }
+
+
+    @Test
+    void expenseKeysConflictOnlyWithinTheirScopeAndReplaySnapshotsAfterMutation() throws Exception {
+        Fixture fixture = createFixture("key-scope", 2);
+        var ids = fixture.memberIds();
+        String auth = token(ids.get(0));
+        String key = UUID.randomUUID().toString();
+        var payload = exactExpenseRequest("Original", new BigDecimal("10.00"),
+                ids.get(0), List.of(split(ids.get(1), "10.00")));
+        assertEquals(400, sendExpense(fixture.groupId(), auth, payload, null).statusCode());
+        assertEquals(400, sendExpense(fixture.groupId(), auth, payload, "invalid").statusCode());
+        var first = sendExpense(fixture.groupId(), auth, payload, key);
+        assertEquals(201, first.statusCode(), first.body());
+        var id = read(first, ExpenseResponse.class).id();
+        var changed = exactExpenseRequest("Original", new BigDecimal("11.00"),
+                ids.get(0), List.of(split(ids.get(1), "11.00")));
+        assertEquals(409, sendExpense(fixture.groupId(), auth, changed, key).statusCode());
+        var changedParticipant = exactExpenseRequest("Original", new BigDecimal("10.00"),
+                ids.get(0), List.of(split(ids.get(0), "10.00")));
+        assertEquals(409, sendExpense(fixture.groupId(), auth, changedParticipant, key).statusCode());
+        assertEquals(201, sendExpense(fixture.groupId(), auth, payload, UUID.randomUUID().toString()).statusCode());
+        assertEquals(201, sendExpense(fixture.groupId(), token(ids.get(1)), payload, key).statusCode());
+        Fixture outsider = createFixture("key-outsider", 1);
+        assertEquals(404, sendExpense(fixture.groupId(), token(outsider.memberIds().get(0)), payload, key).statusCode());
+        var otherPayload = exactExpenseRequest("Other scope", new BigDecimal("10.00"),
+                outsider.memberIds().get(0), List.of(split(outsider.memberIds().get(0), "10.00")));
+        assertEquals(201, sendExpense(outsider.groupId(), token(outsider.memberIds().get(0)), otherPayload, key).statusCode());
+        assertEquals(200, send("PUT", expensesPath(fixture.groupId()) + "/" + id, auth, changed).statusCode());
+        assertEquals(first.body(), sendExpense(fixture.groupId(), auth, payload, key).body());
+        assertEquals(204, send("DELETE", expensesPath(fixture.groupId()) + "/" + id, auth, null).statusCode());
+        assertEquals(first.body(), sendExpense(fixture.groupId(), auth, payload, key).body());
+        assertEquals(2, jdbcTemplate.queryForObject("SELECT COUNT(*) FROM expenses WHERE group_id = ?",
+                Integer.class, fixture.groupId()));
+        assertEquals(200, send("GET", balancesPath(fixture.groupId()), auth, null).statusCode());
+    }
+
+    @Test
+    void concurrentExpenseRetriesCreateOneOutcomeAndDatabaseEnforcesUniqueOperation() throws Exception {
+        Fixture fixture = createFixture("key-race", 2);
+        var ids = fixture.memberIds();
+        var payload = exactExpenseRequest("Concurrent", new BigDecimal("10.00"),
+                ids.get(0), List.of(split(ids.get(1), "10.00")));
+        String key = UUID.randomUUID().toString();
+        var responses = concurrently(List.of(
+                () -> sendExpense(fixture.groupId(), token(ids.get(0)), payload, key),
+                () -> sendExpense(fixture.groupId(), token(ids.get(0)), payload, key)));
+        assertEquals(201, responses.get(0).statusCode(), responses.get(0).body());
+        assertEquals(responses.get(0).body(), responses.get(1).body());
+        assertEquals(1, jdbcTemplate.queryForObject("SELECT COUNT(*) FROM expenses WHERE group_id = ?",
+                Integer.class, fixture.groupId()));
+        assertThrows(org.springframework.dao.DataIntegrityViolationException.class, () -> jdbcTemplate.update(
+                "INSERT INTO expense_creation_operations(group_id,user_id,operation_key,fingerprint,response_json) "
+                + "SELECT group_id,user_id,operation_key,fingerprint,response_json FROM expense_creation_operations WHERE group_id = ?",
+                fixture.groupId()));
+        assertEquals(200, send("GET", balancesPath(fixture.groupId()), token(ids.get(0)), null).statusCode());
+    }
+
+    @Autowired
+    private org.springframework.context.ApplicationContext applicationContext;
+
+    @Test
+    void expenseRetrySurvivesFreshServiceAndRollsBackFailedCreation() throws Exception {
+        Fixture fixture = createFixture("key-rollback", 2);
+        var ids = fixture.memberIds();
+        var payload = exactExpenseRequest("Rollback", new BigDecimal("10.00"),
+                ids.get(0), List.of(split(ids.get(1), "10.00")));
+        String key = UUID.randomUUID().toString();
+        jdbcTemplate.execute("ALTER TABLE expense_splits ADD CONSTRAINT gate2b_fail_split CHECK (user_id <> " + ids.get(1) + ")");
+        try {
+            assertEquals(500, sendExpense(fixture.groupId(), token(ids.get(0)), payload, key).statusCode());
+        } finally {
+            jdbcTemplate.execute("ALTER TABLE expense_splits DROP CHECK gate2b_fail_split");
+        }
+        assertEquals(0, jdbcTemplate.queryForObject("SELECT COUNT(*) FROM expenses WHERE group_id = ?",
+                Integer.class, fixture.groupId()));
+        assertEquals(0, jdbcTemplate.queryForObject("SELECT COUNT(*) FROM expense_creation_operations WHERE group_id = ?",
+                Integer.class, fixture.groupId()));
+        var created = sendExpense(fixture.groupId(), token(ids.get(0)), payload, key);
+        assertEquals(201, created.statusCode(), created.body());
+        ExpenseService fresh = applicationContext.getAutowireCapableBeanFactory().createBean(ExpenseService.class);
+        var request = new CreateExpenseRequest("Rollback", new BigDecimal("10.0"), ids.get(0), null,
+                List.of(new CreateExpenseSplitRequest(ids.get(1), new BigDecimal("10.00"))));
+        var replay = new TransactionTemplate(transactionManager).execute(status ->
+                fresh.createExpense(fixture.groupId(), ids.get(0).toString(), request, "\"" + key + "\""));
+        assertEquals(read(created, ExpenseResponse.class).id(), replay.id());
+        assertEquals(200, send("GET", balancesPath(fixture.groupId()), token(ids.get(0)), null).statusCode());
+    }
+
+    private HttpResponse<String> sendExpense(long groupId, String token, Object body, String key) throws Exception {
+        var builder = HttpRequest.newBuilder()
+                .uri(URI.create("http://127.0.0.1:" + port + expensesPath(groupId)))
+                .timeout(Duration.ofSeconds(20))
+                .header("Authorization", "Bearer " + token)
+                .header("Content-Type", "application/json");
+        if (key != null) builder.header("Idempotency-Key", "\"" + key + "\"");
+        return httpClient.send(builder.POST(HttpRequest.BodyPublishers.ofString(write(body))).build(),
+                HttpResponse.BodyHandlers.ofString());
+    }
+
 	private HttpResponse<String> send(String method, String path, String token, Object body) throws Exception {
 		HttpRequest.Builder builder = HttpRequest.newBuilder()
 				.uri(URI.create("http://127.0.0.1:" + port + path))
 				.timeout(Duration.ofSeconds(20))
 				.header("Accept", "application/json");
-		if (token != null) {
+		if ("POST".equals(method) && path.matches("/api/groups/[0-9]+/expenses")) {
+            builder.header("Idempotency-Key", "\"" + UUID.randomUUID() + "\"");
+        }
+        if (token != null) {
 			builder.header("Authorization", "Bearer " + token);
 		}
 		if (body == null) {

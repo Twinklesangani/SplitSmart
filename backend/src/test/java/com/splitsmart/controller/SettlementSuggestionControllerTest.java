@@ -281,7 +281,7 @@ class SettlementSuggestionControllerTest {
 
 	private org.springframework.test.web.servlet.ResultActions postExpense(
 			ExpenseGroup group, User creator, String body) throws Exception {
-		return mockMvc.perform(post("/api/groups/{groupId}/expenses", group.getId())
+		return mockMvc.perform(post("/api/groups/{groupId}/expenses", group.getId()).header("Idempotency-Key", "\"" + java.util.UUID.randomUUID() + "\"")
 				.header("Authorization", bearerToken(creator))
 				.contentType(MediaType.APPLICATION_JSON)
 				.content(body));

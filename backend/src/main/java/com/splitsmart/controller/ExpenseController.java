@@ -15,6 +15,8 @@ import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.core.annotation.AuthenticationPrincipal;
 import org.springframework.security.oauth2.jwt.Jwt;
+import io.swagger.v3.oas.annotations.Parameter;
+import org.springframework.web.bind.annotation.RequestHeader;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.DeleteMapping;
 import org.springframework.web.bind.annotation.PathVariable;
@@ -58,8 +60,10 @@ public class ExpenseController {
 	public ExpenseResponse createExpense(
 			@PathVariable Long groupId,
 			@Valid @RequestBody CreateExpenseRequest request,
+			@Parameter(required = true, description = "Quoted UUID identifying one creation operation. Reuse for retries.")
+			@RequestHeader(value = "Idempotency-Key", required = false) String operationKey,
 			@AuthenticationPrincipal Jwt jwt) {
-		return expenseService.createExpense(groupId, jwt.getSubject(), request);
+		return expenseService.createExpense(groupId, jwt.getSubject(), request, operationKey);
 	}
 
 	@GetMapping
