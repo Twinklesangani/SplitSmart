@@ -292,7 +292,7 @@ function ExpenseForm({ group, members, initialExpense, onSubmit, submitLabel }) 
     else if (normalizedDescription.length > 255) nextErrors.description = 'Description must be 255 characters or fewer.'
 
     if (!amount.trim()) nextErrors.amount = 'Enter the total expense amount.'
-    else if (amountPaise === null) nextErrors.amount = 'Enter a positive amount with up to 12 whole-number digits and 2 decimal places.'
+    else if (amountPaise === null) nextErrors.amount = 'Enter a positive amount with up to 17 whole-number digits and 2 decimal places.'
 
     if (!members.some((member) => String(member.userId) === payerId)) {
       nextErrors.payer = 'Choose a payer who belongs to this group.'
@@ -417,7 +417,7 @@ function ExpenseForm({ group, members, initialExpense, onSubmit, submitLabel }) 
               required
             />
           </div>
-          <span className="form-help" id="expense-amount-help">Positive amounts, up to 12 whole-number digits and 2 decimal places.</span>
+          <span className="form-help" id="expense-amount-help">Positive amounts, up to 17 whole-number digits and 2 decimal places.</span>
           {errors.amount && <span className="field-error" id="expense-amount-error" role="alert">{errors.amount}</span>}
         </div>
 

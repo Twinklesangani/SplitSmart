@@ -652,3 +652,19 @@ existing group APIs. Step 21 connects expense listing, creation, details,
 editing, and deletion. Step 22 connects group balances, server-generated
 repayment suggestions, and self-reported settlement recording/history. The
 dashboard's financial summary and activity remain placeholders.
+
+## Exact monetary JSON contract
+
+All monetary response fields are decimal JSON strings, including expense shares,
+balances, suggested transfers and settlements. For example, amount is
+"70368744177664.01". Clients must parse those strings using decimal or integer
+minor-unit arithmetic. This response type change requires updating consumers that
+previously expected JSON numbers. The bundled React client is updated together.
+Request amounts retain BigDecimal binding and accept decimal strings (the UI
+sends strings) and exact JSON decimal literals. New individual amounts must be
+positive, have at most two fractional digits and fit DECIMAL(19,2), with maximum
+99999999999999999.99 INR. Existing records remain readable across that range.
+Aggregate balances can exceed the individual amount maximum. The browser uses
+BigInt for paise arithmetic. Legacy numeric browser fixtures are accepted only
+below 10^12 INR, where decimal text retains paise. Larger numeric responses are
+rejected explicitly because precision may already have been lost.

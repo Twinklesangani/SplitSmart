@@ -1,8 +1,7 @@
 import { ApiError, apiRequest } from './apiClient.js'
 
-const MONEY_PATTERN = /^(-?)(0|[1-9]\d{0,16})(?:\.(\d{1,2}))?$/
+const MONEY_PATTERN = /^(-?)(0|[1-9]\d*)(?:\.(\d{1,2}))?$/
 const UUID_PATTERN = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i
-const MAX_SAFE_PAISE = BigInt(Number.MAX_SAFE_INTEGER)
 
 function isId(value) {
   return (typeof value === 'number' && Number.isSafeInteger(value) && value > 0)
@@ -10,7 +9,7 @@ function isId(value) {
 }
 
 function toPaise(value, { signed = false } = {}) {
-  if (typeof value === 'number' && (!Number.isFinite(value) || Math.abs(value) > Number.MAX_SAFE_INTEGER / 100)) {
+  if (typeof value === 'number' && (!Number.isFinite(value) || Math.abs(value) >= 1e12)) {
     return null
   }
   const text = typeof value === 'number' || typeof value === 'string' ? String(value).trim() : ''
@@ -20,7 +19,6 @@ function toPaise(value, { signed = false } = {}) {
   const whole = BigInt(match[2])
   const fraction = BigInt((match[3] ?? '').padEnd(2, '0') || '0')
   const amount = whole * 100n + fraction
-  if (amount > MAX_SAFE_PAISE) return null
   return match[1] === '-' ? -amount : amount
 }
 

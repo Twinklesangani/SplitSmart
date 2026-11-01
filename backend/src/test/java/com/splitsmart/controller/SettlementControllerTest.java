@@ -75,7 +75,7 @@ class SettlementControllerTest {
 				.andExpect(jsonPath("$.groupId").value(group.getId()))
 				.andExpect(jsonPath("$.fromUserId").value(debtor.getId()))
 				.andExpect(jsonPath("$.toUserId").value(creditor.getId()))
-				.andExpect(jsonPath("$.amount").value(200.00))
+				.andExpect(jsonPath("$.amount").value("200.00"))
 				.andExpect(jsonPath("$.recordedByUserId").value(debtor.getId()))
 				.andExpect(jsonPath("$.requestId").value(partialRequestId))
 				.andExpect(jsonPath("$.note").value("UPI repayment"))
@@ -85,12 +85,12 @@ class SettlementControllerTest {
 		mockMvc.perform(get("/api/groups/{groupId}/balances", group.getId())
 						.header("Authorization", bearerToken(creditor)))
 				.andExpect(status().isOk())
-				.andExpect(jsonPath("$.totalExpenseAmount").value(900.00))
-				.andExpect(jsonPath("$.balances[0].netBalance").value(400.00))
-				.andExpect(jsonPath("$.balances[0].totalReceivedSettlements").value(200.00))
-				.andExpect(jsonPath("$.balances[1].netBalance").value(-100.00))
-				.andExpect(jsonPath("$.balances[1].totalSentSettlements").value(200.00))
-				.andExpect(jsonPath("$.balances[2].netBalance").value(-300.00));
+				.andExpect(jsonPath("$.totalExpenseAmount").value("900.00"))
+				.andExpect(jsonPath("$.balances[0].netBalance").value("400.00"))
+				.andExpect(jsonPath("$.balances[0].totalReceivedSettlements").value("200.00"))
+				.andExpect(jsonPath("$.balances[1].netBalance").value("-100.00"))
+				.andExpect(jsonPath("$.balances[1].totalSentSettlements").value("200.00"))
+				.andExpect(jsonPath("$.balances[2].netBalance").value("-300.00"));
 
 		postSettlement(group.getId(), debtor, """
 				{"fromUserId":%d,"toUserId":%d,"amount":200.00,"requestId":"%s"}
@@ -116,16 +116,16 @@ class SettlementControllerTest {
 		mockMvc.perform(get("/api/groups/{groupId}/balances", group.getId())
 						.header("Authorization", bearerToken(debtor)))
 				.andExpect(status().isOk())
-				.andExpect(jsonPath("$.totalExpenseAmount").value(900.00))
-				.andExpect(jsonPath("$.balances[0].netBalance").value(0.00))
-				.andExpect(jsonPath("$.balances[1].netBalance").value(0.00))
-				.andExpect(jsonPath("$.balances[2].netBalance").value(0.00));
+				.andExpect(jsonPath("$.totalExpenseAmount").value("900.00"))
+				.andExpect(jsonPath("$.balances[0].netBalance").value("0.00"))
+				.andExpect(jsonPath("$.balances[1].netBalance").value("0.00"))
+				.andExpect(jsonPath("$.balances[2].netBalance").value("0.00"));
 
 		mockMvc.perform(get("/api/groups/{groupId}/settlements", group.getId())
 						.header("Authorization", bearerToken(creditor)))
 				.andExpect(status().isOk())
 				.andExpect(jsonPath("$.length()").value(3))
-				.andExpect(jsonPath("$[0].amount").value(300.00))
+				.andExpect(jsonPath("$[0].amount").value("300.00"))
 				.andExpect(jsonPath("$[0].recordedByUserId").value(secondDebtor.getId()))
 				.andExpect(jsonPath("$[2].requestId").value(partialRequestId));
 	}

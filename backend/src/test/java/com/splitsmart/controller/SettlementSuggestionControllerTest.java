@@ -85,14 +85,14 @@ class SettlementSuggestionControllerTest {
 				.andExpect(status().isOk())
 				.andExpect(jsonPath("$.groupId").value(group.getId()))
 				.andExpect(jsonPath("$.currencyCode").value("INR"))
-				.andExpect(jsonPath("$.totalSuggestedAmount").value(20.00))
+				.andExpect(jsonPath("$.totalSuggestedAmount").value("20.00"))
 				.andExpect(jsonPath("$.suggestions.length()").value(2))
 				.andExpect(jsonPath("$.suggestions[0].fromUserId").value(debtorA.getId()))
 				.andExpect(jsonPath("$.suggestions[0].toUserId").value(creditorA.getId()))
-				.andExpect(jsonPath("$.suggestions[0].amount").value(10.00))
+				.andExpect(jsonPath("$.suggestions[0].amount").value("10.00"))
 				.andExpect(jsonPath("$.suggestions[1].fromUserId").value(debtorB.getId()))
 				.andExpect(jsonPath("$.suggestions[1].toUserId").value(creditorB.getId()))
-				.andExpect(jsonPath("$.suggestions[1].amount").value(10.00));
+				.andExpect(jsonPath("$.suggestions[1].amount").value("10.00"));
 
 		assertEquals(expensesBefore, expenseRepository.count());
 		assertEquals(settlementsBefore, settlementRepository.count());
@@ -115,9 +115,9 @@ class SettlementSuggestionControllerTest {
 		mockMvc.perform(get(suggestionsPath(group))
 						.header("Authorization", bearerToken(creditor)))
 				.andExpect(status().isOk())
-				.andExpect(jsonPath("$.totalSuggestedAmount").value(6.68))
+				.andExpect(jsonPath("$.totalSuggestedAmount").value("6.68"))
 				.andExpect(jsonPath("$.suggestions[0].fromUserId").value(debtorA.getId()))
-				.andExpect(jsonPath("$.suggestions[0].amount").value(3.34));
+				.andExpect(jsonPath("$.suggestions[0].amount").value("3.34"));
 
 		mockMvc.perform(post("/api/groups/{groupId}/settlements", group.getId())
 						.header("Authorization", bearerToken(debtorA))
@@ -138,12 +138,12 @@ class SettlementSuggestionControllerTest {
 		mockMvc.perform(get(suggestionsPath(group))
 						.header("Authorization", bearerToken(creditor)))
 				.andExpect(status().isOk())
-				.andExpect(jsonPath("$.totalSuggestedAmount").value(5.67))
+				.andExpect(jsonPath("$.totalSuggestedAmount").value("5.67"))
 				.andExpect(jsonPath("$.suggestions.length()").value(2))
 				.andExpect(jsonPath("$.suggestions[0].fromUserId").value(debtorB.getId()))
-				.andExpect(jsonPath("$.suggestions[0].amount").value(3.34))
+				.andExpect(jsonPath("$.suggestions[0].amount").value("3.34"))
 				.andExpect(jsonPath("$.suggestions[1].fromUserId").value(debtorA.getId()))
-				.andExpect(jsonPath("$.suggestions[1].amount").value(2.33));
+				.andExpect(jsonPath("$.suggestions[1].amount").value("2.33"));
 	}
 
 	@Test
@@ -189,7 +189,7 @@ class SettlementSuggestionControllerTest {
 
 		mockMvc.perform(get(suggestionsPath(group)).header("Authorization", token))
 				.andExpect(status().isOk())
-				.andExpect(jsonPath("$.suggestions[0].amount").value(10.00));
+				.andExpect(jsonPath("$.suggestions[0].amount").value("10.00"));
 
 		mockMvc.perform(put("/api/groups/{groupId}/expenses/{expenseId}", group.getId(), expense.getId())
 						.header("Authorization", token)
@@ -198,15 +198,15 @@ class SettlementSuggestionControllerTest {
 				.andExpect(status().isOk());
 		mockMvc.perform(get(suggestionsPath(group)).header("Authorization", token))
 				.andExpect(status().isOk())
-				.andExpect(jsonPath("$.totalSuggestedAmount").value(20.00))
-				.andExpect(jsonPath("$.suggestions[0].amount").value(20.00));
+				.andExpect(jsonPath("$.totalSuggestedAmount").value("20.00"))
+				.andExpect(jsonPath("$.suggestions[0].amount").value("20.00"));
 
 		mockMvc.perform(delete("/api/groups/{groupId}/expenses/{expenseId}", group.getId(), expense.getId())
 						.header("Authorization", token))
 				.andExpect(status().isNoContent());
 		mockMvc.perform(get(suggestionsPath(group)).header("Authorization", token))
 				.andExpect(status().isOk())
-				.andExpect(jsonPath("$.totalSuggestedAmount").value(0.00))
+				.andExpect(jsonPath("$.totalSuggestedAmount").value("0.00"))
 				.andExpect(jsonPath("$.suggestions.length()").value(0));
 		assertEquals(0, expenseRepository.count());
 	}
@@ -239,11 +239,11 @@ class SettlementSuggestionControllerTest {
 
 		mockMvc.perform(get(suggestionsPath(group)).header("Authorization", bearerToken(debtorA)))
 				.andExpect(status().isOk())
-				.andExpect(jsonPath("$.totalSuggestedAmount").value(18.00))
+				.andExpect(jsonPath("$.totalSuggestedAmount").value("18.00"))
 				.andExpect(jsonPath("$.suggestions.length()").value(5))
 				.andExpect(jsonPath("$.suggestions[0].fromUserId").value(debtorA.getId()))
 				.andExpect(jsonPath("$.suggestions[0].toUserId").value(creditorA.getId()))
-				.andExpect(jsonPath("$.suggestions[0].amount").value(7.00));
+				.andExpect(jsonPath("$.suggestions[0].amount").value("7.00"));
 	}
 
 	@Test

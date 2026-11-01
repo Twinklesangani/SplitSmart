@@ -1,9 +1,10 @@
 import { ApiError, apiRequest } from './apiClient.js'
 
-const MAX_AMOUNT_PAISE = 99999999999999n
-const MONEY_PATTERN = /^(0|[1-9]\d{0,11})(?:\.(\d{1,2}))?$/
+const MAX_AMOUNT_PAISE = 9999999999999999999n
+const MONEY_PATTERN = /^(0|[1-9]\d{0,16})(?:\.(\d{1,2}))?$/
 
 export function parseMoneyToPaise(value) {
+  if (typeof value === 'number' && (!Number.isFinite(value) || Math.abs(value) >= 1e12)) return null
   const text = typeof value === 'number' && Number.isFinite(value)
     ? String(value)
     : typeof value === 'string'

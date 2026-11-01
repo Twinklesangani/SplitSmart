@@ -88,7 +88,7 @@ describe('expense money validation', () => {
     expect(formatInr('900.05')).toBe('₹900.05')
   })
 
-  it.each(['0', '-1', '1.001', '1000000000000.00', 'not money'])('rejects unsafe amount %s', (value) => {
+  it.each(['0', '-1', '1.001', '100000000000000000.00', 'not money'])('rejects unsafe amount %s', (value) => {
     expect(parseMoneyToPaise(value)).toBeNull()
   })
 })
