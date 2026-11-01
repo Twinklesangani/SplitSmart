@@ -7,6 +7,7 @@ import org.springframework.boot.test.context.SpringBootTest;
 import org.springframework.http.HttpHeaders;
 import org.springframework.http.MediaType;
 import org.springframework.test.context.ActiveProfiles;
+import org.springframework.test.json.JsonCompareMode;
 import org.springframework.test.web.servlet.MockMvc;
 
 import static org.junit.jupiter.api.Assertions.assertThrows;
@@ -59,6 +60,25 @@ class SecurityConfigTest {
 				.andExpect(jsonPath("$.code").value("unauthorized"))
 				.andExpect(jsonPath("$.message").value("Authentication is required."))
 				.andExpect(jsonPath("$.path").value("/api/groups"));
+	}
+
+	@Test
+	void exposesOnlyRedactedLivenessAndDatabaseReadinessProbes() throws Exception {
+		for (String path : new String[] {
+				"/actuator/health/liveness",
+				"/actuator/health/readiness"}) {
+			mockMvc.perform(get(path))
+					.andExpect(status().isOk())
+					.andExpect(content().json("{\"status\":\"UP\"}", JsonCompareMode.STRICT));
+		}
+	}
+
+	@Test
+	void keepsActuatorRootAndOtherManagementEndpointsInaccessible() throws Exception {
+		mockMvc.perform(get("/actuator/health"))
+				.andExpect(status().isUnauthorized());
+		mockMvc.perform(get("/actuator/env"))
+				.andExpect(status().isUnauthorized());
 	}
 
 	@Test

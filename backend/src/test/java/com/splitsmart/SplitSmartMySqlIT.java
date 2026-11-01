@@ -221,6 +221,19 @@ class SplitSmartMySqlIT {
 	}
 
 	@Test
+	void actuatorProbesAreRedactedAndOnlyTheProbeGroupsArePublic() throws Exception {
+		for (String path : List.of("/actuator/health/liveness", "/actuator/health/readiness")) {
+			HttpResponse<String> response = send("GET", path, null, null);
+			assertEquals(200, response.statusCode(), response.body());
+			var body = objectMapper.readTree(response.body());
+			assertEquals("UP", body.path("status").asText());
+			assertEquals(1, body.size(), response.body());
+		}
+		assertEquals(401, send("GET", "/actuator/health", null, null).statusCode());
+		assertEquals(401, send("GET", "/actuator/env", null, null).statusCode());
+	}
+
+	@Test
 	void equalSplitPersistsExactMinorUnitSharesAndReconciledBalances() throws Exception {
 		Fixture fixture = createFixture("equal", 3);
 		List<Long> ids = fixture.memberIds();

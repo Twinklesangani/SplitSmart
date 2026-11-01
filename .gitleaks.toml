@@ -8,6 +8,6 @@ id = "generic-api-key"
 [[rules.allowlists]]
 description = "Exact synthetic H2 fixture and its Base64-decoded value; never valid for runtime"
 condition = "AND"
-paths = ['''(?:^|/)backend/src/main/resources/application-test\.properties$''']
+paths = ['''(?:^|/)backend/src/(?:main|test)/resources/application-test\.properties$''']
 regexTarget = "secret"
 regexes = ['''^MDEyMzQ1Njc4OWFiY2RlZjAxMjM0NTY3ODlhYmNkZWY=$''', '''^0123456789abcdef0123456789abcdef$''']
