@@ -1,5 +1,15 @@
-param([ValidateSet('smoke', 'auth', 'history', 'all')][string]$Suite = 'smoke')
+param([ValidateSet('smoke', 'auth', 'expenses', 'groups', 'history', 'responsive', 'all')][string]$Suite = 'smoke')
 $ErrorActionPreference = 'Stop'
+
+if ($Suite -eq 'all') {
+	foreach ($isolatedSuite in @('auth', 'expenses', 'groups', 'history', 'responsive')) {
+		& powershell -NoProfile -File $PSCommandPath -Suite $isolatedSuite
+		if ($LASTEXITCODE -ne 0) {
+			exit $LASTEXITCODE
+		}
+	}
+	exit 0
+}
 
 $repositoryRoot = Split-Path -Parent $PSScriptRoot
 $backendRoot = Join-Path $repositoryRoot 'backend'
@@ -320,9 +330,12 @@ try {
 	Push-Location $frontendRoot
 	try {
 		if ($Suite -eq 'history') { & node node_modules/@playwright/test/cli.js test financial-workflow.spec.js history-pagination.spec.js monetary-precision.spec.js }
-        elseif ($Suite -eq 'auth') { & node node_modules/@playwright/test/cli.js test authentication.spec.js auth-resource-limits.spec.js smoke.spec.js }
-        elseif ($Suite -eq 'smoke') { & node node_modules/@playwright/test/cli.js test smoke.spec.js }
-		else { & node node_modules/@playwright/test/cli.js test }
+		elseif ($Suite -eq 'auth') { & node node_modules/@playwright/test/cli.js test authentication.spec.js auth-resource-limits.spec.js smoke.spec.js }
+		elseif ($Suite -eq 'expenses') { & node node_modules/@playwright/test/cli.js test expense-management.spec.js }
+		elseif ($Suite -eq 'groups') { & node node_modules/@playwright/test/cli.js test group-management.spec.js }
+		elseif ($Suite -eq 'responsive') { & node node_modules/@playwright/test/cli.js test responsive-ui.spec.js }
+		elseif ($Suite -eq 'smoke') { & node node_modules/@playwright/test/cli.js test smoke.spec.js }
+		else { throw "Unsupported E2E suite: $Suite." }
 		$playwrightExitCode = $LASTEXITCODE
 	} finally {
 		Pop-Location
