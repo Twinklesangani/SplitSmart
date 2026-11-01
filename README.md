@@ -39,9 +39,21 @@ existing migrations but cannot apply future DDL. Future schema changes require a
 separate authorized migration step. Local performance/tracing results are bounded
 observations, not production-scale guarantees.
 
-The local CI draft uses Java 21 and Node 24, Maven tests, Vitest, Oxlint and Vite.
-MySQL integration is an optional manual job until hosted-runner compatibility is
-verified. No deployment or AI review is enabled by the workflow.
+CI uses Java 21 and Node 24, Maven unit tests, Vitest, Oxlint and Vite. Hosted
+validation passed 83 backend tests, 76 frontend tests and 10 real MySQL tests.
+Pull requests targeting `main` run the disposable MySQL Testcontainers suite through
+`verify -Pmysql-it`, alongside backend and frontend jobs. These financial tests check
+persisted splits, authorization, rollback and concurrent repayment constraints.
+A failing test fails its job; no `continue-on-error` hides failures.
+
+Manual execution remains available through Actions → CI → Run workflow: set
+`mysql_integration` to true to include MySQL tests (false runs backend/frontend only).
+Pushes to `main` run backend/frontend checks. No real database credentials, deployment
+or AI review are enabled. Automatic PR integration passed in
+[CI run 41126007661](https://github.com/Twinklesangani/SplitSmart/actions/runs/41126007661),
+including 83 backend tests, 10 MySQL integration tests, 76 frontend tests, lint and build.
+Running a job is distinct from enforcing it as a merge requirement; branch protection
+or rulesets must be configured separately where the repository plan permits them.
 
 For checks, run `./mvnw.cmd clean test`, `./mvnw.cmd package`, and
 `./mvnw.cmd verify -Pmysql-it` from backend; run `npm.cmd run test -- --pool=threads --maxWorkers=1`,
