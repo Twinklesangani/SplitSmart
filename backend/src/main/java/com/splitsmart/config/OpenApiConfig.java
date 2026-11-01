@@ -50,19 +50,19 @@ public class OpenApiConfig {
 				amount.setExclusiveMaximumValue(new BigDecimal("100000000000000000"));
 			}
 
-			openApi.getComponents().getSchemas().forEach((name, schema) -> {
-                if (!name.endsWith("Response") || schema.getProperties() == null) return;
-                schema.getProperties().replaceAll((fieldName, property) -> {
-                    Schema<?> field = (Schema<?>) property;
-                    if ("number".equals(field.getType())) {
-                        return new StringSchema().pattern("^-?(0|[1-9][0-9]*)(\\.[0-9]{1,2})?$")
-                                .description("Exact decimal money. Parse without floating-point conversion.");
-                    }
-                    return field;
-                });
-            });
+			openApi.getComponents().getSchemas().forEach((name, component) -> {
+				Schema<?> schema = component;
+				if (!name.endsWith("Response") || schema.getProperties() == null) return;
+				schema.getProperties().replaceAll((fieldName, field) -> {
+					if ("number".equals(field.getType())) {
+						return new StringSchema().pattern("^-?(0|[1-9][0-9]*)(\\.[0-9]{1,2})?$")
+								.description("Exact decimal money. Parse without floating-point conversion.");
+					}
+					return field;
+				});
+			});
 
-            Schema<?> settlementResponse = Objects.requireNonNull(
+			Schema<?> settlementResponse = Objects.requireNonNull(
 					openApi.getComponents().getSchemas().get("SettlementResponse"),
 					"Missing SettlementResponse schema");
 			Schema<?> createdAt = (Schema<?>) settlementResponse.getProperties().get("createdAt");
