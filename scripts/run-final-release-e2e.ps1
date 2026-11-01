@@ -41,7 +41,7 @@ $containerRemoved = $false
 $volumeRemoved = $false
 $apiProcess = $null
 $viteProcess = $null
-$originalMysqlPid = $null
+$originalMysqlListeners = $null
 $originalApiOwners = @()
 $failure = $null
 $cleanupIssues = @()
@@ -112,6 +112,7 @@ function Invoke-TestDatabaseQuery([string]$Sql, [switch]$AllowFailure) {
 		"--user=$env:MYSQL_USER",
 		"--database=$env:MYSQL_DATABASE",
 		'--batch',
+		'--raw',
 		'--skip-column-names',
 		"--execute=$Sql"
 	) -AllowFailure:$AllowFailure
@@ -180,11 +181,10 @@ try {
 		throw 'The verified MySQL 8.4.13 image is not available locally; no image was pulled.'
 	}
 
-	$mysqlListeners = @(Get-NetTCPConnection -LocalPort 3306 -State Listen -ErrorAction SilentlyContinue)
-	if ($mysqlListeners.Count -ne 1) {
-		throw 'The original development MySQL listener could not be uniquely identified.'
-	}
-	$originalMysqlPid = [int]$mysqlListeners[0].OwningProcess
+	# An absent development server is a valid baseline. Preserve every listener,
+	# rather than requiring an unrelated server to be running for isolated tests.
+	$originalMysqlListeners = @(Get-NetTCPConnection -LocalPort 3306 -State Listen -ErrorAction SilentlyContinue |
+		ForEach-Object { "$($_.LocalAddress):$($_.LocalPort):$($_.OwningProcess)" } | Sort-Object)
 	$originalApiOwners = @(Get-NetTCPConnection -LocalPort 8081 -State Listen -ErrorAction SilentlyContinue | Select-Object -ExpandProperty OwningProcess -Unique)
 
 	$rootPassword = New-UrlSafeSecret 32
@@ -250,6 +250,17 @@ try {
 		throw 'The disposable MySQL port was not bound exclusively to loopback.'
 	}
 	$databasePort = [int]$matches[1]
+	if ($databasePort -eq 3306) { throw 'Disposable database must not use the development port.' }
+	$grants = Invoke-TestDatabaseQuery 'SHOW GRANTS'
+	"ISOLATED_DATABASE_GRANTS=$grants"
+	foreach ($grant in ($grants -split "[\r\n]+")) {
+		if ($grant -notmatch '^GRANT USAGE ON \*\.\* TO ' -and
+			$grant -notmatch '^GRANT ALL PRIVILEGES ON `splitsmart\\?_e2e`\.\* TO ') {
+			throw 'Unexpected disposable application account privileges.'
+		}
+	}
+	"ISOLATED_DATABASE_PORT=$databasePort"
+	"ISOLATED_DATABASE_PRIVILEGES=SCHEMA_ONLY"
 	$env:DB_URL = "jdbc:mysql://127.0.0.1:$databasePort/splitsmart_e2e?serverTimezone=UTC&useSSL=false&allowPublicKeyRetrieval=true"
 	$env:DB_USERNAME = 'splitsmart_e2e'
 	$env:DB_PASSWORD = $applicationPassword
@@ -318,6 +329,8 @@ try {
 		throw "Playwright exited with code $playwrightExitCode."
 	}
 
+	$precisionRows = Invoke-TestDatabaseQuery "SELECT description, CAST(amount AS CHAR) FROM expenses WHERE description LIKE 'Precision-%' ORDER BY id"
+	"ISOLATED_PRECISION_ROWS=$precisionRows"
 	$finalCounts = Invoke-TestDatabaseQuery 'SELECT (SELECT COUNT(*) FROM users), (SELECT COUNT(*) FROM expense_groups), (SELECT COUNT(*) FROM group_members), (SELECT COUNT(*) FROM expenses), (SELECT COUNT(*) FROM expense_splits), (SELECT COUNT(*) FROM settlements)'
 	$finalFlywayVersions = Invoke-TestDatabaseQuery "SELECT GROUP_CONCAT(version ORDER BY installed_rank SEPARATOR ',') FROM flyway_schema_history"
 	if ($finalFlywayVersions -ne '1,2,3') {
@@ -370,12 +383,15 @@ try {
 	if (-not (Test-PortAvailable $frontendPort)) {
 		$cleanupIssues += 'The isolated Vite port remains occupied after cleanup.'
 	}
-	$mysqlAfter = @(Get-NetTCPConnection -LocalPort 3306 -State Listen -ErrorAction SilentlyContinue)
-	if ($null -ne $originalMysqlPid -and ($mysqlAfter.Count -ne 1 -or [int]$mysqlAfter[0].OwningProcess -ne $originalMysqlPid)) {
-		$cleanupIssues += 'The original development MySQL listener did not remain unchanged.'
+	$mysqlAfter = @(Get-NetTCPConnection -LocalPort 3306 -State Listen -ErrorAction SilentlyContinue |
+		ForEach-Object { "$($_.LocalAddress):$($_.LocalPort):$($_.OwningProcess)" } | Sort-Object)
+	if ($null -ne $originalMysqlListeners -and ($mysqlAfter -join ',') -ne ($originalMysqlListeners -join ',')) {
+		$cleanupIssues += 'The development MySQL listener state changed.'
 	}
 	$apiOwnersAfter = @(Get-NetTCPConnection -LocalPort 8081 -State Listen -ErrorAction SilentlyContinue | Select-Object -ExpandProperty OwningProcess -Unique)
-	if ($null -ne $originalMysqlPid -and ($originalApiOwners -join ',') -ne ($apiOwnersAfter -join ',')) { $cleanupIssues += 'Development API listener changed.' }
+	if ($null -ne $originalMysqlListeners -and ($originalApiOwners -join ',') -ne ($apiOwnersAfter -join ',')) {
+		$cleanupIssues += 'Development API listener changed.'
+	}
 
 	$logPaths = @($apiStdout, $apiStderr, $viteStdout, $viteStderr)
 	$secretValues = @($rootPassword, $applicationPassword, $jwtSecret) | Where-Object { $_ }

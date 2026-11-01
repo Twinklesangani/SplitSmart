@@ -553,7 +553,7 @@ function SettlementForm({ groupId, members, currentUser, finance, onRefresh }) {
             autoComplete="off"
             value={amount}
             onChange={(event) => { setAmount(event.target.value); setError('') }}
-            maxLength={15}
+            maxLength={20}
             placeholder="0.00"
             disabled={locked}
             aria-invalid={Boolean(error && amount !== '')}
