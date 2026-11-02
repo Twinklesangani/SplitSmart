@@ -704,7 +704,8 @@ class SplitSmartMySqlIT {
             assertEquals(404, hidden.statusCode());
             assertTrue(hidden.headers().firstValue("X-Next-Before").isEmpty());
         }
-        long otherCursor = jdbcTemplate.queryForObject("SELECT MAX(id) FROM expenses WHERE group_id = ?", Long.class, other.groupId());
+        Long otherCursor = jdbcTemplate.queryForObject("SELECT MAX(id) FROM expenses WHERE group_id = ?", Long.class, other.groupId());
+        assertNotNull(otherCursor, "Expected an expense in the other group");
         var scoped = send("GET", paths[0] + "?before=" + otherCursor, auth, null);
         for (var row : objectMapper.readTree(scoped.body())) assertEquals(fixture.groupId(), row.path("groupId").asLong());
     }
@@ -997,6 +998,7 @@ class SplitSmartMySqlIT {
                 List.of(new CreateExpenseSplitRequest(ids.get(1), new BigDecimal("10.00"))));
         var replay = new TransactionTemplate(transactionManager).execute(status ->
                 fresh.createExpense(fixture.groupId(), ids.get(0).toString(), request, "\"" + key + "\""));
+        assertNotNull(replay, "Expected the committed expense on replay");
         assertEquals(read(created, ExpenseResponse.class).id(), replay.id());
         assertEquals(200, send("GET", balancesPath(fixture.groupId()), token(ids.get(0)), null).statusCode());
     }
@@ -1065,10 +1067,12 @@ class SplitSmartMySqlIT {
 	}
 
 	private long settlementCount(long groupId) {
-		return jdbcTemplate.queryForObject(
+		Long count = jdbcTemplate.queryForObject(
 				"SELECT COUNT(*) FROM settlements WHERE group_id = ?",
 				Long.class,
 				groupId);
+		assertNotNull(count);
+		return count;
 	}
 
 	private String expensesPath(long groupId) {
