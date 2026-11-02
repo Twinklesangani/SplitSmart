@@ -124,9 +124,12 @@ export async function createExpense(page, groupId, description, amount, splitTyp
   return match[1]
 }
 
-export async function apiRequest(page, path, { method = 'GET', body, authenticated = true } = {}) {
-  return page.evaluate(async ({ apiUrl, requestPath, requestMethod, requestBody, useSession }) => {
+export async function apiRequest(page, path, { method = 'GET', body, authenticated = true, operationKey } = {}) {
+  return page.evaluate(async ({ apiUrl, requestPath, requestMethod, requestBody, useSession, key }) => {
     const headers = { Accept: 'application/json' }
+    if (requestMethod === 'POST' && /^\/api\/groups\/[^/]+\/expenses$/.test(requestPath)) {
+      headers['Idempotency-Key'] = '"' + (key || crypto.randomUUID()) + '"'
+    }
     if (useSession) {
       const token = window.sessionStorage.getItem('splitsmart.accessToken')
       if (token) headers.Authorization = `Bearer ${token}`
@@ -144,12 +147,13 @@ export async function apiRequest(page, path, { method = 'GET', body, authenticat
     } catch {
       responseBody = null
     }
-    return { status: response.status, body: responseBody }
+    return { status: response.status, body: responseBody, nextBefore: response.headers.get('X-Next-Before') }
   }, {
     apiUrl: API_URL,
     requestPath: path,
     requestMethod: method,
     requestBody: body,
     useSession: authenticated,
+    key: operationKey,
   })
 }

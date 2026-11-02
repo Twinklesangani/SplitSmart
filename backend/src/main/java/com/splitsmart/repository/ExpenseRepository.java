@@ -50,8 +50,16 @@ public interface ExpenseRepository extends JpaRepository<Expense, Long> {
 			join fetch e.createdBy
 			left join fetch e.splits s
 			left join fetch s.user
-			where e.group.id = :groupId
+			where e.group.id = :groupId and e.id in :ids
 			order by e.id desc, s.id asc
 			""")
-	List<Expense> findAllWithDetailsByGroupIdOrderByIdDesc(@Param("groupId") Long groupId);
+	List<Expense> findHistoryDetails(@Param("groupId") Long groupId, @Param("ids") List<Long> ids);
+
+    @Query("""
+            select e.id from Expense e
+            where e.group.id = :groupId and (:before is null or e.id < :before)
+            order by e.id desc
+            """)
+    List<Long> findHistoryIds(@Param("groupId") Long groupId, @Param("before") Long before,
+            org.springframework.data.domain.Pageable pageable);
 }

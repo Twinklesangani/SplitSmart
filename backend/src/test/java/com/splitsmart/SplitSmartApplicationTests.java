@@ -25,7 +25,7 @@ class SplitSmartApplicationTests {
 	@Test
 	void migrationCreatesExpectedSchema() {
 		var appliedMigrations = flyway.info().applied();
-		assertEquals(3, appliedMigrations.length);
+		assertEquals(4, appliedMigrations.length);
 		assertEquals(MigrationState.SUCCESS, appliedMigrations[0].getState());
 		assertEquals("1", appliedMigrations[0].getVersion().getVersion());
 		assertEquals(MigrationState.SUCCESS, appliedMigrations[1].getState());
@@ -39,7 +39,8 @@ class SplitSmartApplicationTests {
 				String.class);
 
 		assertEquals(List.of(
-				"expense_groups",
+				"expense_creation_operations",
+                "expense_groups",
 				"expense_splits",
 				"expenses",
 				"flyway_schema_history",

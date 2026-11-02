@@ -35,7 +35,7 @@ class SettlementServiceTest {
 	void missingAuthenticatedSubjectIsRejectedAsUnauthorized() {
 		ResponseStatusException exception = assertThrows(
 				ResponseStatusException.class,
-				() -> settlementService.listSettlements(1L, null));
+				() -> settlementService.listSettlements(1L, null, null, 25, null));
 
 		assertEquals(HttpStatus.UNAUTHORIZED, exception.getStatusCode());
 	}

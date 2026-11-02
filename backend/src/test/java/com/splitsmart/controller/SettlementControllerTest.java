@@ -9,6 +9,7 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.autoconfigure.web.servlet.AutoConfigureMockMvc;
 import org.springframework.boot.test.context.SpringBootTest;
 import org.springframework.http.MediaType;
+import org.springframework.lang.NonNull;
 import org.springframework.security.oauth2.jose.jws.MacAlgorithm;
 import org.springframework.security.oauth2.jwt.JwtClaimsSet;
 import org.springframework.security.oauth2.jwt.JwtEncoder;
@@ -75,7 +76,7 @@ class SettlementControllerTest {
 				.andExpect(jsonPath("$.groupId").value(group.getId()))
 				.andExpect(jsonPath("$.fromUserId").value(debtor.getId()))
 				.andExpect(jsonPath("$.toUserId").value(creditor.getId()))
-				.andExpect(jsonPath("$.amount").value(200.00))
+				.andExpect(jsonPath("$.amount").value("200.00"))
 				.andExpect(jsonPath("$.recordedByUserId").value(debtor.getId()))
 				.andExpect(jsonPath("$.requestId").value(partialRequestId))
 				.andExpect(jsonPath("$.note").value("UPI repayment"))
@@ -85,12 +86,12 @@ class SettlementControllerTest {
 		mockMvc.perform(get("/api/groups/{groupId}/balances", group.getId())
 						.header("Authorization", bearerToken(creditor)))
 				.andExpect(status().isOk())
-				.andExpect(jsonPath("$.totalExpenseAmount").value(900.00))
-				.andExpect(jsonPath("$.balances[0].netBalance").value(400.00))
-				.andExpect(jsonPath("$.balances[0].totalReceivedSettlements").value(200.00))
-				.andExpect(jsonPath("$.balances[1].netBalance").value(-100.00))
-				.andExpect(jsonPath("$.balances[1].totalSentSettlements").value(200.00))
-				.andExpect(jsonPath("$.balances[2].netBalance").value(-300.00));
+				.andExpect(jsonPath("$.totalExpenseAmount").value("900.00"))
+				.andExpect(jsonPath("$.balances[0].netBalance").value("400.00"))
+				.andExpect(jsonPath("$.balances[0].totalReceivedSettlements").value("200.00"))
+				.andExpect(jsonPath("$.balances[1].netBalance").value("-100.00"))
+				.andExpect(jsonPath("$.balances[1].totalSentSettlements").value("200.00"))
+				.andExpect(jsonPath("$.balances[2].netBalance").value("-300.00"));
 
 		postSettlement(group.getId(), debtor, """
 				{"fromUserId":%d,"toUserId":%d,"amount":200.00,"requestId":"%s"}
@@ -116,16 +117,16 @@ class SettlementControllerTest {
 		mockMvc.perform(get("/api/groups/{groupId}/balances", group.getId())
 						.header("Authorization", bearerToken(debtor)))
 				.andExpect(status().isOk())
-				.andExpect(jsonPath("$.totalExpenseAmount").value(900.00))
-				.andExpect(jsonPath("$.balances[0].netBalance").value(0.00))
-				.andExpect(jsonPath("$.balances[1].netBalance").value(0.00))
-				.andExpect(jsonPath("$.balances[2].netBalance").value(0.00));
+				.andExpect(jsonPath("$.totalExpenseAmount").value("900.00"))
+				.andExpect(jsonPath("$.balances[0].netBalance").value("0.00"))
+				.andExpect(jsonPath("$.balances[1].netBalance").value("0.00"))
+				.andExpect(jsonPath("$.balances[2].netBalance").value("0.00"));
 
 		mockMvc.perform(get("/api/groups/{groupId}/settlements", group.getId())
 						.header("Authorization", bearerToken(creditor)))
 				.andExpect(status().isOk())
 				.andExpect(jsonPath("$.length()").value(3))
-				.andExpect(jsonPath("$[0].amount").value(300.00))
+				.andExpect(jsonPath("$[0].amount").value("300.00"))
 				.andExpect(jsonPath("$[0].recordedByUserId").value(secondDebtor.getId()))
 				.andExpect(jsonPath("$[2].requestId").value(partialRequestId));
 	}
@@ -158,7 +159,7 @@ class SettlementControllerTest {
 		mockMvc.perform(get("/api/groups/{groupId}/settlements", group.getId()))
 				.andExpect(status().isUnauthorized());
 		mockMvc.perform(post("/api/groups/{groupId}/settlements", group.getId())
-						.contentType(MediaType.APPLICATION_JSON)
+						.contentType(MediaType.APPLICATION_JSON_VALUE)
 						.content(request(debtor, creditor, "10.00")))
 				.andExpect(status().isUnauthorized());
 		mockMvc.perform(get("/api/groups/{groupId}/settlements", group.getId())
@@ -230,9 +231,9 @@ class SettlementControllerTest {
 		String request = """
 				{"description":"%s","amount":%s,"paidByUserId":%d,%s}
 				""".formatted(description, amount, payer.getId(), splitFields);
-		mockMvc.perform(post("/api/groups/{groupId}/expenses", groupId)
+		mockMvc.perform(post("/api/groups/{groupId}/expenses", groupId).header("Idempotency-Key", "\"" + java.util.UUID.randomUUID() + "\"")
 						.header("Authorization", bearerToken(payer))
-						.contentType(MediaType.APPLICATION_JSON)
+						.contentType(MediaType.APPLICATION_JSON_VALUE)
 						.content(request))
 				.andExpect(status().isCreated());
 	}
@@ -240,7 +241,7 @@ class SettlementControllerTest {
 	private ResultActions postSettlement(Long groupId, User requester, String body) throws Exception {
 		return mockMvc.perform(post("/api/groups/{groupId}/settlements", groupId)
 				.header("Authorization", bearerToken(requester))
-				.contentType(MediaType.APPLICATION_JSON)
+				.contentType(MediaType.APPLICATION_JSON_VALUE)
 				.content(body));
 	}
 
@@ -250,7 +251,7 @@ class SettlementControllerTest {
 				""".formatted(from.getId(), to.getId(), amount, UUID.randomUUID());
 	}
 
-	private User createUser(String name) {
+	private @NonNull User createUser(String name) {
 		String suffix = UUID.randomUUID().toString();
 		return userRepository.saveAndFlush(new User(
 				name,

@@ -107,7 +107,7 @@ public class Expense {
 	}
 
 	public List<ExpenseSplit> getSplits() {
-		return splits;
+		return List.copyOf(splits);
 	}
 
 	public void updateDetails(String description, BigDecimal amount, User paidBy) {

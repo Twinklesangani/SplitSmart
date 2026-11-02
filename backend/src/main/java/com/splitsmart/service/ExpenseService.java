@@ -1,5 +1,13 @@
 package com.splitsmart.service;
 
+import com.splitsmart.repository.ExpenseCreationOperationRepository;
+import com.splitsmart.entity.ExpenseCreationOperation;
+import com.fasterxml.jackson.databind.ObjectMapper;
+import com.fasterxml.jackson.core.JsonProcessingException;
+import java.util.Locale;
+import java.util.HexFormat;
+import java.security.MessageDigest;
+import java.security.NoSuchAlgorithmException;
 import java.math.BigDecimal;
 import java.math.BigInteger;
 import java.util.ArrayList;
@@ -21,6 +29,7 @@ import com.splitsmart.dto.CreateExpenseRequest;
 import com.splitsmart.dto.CreateExpenseSplitRequest;
 import com.splitsmart.dto.CreateExpenseRequest.SplitType;
 import com.splitsmart.dto.GroupBalanceResponse;
+import com.splitsmart.dto.HistoryPage;
 import com.splitsmart.dto.MemberBalanceResponse;
 import com.splitsmart.dto.ExpenseResponse;
 import com.splitsmart.dto.ExpenseSplitResponse;
@@ -50,6 +59,8 @@ public class ExpenseService {
 	private final ExpenseSplitRepository expenseSplitRepository;
 	private final SettlementRepository settlementRepository;
 	private final EntityManager entityManager;
+	private final ExpenseCreationOperationRepository operations;
+	private final ObjectMapper objectMapper;
 
 	public ExpenseService(
 			UserRepository userRepository,
@@ -58,7 +69,9 @@ public class ExpenseService {
 			ExpenseRepository expenseRepository,
 			ExpenseSplitRepository expenseSplitRepository,
 			SettlementRepository settlementRepository,
-			EntityManager entityManager) {
+			EntityManager entityManager,
+			ExpenseCreationOperationRepository operations,
+			ObjectMapper objectMapper) {
 		this.userRepository = userRepository;
 		this.expenseGroupRepository = expenseGroupRepository;
 		this.groupMemberRepository = groupMemberRepository;
@@ -66,10 +79,12 @@ public class ExpenseService {
 		this.expenseSplitRepository = expenseSplitRepository;
 		this.settlementRepository = settlementRepository;
 		this.entityManager = entityManager;
+		this.operations = operations;
+		this.objectMapper = objectMapper;
 	}
 
 	@Transactional
-	public ExpenseResponse createExpense(Long groupId, String subject, CreateExpenseRequest request) {
+	public ExpenseResponse createExpense(Long groupId, String subject, CreateExpenseRequest request, String operationHeader) {
 		User requester = loadUser(subject);
 		loadGroup(groupId);
 		requireMembership(groupId, requester.getId());
@@ -82,6 +97,24 @@ public class ExpenseService {
 		}
 
 		List<CreateExpenseSplitRequest> requestedSplits = validateAndResolveSplits(groupId, request);
+		if (operationHeader == null || !operationHeader.matches(
+				"\"[a-fA-F0-9]{8}-[a-fA-F0-9]{4}-[a-fA-F0-9]{4}-[a-fA-F0-9]{4}-[a-fA-F0-9]{12}\"")) {
+			throw badRequest("Idempotency-Key must be a quoted UUID.");
+		}
+		String key = operationHeader.substring(1, 37).toLowerCase(Locale.ROOT);
+		String fingerprint = creationFingerprint(request, requestedSplits);
+		var previous = operations.findByGroupIdAndUserIdAndOperationKey(groupId, requester.getId(), key);
+		if (previous.isPresent()) {
+			if (!previous.get().getFingerprint().equals(fingerprint)) {
+				throw new ResponseStatusException(HttpStatus.CONFLICT,
+						"Idempotency-Key was already used for different expense details.");
+			}
+			try {
+				return objectMapper.readValue(previous.get().getResponseJson(), ExpenseResponse.class);
+			} catch (JsonProcessingException exception) {
+				throw new IllegalStateException("Could not read stored expense creation outcome.", exception);
+			}
+		}
 
 		User payer = userRepository.getReferenceById(request.paidByUserId());
 		Expense expense = expenseRepository.saveAndFlush(new Expense(
@@ -98,7 +131,28 @@ public class ExpenseService {
 		}
 		List<ExpenseSplit> savedSplits = expenseSplitRepository.saveAllAndFlush(splits);
 		expense.replaceSplits(savedSplits);
-		return toResponse(expense, savedSplits);
+		ExpenseResponse response = toResponse(expense, savedSplits);
+		try {
+			operations.saveAndFlush(new ExpenseCreationOperation(
+					groupId, requester.getId(), key, fingerprint, objectMapper.writeValueAsString(response)));
+		} catch (JsonProcessingException exception) {
+			throw new IllegalStateException("Could not store expense creation outcome.", exception);
+		}
+		return response;
+	}
+
+	private String creationFingerprint(CreateExpenseRequest request, List<CreateExpenseSplitRequest> splits) {
+		var normalizedSplits = splits.stream().sorted(Comparator.comparing(CreateExpenseSplitRequest::userId))
+				.map(split -> List.of(split.userId(), split.amount().stripTrailingZeros().toPlainString())).toList();
+		var logicalRequest = List.of(request.description(), request.amount().stripTrailingZeros().toPlainString(),
+				request.paidByUserId(), CURRENCY_CODE,
+				request.splitType() == null ? SplitType.EXACT : request.splitType(), normalizedSplits);
+		try {
+			byte[] bytes = objectMapper.writeValueAsBytes(logicalRequest);
+			return HexFormat.of().formatHex(MessageDigest.getInstance("SHA-256").digest(bytes));
+		} catch (JsonProcessingException | NoSuchAlgorithmException exception) {
+			throw new IllegalStateException("Could not fingerprint expense creation.", exception);
+		}
 	}
 
 	@Transactional(readOnly = true)
@@ -173,14 +227,20 @@ public class ExpenseService {
 	}
 
 	@Transactional(readOnly = true)
-	public List<ExpenseResponse> listExpenses(Long groupId, String subject) {
+	public HistoryPage<ExpenseResponse> listExpenses(Long groupId, String subject, Long before, int limit) {
 		User requester = loadUser(subject);
 		loadGroup(groupId);
 		requireMembership(groupId, requester.getId());
 
-		return expenseRepository.findAllWithDetailsByGroupIdOrderByIdDesc(groupId).stream()
-				.map(expense -> toResponse(expense, expense.getSplits()))
-				.toList();
+        HistoryPage.validate(before, limit);
+        List<Long> fetched = expenseRepository.findHistoryIds(groupId, before,
+                org.springframework.data.domain.PageRequest.of(0, limit + 1));
+        boolean more = fetched.size() > limit;
+        List<Long> ids = more ? fetched.subList(0, limit) : fetched;
+        List<ExpenseResponse> items = ids.isEmpty() ? List.of()
+                : expenseRepository.findHistoryDetails(groupId, ids).stream()
+                    .map(expense -> toResponse(expense, expense.getSplits())).toList();
+        return new HistoryPage<>(items, more ? ids.get(ids.size() - 1) : null);
 	}
 
 	@Transactional(readOnly = true)
@@ -367,12 +427,12 @@ public class ExpenseService {
 	}
 
 	private User loadUser(String subject) {
-		final Long userId;
+		final long userId;
 		if (subject == null) {
 			throw new ResponseStatusException(HttpStatus.UNAUTHORIZED, INVALID_USER_MESSAGE);
 		}
 		try {
-			userId = Long.valueOf(subject);
+			userId = Long.parseLong(subject);
 		} catch (NumberFormatException exception) {
 			throw new ResponseStatusException(HttpStatus.UNAUTHORIZED, INVALID_USER_MESSAGE);
 		}

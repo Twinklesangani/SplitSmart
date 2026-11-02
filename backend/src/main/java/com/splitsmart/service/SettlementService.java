@@ -1,7 +1,6 @@
 package com.splitsmart.service;
 
 import java.math.BigDecimal;
-import java.util.List;
 import java.util.UUID;
 
 import org.hibernate.exception.ConstraintViolationException;
@@ -15,6 +14,7 @@ import com.splitsmart.dto.CreateSettlementRequest;
 import com.splitsmart.dto.GroupBalanceResponse;
 import com.splitsmart.dto.MemberBalanceResponse;
 import com.splitsmart.dto.SettlementResponse;
+import com.splitsmart.dto.HistoryPage;
 import com.splitsmart.entity.ExpenseGroup;
 import com.splitsmart.entity.Settlement;
 import com.splitsmart.entity.User;
@@ -57,7 +57,7 @@ public class SettlementService {
 			Long groupId,
 			String subject,
 			CreateSettlementRequest request) {
-		Long requesterId = parseSubject(subject);
+		long requesterId = parseSubject(subject);
 		ExpenseGroup group = expenseGroupRepository.findByIdForUpdate(groupId)
 				.orElseThrow(() -> notFound("Group not found."));
 		User requester = userRepository.findById(requesterId)
@@ -108,8 +108,8 @@ public class SettlementService {
 	}
 
 	@Transactional(readOnly = true)
-	public List<SettlementResponse> listSettlements(Long groupId, String subject) {
-		Long requesterId = parseSubject(subject);
+	public HistoryPage<SettlementResponse> listSettlements(Long groupId, String subject, Long before, int limit, String requestId) {
+		long requesterId = parseSubject(subject);
 		userRepository.findById(requesterId)
 				.orElseThrow(() -> new ResponseStatusException(
 						HttpStatus.UNAUTHORIZED, "Invalid authenticated user."));
@@ -117,17 +117,24 @@ public class SettlementService {
 			throw notFound("Group not found.");
 		}
 		requireMembership(groupId, requesterId);
-		return settlementRepository.findAllWithUsersByGroupIdOrderByIdDesc(groupId).stream()
-				.map(SettlementService::toResponse)
-				.toList();
+        HistoryPage.validate(before, limit);
+        if (requestId != null && (!requestId.matches("[a-fA-F0-9]{8}-[a-fA-F0-9]{4}-[a-fA-F0-9]{4}-[a-fA-F0-9]{4}-[a-fA-F0-9]{12}") || before != null)) {
+            throw badRequest("requestId must be a UUID and cannot be combined with before.");
+        }
+        var fetched = settlementRepository.findHistory(groupId, before, requestId,
+                org.springframework.data.domain.PageRequest.of(0, limit + 1));
+        boolean more = fetched.size() > limit;
+        var selected = more ? fetched.subList(0, limit) : fetched;
+        return new HistoryPage<>(selected.stream().map(SettlementService::toResponse).toList(),
+                more ? selected.get(selected.size() - 1).getId() : null);
 	}
 
-	private static Long parseSubject(String subject) {
+	private static long parseSubject(String subject) {
 		if (subject == null) {
 			throw new ResponseStatusException(HttpStatus.UNAUTHORIZED, "Invalid authenticated user.");
 		}
 		try {
-			return Long.valueOf(subject);
+			return Long.parseLong(subject);
 		} catch (NumberFormatException exception) {
 			throw new ResponseStatusException(HttpStatus.UNAUTHORIZED, "Invalid authenticated user.");
 		}

@@ -13,6 +13,7 @@ import org.springframework.jdbc.core.JdbcTemplate;
 import org.springframework.boot.test.autoconfigure.web.servlet.AutoConfigureMockMvc;
 import org.springframework.boot.test.context.SpringBootTest;
 import org.springframework.http.MediaType;
+import org.springframework.lang.NonNull;
 import org.springframework.security.oauth2.jose.jws.MacAlgorithm;
 import org.springframework.security.oauth2.jwt.JwtClaimsSet;
 import org.springframework.security.oauth2.jwt.JwtEncoder;
@@ -101,14 +102,14 @@ class ExpenseControllerTest {
 				.andExpect(jsonPath("$.id").isNumber())
 				.andExpect(jsonPath("$.groupId").value(group.getId()))
 				.andExpect(jsonPath("$.description").value("Dinner"))
-				.andExpect(jsonPath("$.amount").value(0.60))
+				.andExpect(jsonPath("$.amount").value("0.60"))
 				.andExpect(jsonPath("$.currencyCode").value("INR"))
 				.andExpect(jsonPath("$.paidByUserId").value(payer.getId()))
 				.andExpect(jsonPath("$.createdByUserId").value(creator.getId()))
 				.andExpect(jsonPath("$.splits.length()").value(2))
 				.andExpect(jsonPath("$.splits[0].userId").value(creator.getId()))
-				.andExpect(jsonPath("$.splits[0].amount").value(0.10))
-				.andExpect(jsonPath("$.splits[1].amount").value(0.50))
+				.andExpect(jsonPath("$.splits[0].amount").value("0.10"))
+				.andExpect(jsonPath("$.splits[1].amount").value("0.50"))
 				.andReturn().getResponse().getContentAsString();
 
 		long expenseId = objectMapper.readTree(response).get("id").asLong();
@@ -134,9 +135,9 @@ class ExpenseControllerTest {
 				List.of(highest.getId(), creator.getId(), middle.getId())))
 				.andExpect(status().isCreated())
 				.andExpect(jsonPath("$.splits[0].userId").value(creator.getId()))
-				.andExpect(jsonPath("$.splits[0].amount").value(300.00))
-				.andExpect(jsonPath("$.splits[1].amount").value(300.00))
-				.andExpect(jsonPath("$.splits[2].amount").value(300.00));
+				.andExpect(jsonPath("$.splits[0].amount").value("300.00"))
+				.andExpect(jsonPath("$.splits[1].amount").value("300.00"))
+				.andExpect(jsonPath("$.splits[2].amount").value("300.00"));
 
 		String response = postExpense(group.getId(), bearerToken(creator), """
 				{
@@ -150,11 +151,11 @@ class ExpenseControllerTest {
 				.andExpect(status().isCreated())
 				.andExpect(jsonPath("$.splits.length()").value(3))
 				.andExpect(jsonPath("$.splits[0].userId").value(creator.getId()))
-				.andExpect(jsonPath("$.splits[0].amount").value(333.34))
+				.andExpect(jsonPath("$.splits[0].amount").value("333.34"))
 				.andExpect(jsonPath("$.splits[1].userId").value(middle.getId()))
-				.andExpect(jsonPath("$.splits[1].amount").value(333.33))
+				.andExpect(jsonPath("$.splits[1].amount").value("333.33"))
 				.andExpect(jsonPath("$.splits[2].userId").value(highest.getId()))
-				.andExpect(jsonPath("$.splits[2].amount").value(333.33))
+				.andExpect(jsonPath("$.splits[2].amount").value("333.33"))
 				.andReturn().getResponse().getContentAsString();
 		long expenseId = objectMapper.readTree(response).get("id").asLong();
 		List<ExpenseSplit> persisted = expenseSplitRepository.findAllByExpense_Id(expenseId);
@@ -178,16 +179,16 @@ class ExpenseControllerTest {
 		postExpense(group.getId(), bearerToken(creator), equalExpenseJson(
 				"Three paise", "0.03", creator.getId(), List.of(other.getId(), member.getId(), creator.getId())))
 				.andExpect(status().isCreated())
-				.andExpect(jsonPath("$.splits[0].amount").value(0.01))
-				.andExpect(jsonPath("$.splits[1].amount").value(0.01))
-				.andExpect(jsonPath("$.splits[2].amount").value(0.01));
+				.andExpect(jsonPath("$.splits[0].amount").value("0.01"))
+				.andExpect(jsonPath("$.splits[1].amount").value("0.01"))
+				.andExpect(jsonPath("$.splits[2].amount").value("0.01"));
 
 		postExpense(group.getId(), bearerToken(creator), equalExpenseJson(
 				"One participant", "100.00", creator.getId(), List.of(member.getId())))
 				.andExpect(status().isCreated())
 				.andExpect(jsonPath("$.splits.length()").value(1))
 				.andExpect(jsonPath("$.splits[0].userId").value(member.getId()))
-				.andExpect(jsonPath("$.splits[0].amount").value(100.00));
+				.andExpect(jsonPath("$.splits[0].amount").value("100.00"));
 
 		String maximumResponse = postExpense(group.getId(), bearerToken(creator), equalExpenseJson(
 				"Maximum amount", "99999999999999999.99", creator.getId(),
@@ -199,12 +200,12 @@ class ExpenseControllerTest {
 				.readTree(maximumResponse).get("splits");
 		assertEquals(3, shares.size());
 		assertEquals(creator.getId().longValue(), shares.get(0).get("userId").asLong());
-		assertEquals(new BigDecimal("33333333333333333.33"), shares.get(0).get("amount").decimalValue());
-		assertEquals(new BigDecimal("33333333333333333.33"), shares.get(1).get("amount").decimalValue());
-		assertEquals(new BigDecimal("33333333333333333.33"), shares.get(2).get("amount").decimalValue());
+		assertEquals(new BigDecimal("33333333333333333.33"), new BigDecimal(shares.get(0).get("amount").asText()));
+		assertEquals(new BigDecimal("33333333333333333.33"), new BigDecimal(shares.get(1).get("amount").asText()));
+		assertEquals(new BigDecimal("33333333333333333.33"), new BigDecimal(shares.get(2).get("amount").asText()));
 		assertEquals(new BigDecimal("99999999999999999.99"), java.util.stream.StreamSupport
 				.stream(shares.spliterator(), false)
-				.map(node -> node.get("amount").decimalValue())
+				.map(node -> new BigDecimal(node.get("amount").asText()))
 				.reduce(BigDecimal.ZERO, BigDecimal::add));
 		long maxExpenseId = objectMapper.readTree(maximumResponse).get("id").asLong();
 		List<ExpenseSplit> persisted = expenseSplitRepository.findAllByExpense_Id(maxExpenseId);
@@ -276,9 +277,9 @@ class ExpenseControllerTest {
 				 "splitType":"EXACT","splits":[{"userId":%d,"amount":2.00}]}
 				""".formatted(creator.getId(), creator.getId()))
 				.andExpect(status().isCreated())
-				.andExpect(jsonPath("$.splits[0].amount").value(2.00));
+				.andExpect(jsonPath("$.splits[0].amount").value("2.00"));
 		mockMvc.perform(post("/api/groups/{groupId}/expenses", group.getId())
-						.contentType(MediaType.APPLICATION_JSON)
+						.contentType(MediaType.APPLICATION_JSON_VALUE)
 						.content(equalExpenseJson("Unauthenticated equal", "1.00",
 								creator.getId(), List.of(creator.getId()))))
 				.andExpect(status().isUnauthorized());
@@ -303,11 +304,11 @@ class ExpenseControllerTest {
 				.andExpect(status().isOk())
 				.andExpect(jsonPath("$.id").value(expenseId))
 				.andExpect(jsonPath("$.groupId").value(group.getId()))
-				.andExpect(jsonPath("$.amount").value(5.00))
+				.andExpect(jsonPath("$.amount").value("5.00"))
 				.andExpect(jsonPath("$.paidByUserId").value(creator.getId()))
 				.andExpect(jsonPath("$.createdByUserId").value(creator.getId()))
 				.andExpect(jsonPath("$.splits[0].userId").value(member.getId()))
-				.andExpect(jsonPath("$.splits[0].amount").value(5.00));
+				.andExpect(jsonPath("$.splits[0].amount").value("5.00"));
 
 		mockMvc.perform(get("/api/groups/{groupId}/expenses/{expenseId}", group.getId(), expenseId)
 						.header("Authorization", bearerToken(unrelated)))
@@ -345,19 +346,19 @@ class ExpenseControllerTest {
 				""".formatted(member.getId(), participant.getId(), creator.getId(), member.getId(), member.getId());
 		mockMvc.perform(put("/api/groups/{groupId}/expenses/{expenseId}", group.getId(), expenseId)
 						.header("Authorization", bearerToken(creator))
-						.contentType(MediaType.APPLICATION_JSON)
+						.contentType(MediaType.APPLICATION_JSON_VALUE)
 						.content(equalUpdate))
 				.andExpect(status().isOk())
 				.andExpect(jsonPath("$.id").value(expenseId))
 				.andExpect(jsonPath("$.description").value("Updated Dinner"))
-				.andExpect(jsonPath("$.amount").value(10.00))
+				.andExpect(jsonPath("$.amount").value("10.00"))
 				.andExpect(jsonPath("$.paidByUserId").value(member.getId()))
 				.andExpect(jsonPath("$.createdByUserId").value(creator.getId()))
 				.andExpect(jsonPath("$.splits.length()").value(3))
 				.andExpect(jsonPath("$.splits[0].userId").value(creator.getId()))
-				.andExpect(jsonPath("$.splits[0].amount").value(3.34))
-				.andExpect(jsonPath("$.splits[1].amount").value(3.33))
-				.andExpect(jsonPath("$.splits[2].amount").value(3.33));
+				.andExpect(jsonPath("$.splits[0].amount").value("3.34"))
+				.andExpect(jsonPath("$.splits[1].amount").value("3.33"))
+				.andExpect(jsonPath("$.splits[2].amount").value("3.33"));
 
 		List<ExpenseSplit> equalShares = expenseSplitRepository.findAllByExpense_Id(expenseId);
 		assertEquals(3, equalShares.size());
@@ -368,7 +369,7 @@ class ExpenseControllerTest {
 
 		mockMvc.perform(put("/api/groups/{groupId}/expenses/{expenseId}", group.getId(), expenseId)
 						.header("Authorization", bearerToken(creator))
-						.contentType(MediaType.APPLICATION_JSON)
+						.contentType(MediaType.APPLICATION_JSON_VALUE)
 						.content("""
 								{"description":"Exact correction","amount":12.00,"paidByUserId":%d,
 								 "splits":[{"userId":%d,"amount":4.00},
@@ -378,11 +379,11 @@ class ExpenseControllerTest {
 				.andExpect(status().isOk())
 				.andExpect(jsonPath("$.id").value(expenseId))
 				.andExpect(jsonPath("$.createdByUserId").value(creator.getId()))
-				.andExpect(jsonPath("$.amount").value(12.00))
+				.andExpect(jsonPath("$.amount").value("12.00"))
 				.andExpect(jsonPath("$.splits.length()").value(3))
-				.andExpect(jsonPath("$.splits[0].amount").value(4.00))
-				.andExpect(jsonPath("$.splits[1].amount").value(3.50))
-				.andExpect(jsonPath("$.splits[2].amount").value(4.50));
+				.andExpect(jsonPath("$.splits[0].amount").value("4.00"))
+				.andExpect(jsonPath("$.splits[1].amount").value("3.50"))
+				.andExpect(jsonPath("$.splits[2].amount").value("4.50"));
 
 		List<ExpenseSplit> exactShares = expenseSplitRepository.findAllByExpense_Id(expenseId);
 		assertEquals(3, exactShares.size());
@@ -412,14 +413,14 @@ class ExpenseControllerTest {
 
 		mockMvc.perform(put("/api/groups/{groupId}/expenses/{expenseId}", group.getId(), expenseId)
 						.header("Authorization", bearerToken(member))
-						.contentType(MediaType.APPLICATION_JSON).content(invalid))
+						.contentType(MediaType.APPLICATION_JSON_VALUE).content(invalid))
 				.andExpect(status().isForbidden());
 		mockMvc.perform(put("/api/groups/{groupId}/expenses/{expenseId}", group.getId(), expenseId)
 						.header("Authorization", bearerToken(unrelated))
-						.contentType(MediaType.APPLICATION_JSON).content(invalid))
+						.contentType(MediaType.APPLICATION_JSON_VALUE).content(invalid))
 				.andExpect(status().isNotFound());
 		mockMvc.perform(put("/api/groups/{groupId}/expenses/{expenseId}", group.getId(), expenseId)
-						.contentType(MediaType.APPLICATION_JSON).content(invalid))
+						.contentType(MediaType.APPLICATION_JSON_VALUE).content(invalid))
 				.andExpect(status().isUnauthorized());
 		for (String invalidRequest : List.of(
 				"""
@@ -436,7 +437,7 @@ class ExpenseControllerTest {
 				""".formatted(creator.getId(), creator.getId()))) {
 			mockMvc.perform(put("/api/groups/{groupId}/expenses/{expenseId}", group.getId(), expenseId)
 							.header("Authorization", bearerToken(creator))
-							.contentType(MediaType.APPLICATION_JSON).content(invalidRequest))
+							.contentType(MediaType.APPLICATION_JSON_VALUE).content(invalidRequest))
 					.andExpect(status().isBadRequest());
 		}
 		String outsidePayer = """
@@ -445,7 +446,7 @@ class ExpenseControllerTest {
 				""".formatted(unrelated.getId(), creator.getId());
 		mockMvc.perform(put("/api/groups/{groupId}/expenses/{expenseId}", group.getId(), expenseId)
 						.header("Authorization", bearerToken(creator))
-						.contentType(MediaType.APPLICATION_JSON).content(outsidePayer))
+						.contentType(MediaType.APPLICATION_JSON_VALUE).content(outsidePayer))
 				.andExpect(status().isBadRequest())
 				.andExpect(jsonPath("$.code").value("bad_request"))
 				.andExpect(jsonPath("$.message").value("The payer must be a member of this group."));
@@ -595,9 +596,9 @@ class ExpenseControllerTest {
 		BigDecimal shareTotal = BigDecimal.ZERO;
 		BigDecimal netTotal = BigDecimal.ZERO;
 		for (var balance : responseTree.path("balances")) {
-			paidTotal = paidTotal.add(balance.path("totalPaid").decimalValue());
-			shareTotal = shareTotal.add(balance.path("totalShare").decimalValue());
-			netTotal = netTotal.add(balance.path("netBalance").decimalValue());
+			paidTotal = paidTotal.add(new BigDecimal(balance.path("totalPaid").asText()));
+			shareTotal = shareTotal.add(new BigDecimal(balance.path("totalShare").asText()));
+			netTotal = netTotal.add(new BigDecimal(balance.path("netBalance").asText()));
 		}
 		assertEquals(0, new BigDecimal("1600.05").compareTo(paidTotal));
 		assertEquals(0, new BigDecimal("1600.05").compareTo(shareTotal));
@@ -627,7 +628,7 @@ class ExpenseControllerTest {
 
 		mockMvc.perform(put("/api/groups/{groupId}/expenses/{expenseId}", group.getId(), targetExpenseId)
 						.header("Authorization", bearerToken(creator))
-						.contentType(MediaType.APPLICATION_JSON)
+						.contentType(MediaType.APPLICATION_JSON_VALUE)
 						.content("""
 								{"description":"Updated target","amount":12.00,"paidByUserId":%d,
 								 "splits":[{"userId":%d,"amount":2.00},
@@ -764,12 +765,12 @@ class ExpenseControllerTest {
 		String body = expenseJson(creator, creator, "No token", "1.00");
 
 		mockMvc.perform(post("/api/groups/{groupId}/expenses", group.getId())
-						.contentType(MediaType.APPLICATION_JSON)
+						.contentType(MediaType.APPLICATION_JSON_VALUE)
 						.content(body))
 				.andExpect(status().isUnauthorized());
 		mockMvc.perform(post("/api/groups/{groupId}/expenses", group.getId())
 						.header("Authorization", "Bearer invalid")
-						.contentType(MediaType.APPLICATION_JSON)
+						.contentType(MediaType.APPLICATION_JSON_VALUE)
 						.content(body))
 				.andExpect(status().isUnauthorized());
 		mockMvc.perform(get("/api/groups/{groupId}/expenses", group.getId())
@@ -793,8 +794,9 @@ class ExpenseControllerTest {
 
 	private ResultActions postExpense(Long groupId, String token, String body) throws Exception {
 		return mockMvc.perform(post("/api/groups/{groupId}/expenses", groupId)
+				.header("Idempotency-Key", "\"" + java.util.UUID.randomUUID() + "\"")
 				.header("Authorization", token)
-				.contentType(MediaType.APPLICATION_JSON)
+				.contentType(MediaType.APPLICATION_JSON_VALUE)
 				.content(body));
 	}
 
@@ -822,7 +824,7 @@ class ExpenseControllerTest {
 		var responseTree = objectMapper.readTree(response);
 		assertEquals(groupId.longValue(), responseTree.path("groupId").longValue());
 		assertEquals("INR", responseTree.path("currencyCode").textValue());
-		assertDecimal(totalExpenseAmount, responseTree.path("totalExpenseAmount").decimalValue());
+		assertDecimal(totalExpenseAmount, new BigDecimal(responseTree.path("totalExpenseAmount").asText()));
 		var actualBalances = responseTree.path("balances");
 		assertEquals(expectedBalances.size(), actualBalances.size());
 		for (int index = 0; index < expectedBalances.size(); index++) {
@@ -831,11 +833,11 @@ class ExpenseControllerTest {
 			assertEquals(expected.userId(), actual.path("userId").longValue());
 			assertEquals(expected.name(), actual.path("name").textValue());
 			assertEquals(expected.email(), actual.path("email").textValue());
-			assertDecimal(expected.totalPaid(), actual.path("totalPaid").decimalValue());
-			assertDecimal(expected.totalShare(), actual.path("totalShare").decimalValue());
-			assertDecimal(expected.totalSent(), actual.path("totalSentSettlements").decimalValue());
-			assertDecimal(expected.totalReceived(), actual.path("totalReceivedSettlements").decimalValue());
-			assertDecimal(expected.netBalance(), actual.path("netBalance").decimalValue());
+			assertDecimal(expected.totalPaid(), new BigDecimal(actual.path("totalPaid").asText()));
+			assertDecimal(expected.totalShare(), new BigDecimal(actual.path("totalShare").asText()));
+			assertDecimal(expected.totalSent(), new BigDecimal(actual.path("totalSentSettlements").asText()));
+			assertDecimal(expected.totalReceived(), new BigDecimal(actual.path("totalReceivedSettlements").asText()));
+			assertDecimal(expected.netBalance(), new BigDecimal(actual.path("netBalance").asText()));
 		}
 	}
 
@@ -880,7 +882,7 @@ class ExpenseControllerTest {
 			String netBalance) {
 	}
 
-	private User createUser(String name) {
+	private @NonNull User createUser(String name) {
 		return userRepository.saveAndFlush(new User(
 				name,
 				name.toLowerCase().replace(' ', '.') + "@expenses.example",

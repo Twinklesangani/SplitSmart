@@ -10,6 +10,7 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.autoconfigure.web.servlet.AutoConfigureMockMvc;
 import org.springframework.boot.test.context.SpringBootTest;
 import org.springframework.http.MediaType;
+import org.springframework.lang.NonNull;
 import org.springframework.security.oauth2.jose.jws.MacAlgorithm;
 import org.springframework.security.oauth2.jwt.JwtClaimsSet;
 import org.springframework.security.oauth2.jwt.JwtEncoder;
@@ -85,14 +86,14 @@ class SettlementSuggestionControllerTest {
 				.andExpect(status().isOk())
 				.andExpect(jsonPath("$.groupId").value(group.getId()))
 				.andExpect(jsonPath("$.currencyCode").value("INR"))
-				.andExpect(jsonPath("$.totalSuggestedAmount").value(20.00))
+				.andExpect(jsonPath("$.totalSuggestedAmount").value("20.00"))
 				.andExpect(jsonPath("$.suggestions.length()").value(2))
 				.andExpect(jsonPath("$.suggestions[0].fromUserId").value(debtorA.getId()))
 				.andExpect(jsonPath("$.suggestions[0].toUserId").value(creditorA.getId()))
-				.andExpect(jsonPath("$.suggestions[0].amount").value(10.00))
+				.andExpect(jsonPath("$.suggestions[0].amount").value("10.00"))
 				.andExpect(jsonPath("$.suggestions[1].fromUserId").value(debtorB.getId()))
 				.andExpect(jsonPath("$.suggestions[1].toUserId").value(creditorB.getId()))
-				.andExpect(jsonPath("$.suggestions[1].amount").value(10.00));
+				.andExpect(jsonPath("$.suggestions[1].amount").value("10.00"));
 
 		assertEquals(expensesBefore, expenseRepository.count());
 		assertEquals(settlementsBefore, settlementRepository.count());
@@ -115,13 +116,13 @@ class SettlementSuggestionControllerTest {
 		mockMvc.perform(get(suggestionsPath(group))
 						.header("Authorization", bearerToken(creditor)))
 				.andExpect(status().isOk())
-				.andExpect(jsonPath("$.totalSuggestedAmount").value(6.68))
+				.andExpect(jsonPath("$.totalSuggestedAmount").value("6.68"))
 				.andExpect(jsonPath("$.suggestions[0].fromUserId").value(debtorA.getId()))
-				.andExpect(jsonPath("$.suggestions[0].amount").value(3.34));
+				.andExpect(jsonPath("$.suggestions[0].amount").value("3.34"));
 
 		mockMvc.perform(post("/api/groups/{groupId}/settlements", group.getId())
 						.header("Authorization", bearerToken(debtorA))
-						.contentType(MediaType.APPLICATION_JSON)
+						.contentType(MediaType.APPLICATION_JSON_VALUE)
 						.content("""
 								{"fromUserId":%d,"toUserId":%d,"amount":1.01,"requestId":"%s"}
 								""".formatted(debtorA.getId(), creditor.getId(), UUID.randomUUID())))
@@ -129,7 +130,7 @@ class SettlementSuggestionControllerTest {
 
 		mockMvc.perform(post("/api/groups/{groupId}/settlements", group.getId())
 						.header("Authorization", bearerToken(debtorA))
-						.contentType(MediaType.APPLICATION_JSON)
+						.contentType(MediaType.APPLICATION_JSON_VALUE)
 						.content("""
 								{"fromUserId":%d,"toUserId":%d,"amount":3.34,"requestId":"%s"}
 								""".formatted(debtorA.getId(), creditor.getId(), UUID.randomUUID())))
@@ -138,12 +139,12 @@ class SettlementSuggestionControllerTest {
 		mockMvc.perform(get(suggestionsPath(group))
 						.header("Authorization", bearerToken(creditor)))
 				.andExpect(status().isOk())
-				.andExpect(jsonPath("$.totalSuggestedAmount").value(5.67))
+				.andExpect(jsonPath("$.totalSuggestedAmount").value("5.67"))
 				.andExpect(jsonPath("$.suggestions.length()").value(2))
 				.andExpect(jsonPath("$.suggestions[0].fromUserId").value(debtorB.getId()))
-				.andExpect(jsonPath("$.suggestions[0].amount").value(3.34))
+				.andExpect(jsonPath("$.suggestions[0].amount").value("3.34"))
 				.andExpect(jsonPath("$.suggestions[1].fromUserId").value(debtorA.getId()))
-				.andExpect(jsonPath("$.suggestions[1].amount").value(2.33));
+				.andExpect(jsonPath("$.suggestions[1].amount").value("2.33"));
 	}
 
 	@Test
@@ -189,24 +190,24 @@ class SettlementSuggestionControllerTest {
 
 		mockMvc.perform(get(suggestionsPath(group)).header("Authorization", token))
 				.andExpect(status().isOk())
-				.andExpect(jsonPath("$.suggestions[0].amount").value(10.00));
+				.andExpect(jsonPath("$.suggestions[0].amount").value("10.00"));
 
 		mockMvc.perform(put("/api/groups/{groupId}/expenses/{expenseId}", group.getId(), expense.getId())
 						.header("Authorization", token)
-						.contentType(MediaType.APPLICATION_JSON)
+						.contentType(MediaType.APPLICATION_JSON_VALUE)
 						.content(expenseJson(creator, member, "20.00")))
 				.andExpect(status().isOk());
 		mockMvc.perform(get(suggestionsPath(group)).header("Authorization", token))
 				.andExpect(status().isOk())
-				.andExpect(jsonPath("$.totalSuggestedAmount").value(20.00))
-				.andExpect(jsonPath("$.suggestions[0].amount").value(20.00));
+				.andExpect(jsonPath("$.totalSuggestedAmount").value("20.00"))
+				.andExpect(jsonPath("$.suggestions[0].amount").value("20.00"));
 
 		mockMvc.perform(delete("/api/groups/{groupId}/expenses/{expenseId}", group.getId(), expense.getId())
 						.header("Authorization", token))
 				.andExpect(status().isNoContent());
 		mockMvc.perform(get(suggestionsPath(group)).header("Authorization", token))
 				.andExpect(status().isOk())
-				.andExpect(jsonPath("$.totalSuggestedAmount").value(0.00))
+				.andExpect(jsonPath("$.totalSuggestedAmount").value("0.00"))
 				.andExpect(jsonPath("$.suggestions.length()").value(0));
 		assertEquals(0, expenseRepository.count());
 	}
@@ -239,11 +240,11 @@ class SettlementSuggestionControllerTest {
 
 		mockMvc.perform(get(suggestionsPath(group)).header("Authorization", bearerToken(debtorA)))
 				.andExpect(status().isOk())
-				.andExpect(jsonPath("$.totalSuggestedAmount").value(18.00))
+				.andExpect(jsonPath("$.totalSuggestedAmount").value("18.00"))
 				.andExpect(jsonPath("$.suggestions.length()").value(5))
 				.andExpect(jsonPath("$.suggestions[0].fromUserId").value(debtorA.getId()))
 				.andExpect(jsonPath("$.suggestions[0].toUserId").value(creditorA.getId()))
-				.andExpect(jsonPath("$.suggestions[0].amount").value(7.00));
+				.andExpect(jsonPath("$.suggestions[0].amount").value("7.00"));
 	}
 
 	@Test
@@ -281,13 +282,13 @@ class SettlementSuggestionControllerTest {
 
 	private org.springframework.test.web.servlet.ResultActions postExpense(
 			ExpenseGroup group, User creator, String body) throws Exception {
-		return mockMvc.perform(post("/api/groups/{groupId}/expenses", group.getId())
+		return mockMvc.perform(post("/api/groups/{groupId}/expenses", group.getId()).header("Idempotency-Key", "\"" + java.util.UUID.randomUUID() + "\"")
 				.header("Authorization", bearerToken(creator))
-				.contentType(MediaType.APPLICATION_JSON)
+				.contentType(MediaType.APPLICATION_JSON_VALUE)
 				.content(body));
 	}
 
-	private String suggestionsPath(ExpenseGroup group) {
+	private @NonNull String suggestionsPath(ExpenseGroup group) {
 		return "/api/groups/" + group.getId() + "/settlement-suggestions";
 	}
 
@@ -299,7 +300,7 @@ class SettlementSuggestionControllerTest {
 		return group;
 	}
 
-	private User createUser(String name) {
+	private @NonNull User createUser(String name) {
 		String suffix = UUID.randomUUID().toString();
 		return userRepository.saveAndFlush(new User(name, suffix + "@suggestions.example", "{bcrypt}test"));
 	}

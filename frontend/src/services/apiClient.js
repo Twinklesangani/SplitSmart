@@ -31,6 +31,8 @@ function resolveApiUrl(path) {
 }
 
 function messageForHttpError(status, code, path) {
+  if (status === 429) return 'Too many requests. Please wait before trying again.'
+  if (status === 413) return 'This request is too large. Reduce its size and try again.'
   if (status === 401) {
     return path === '/api/auth/login'
       ? 'Invalid email or password.'
@@ -47,6 +49,7 @@ function messageForHttpError(status, code, path) {
     if (/\/api\/groups\/[^/]+\/settlements(?:\/|$)/.test(path)) {
       return 'This repayment request conflicts with an existing record. Refresh settlement history before trying again.'
     }
+    if (/^\/api\/groups\/[^/]+\/expenses$/.test(path)) return 'This operation was already used with different details. Check expense history before starting a separate expense.'
     if (path.startsWith('/api/groups')) return 'This person is already a group member or the request conflicts with current group data.'
     return 'This request conflicts with existing data.'
   }
@@ -77,7 +80,7 @@ function isAbortError(error) {
   return error?.name === 'AbortError' || error?.name === 'TimeoutError'
 }
 
-export async function apiRequest(path, { method = 'GET', body, token, signal, expectedStatus } = {}) {
+export async function apiRequest(path, { method = 'GET', body, token, signal, expectedStatus, operationKey, includeCursor = false } = {}) {
   const url = resolveApiUrl(path)
   let requestToken = token
   if (requestToken === undefined && path.startsWith('/api/groups')) {
@@ -97,6 +100,7 @@ export async function apiRequest(path, { method = 'GET', body, token, signal, ex
   else signal?.addEventListener('abort', abortFromCaller, { once: true })
 
   const headers = { Accept: 'application/json' }
+  if (operationKey) headers['Idempotency-Key'] = '"' + operationKey + '"'
   if (body !== undefined) headers['Content-Type'] = 'application/json'
   if (requestToken) headers.Authorization = `Bearer ${requestToken}`
 
@@ -149,9 +153,33 @@ export async function apiRequest(path, { method = 'GET', body, token, signal, ex
         code: 'invalid_response',
       })
     }
+    if (includeCursor) {
+      const nextBefore = response.headers?.get('X-Next-Before') || null
+      if (nextBefore !== null && (!/^[1-9]\d{0,18}$/.test(nextBefore) || BigInt(nextBefore) > 9223372036854775807n)) {
+        throw new ApiError('The service returned invalid history pagination data.', { code: 'invalid_response' })
+      }
+      return { items: responseBody, nextBefore }
+    }
     return responseBody
   } finally {
     clearTimeout(timeoutId)
     signal?.removeEventListener('abort', abortFromCaller)
   }
+}
+
+
+export async function apiHistory(path, { signal, before, limit, requestId } = {}) {
+  const query = new URLSearchParams()
+  if (before !== undefined && before !== null) query.set('before', before)
+  if (limit !== undefined) query.set('limit', String(limit))
+  if (requestId !== undefined) query.set('requestId', requestId)
+  const suffix = query.size ? '?' + query.toString() : ''
+  const page = await apiRequest(path + suffix, { signal, includeCursor: true })
+  if (!Array.isArray(page.items) || page.items.length > 100 || page.nextBefore && page.items.length === 0) {
+    throw new ApiError('The service returned invalid history data.', { code: 'invalid_response' })
+  }
+  if (before && page.nextBefore && BigInt(page.nextBefore) >= BigInt(before)) {
+    throw new ApiError('History pagination did not advance. Refresh and try again.', { code: 'invalid_response' })
+  }
+  return page
 }

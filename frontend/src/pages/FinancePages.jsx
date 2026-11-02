@@ -63,11 +63,14 @@ function useFinanceData(groupId, userId, members, groupStatus) {
   const [attempt, setAttempt] = useState(0)
   const [result, setResult] = useState({ scope: '', status: 'loading', balances: null, suggestions: null, settlements: null })
   const loadRef = useRef({ id: 0, controller: null })
+  const moreRef = useRef(null)
   const scope = `${userId}:${groupId}:${attempt}`
 
   const refresh = useCallback(async () => {
     if (groupStatus !== 'success') return null
     loadRef.current.controller?.abort()
+    moreRef.current?.abort()
+    moreRef.current = null
     const controller = new AbortController()
     const requestId = loadRef.current.id + 1
     loadRef.current = { id: requestId, controller }
@@ -113,7 +116,7 @@ function useFinanceData(groupId, userId, members, groupStatus) {
 
     const settlements = settlementResult.error
       ? financeFailure(settlementResult.error, 'Settlement history could not be loaded. Please try again.')
-      : financeSuccess(settlementResult.value)
+      : { ...financeSuccess(settlementResult.value.items), nextBefore: settlementResult.value.nextBefore }
     const freshResult = { scope, status: 'success', balances, suggestions, settlements }
     setResult(freshResult)
     loadRef.current = { id: requestId, controller: null }
@@ -133,6 +136,8 @@ function useFinanceData(groupId, userId, members, groupStatus) {
       }
     })
     return () => {
+      moreRef.current?.abort()
+      moreRef.current = null
       if (loadRef.current.controller) {
         loadRef.current.controller.abort()
         loadRef.current = { id: loadRef.current.id + 1, controller: null }
@@ -143,7 +148,29 @@ function useFinanceData(groupId, userId, members, groupStatus) {
   const current = result.scope === scope
     ? result
     : { status: 'loading', balances: null, suggestions: null, settlements: null }
-  return { ...current, refresh, reload: () => setAttempt((value) => value + 1) }
+  async function loadMoreSettlements() {
+    if (!current.settlements?.nextBefore || moreRef.current) return
+    const controller = new AbortController()
+    moreRef.current = controller
+    setResult(previous => ({ ...previous, loadingMore: true, moreError: '' }))
+    try {
+      const page = await listSettlements(groupId, { before: current.settlements.nextBefore, signal: controller.signal })
+      if (controller.signal.aborted) return
+      setResult(previous => {
+        if (previous.scope !== scope) return previous
+        const byId = new Map(previous.settlements.value.map(item => [String(item.id), item]))
+        for (const item of page.items) byId.set(String(item.id), item)
+        return { ...previous, settlements: { ...financeSuccess([...byId.values()]), nextBefore: page.nextBefore },
+          loadingMore: false, moreError: '' }
+      })
+    } catch (error) {
+      if (!controller.signal.aborted) setResult(previous => previous.scope === scope
+        ? { ...previous, loadingMore: false, moreError: apiErrorMessage(error, 'More repayments could not be loaded.') } : previous)
+    } finally {
+      if (moreRef.current === controller) moreRef.current = null
+    }
+  }
+  return { ...current, refresh, loadMoreSettlements, reload: () => setAttempt((value) => value + 1) }
 }
 
 function retryFinance(finance) {
@@ -380,6 +407,17 @@ function SettlementForm({ groupId, members, currentUser, finance, onRefresh }) {
     setNote('')
   }
 
+  async function lookupPending(requestId) {
+    try {
+      const page = await listSettlements(groupId, { requestId })
+      if (!mounted.current) return undefined
+      return page.items.find(item => item.requestId === requestId) || null
+    } catch {
+      if (mounted.current) setError('The repayment outcome could not be checked. Keep the same request and try again.')
+      return undefined
+    }
+  }
+
   async function reconcilePending() {
     setError('')
     const refreshed = await onRefresh()
@@ -389,7 +427,8 @@ function SettlementForm({ groupId, members, currentUser, finance, onRefresh }) {
       setError('Settlement history could not be refreshed. The request outcome remains uncertain; do not record a different repayment yet.')
       return
     }
-    const recorded = refreshed.settlements.value.find((item) => item.requestId === pending?.requestId)
+    const recorded = await lookupPending(pending.requestId)
+    if (recorded === undefined) return
     if (recorded) {
       confirmRecorded(recorded)
       setNotice(`Repayment record ${recorded.id} was found in settlement history. This does not confirm or initiate a money transfer.`)
@@ -495,7 +534,8 @@ function SettlementForm({ groupId, members, currentUser, finance, onRefresh }) {
       setError('Settlement history could not be refreshed. The request outcome remains uncertain; do not submit a new repayment.')
       return
     }
-    const recorded = refreshed.settlements.value.find((item) => item.requestId === pendingSubmission.requestId)
+    const recorded = await lookupPending(pendingSubmission.requestId)
+    if (recorded === undefined) return
     if (recorded) {
       confirmRecorded(recorded)
       setNotice(`Repayment record ${recorded.id} was found in settlement history. This does not confirm or initiate a money transfer.`)
@@ -553,7 +593,7 @@ function SettlementForm({ groupId, members, currentUser, finance, onRefresh }) {
             autoComplete="off"
             value={amount}
             onChange={(event) => { setAmount(event.target.value); setError('') }}
-            maxLength={15}
+            maxLength={20}
             placeholder="0.00"
             disabled={locked}
             aria-invalid={Boolean(error && amount !== '')}
@@ -635,6 +675,10 @@ function GroupSettlementsContent({ data, user }) {
           error={finance.settlements?.error}
           onRetry={() => retryFinance(finance)}
         />
+        {finance.moreError && <RequestError error={finance.moreError} onRetry={finance.loadMoreSettlements} />}
+        {finance.settlements?.nextBefore && <Button type="button" onClick={finance.loadMoreSettlements}
+          disabled={finance.loadingMore} aria-busy={Boolean(finance.loadingMore)}>
+          {finance.loadingMore ? 'Loading more repayments…' : 'Load more repayments'}</Button>}
       </Card>
       {finance.balances?.status === 'error' && <Card><RequestError error={finance.balances.error} onRetry={() => retryFinance(finance)} /></Card>}
       {finance.suggestions?.status === 'error' && <Card><RequestError error={finance.suggestions.error} onRetry={() => retryFinance(finance)} /></Card>}

@@ -99,12 +99,12 @@ public class GroupService {
 	}
 
 	private User loadUser(String subject) {
-		final Long userId;
+		final long userId;
 		if (subject == null) {
 			throw invalidAuthenticatedUser();
 		}
 		try {
-			userId = Long.valueOf(subject);
+			userId = Long.parseLong(subject);
 		} catch (NumberFormatException exception) {
 			throw invalidAuthenticatedUser();
 		}

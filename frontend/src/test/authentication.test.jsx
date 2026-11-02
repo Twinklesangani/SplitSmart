@@ -307,3 +307,26 @@ describe('login and session', () => {
     expect(await screen.findByRole('heading', { name: 'Welcome, Samira' })).toBeInTheDocument()
   })
 })
+
+describe('authentication throttling feedback', () => {
+  it('shows a generic 429 message without automatically retrying login', async () => {
+    const user = userEvent.setup()
+    fetch.mockResolvedValueOnce(jsonResponse({ code: 'rate_limited' }, 429))
+    renderApp('/login')
+    await fillAndSubmitLogin(user)
+    expect(await screen.findByRole('alert')).toHaveTextContent('Too many requests. Please wait before trying again.')
+    expect(fetch).toHaveBeenCalledTimes(1)
+  })
+
+  it('shows the same generic message for registration throttling', async () => {
+    const user = userEvent.setup()
+    fetch.mockResolvedValueOnce(jsonResponse({ code: 'rate_limited' }, 429))
+    renderApp('/register')
+    await user.type(await screen.findByLabelText('Full name'), 'Synthetic User')
+    await user.type(screen.getByLabelText('Email address'), 'synthetic@example.test')
+    await user.type(screen.getByLabelText('Password'), 'SecurePass123!')
+    await user.click(screen.getByRole('button', { name: /create account/i }))
+    expect(await screen.findByRole('alert')).toHaveTextContent('Too many requests. Please wait before trying again.')
+    expect(fetch).toHaveBeenCalledTimes(1)
+  })
+})

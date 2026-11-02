@@ -1,6 +1,11 @@
 package com.splitsmart.controller;
 
 import java.util.List;
+import java.util.Set;
+import org.springframework.util.MultiValueMap;
+import org.springframework.web.bind.annotation.RequestParam;
+import com.splitsmart.dto.HistoryPage;
+import io.swagger.v3.oas.annotations.headers.Header;
 
 import jakarta.validation.Valid;
 
@@ -15,6 +20,8 @@ import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.core.annotation.AuthenticationPrincipal;
 import org.springframework.security.oauth2.jwt.Jwt;
+import io.swagger.v3.oas.annotations.Parameter;
+import org.springframework.web.bind.annotation.RequestHeader;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.DeleteMapping;
 import org.springframework.web.bind.annotation.PathVariable;
@@ -58,16 +65,19 @@ public class ExpenseController {
 	public ExpenseResponse createExpense(
 			@PathVariable Long groupId,
 			@Valid @RequestBody CreateExpenseRequest request,
+			@Parameter(required = true, description = "Quoted UUID identifying one creation operation. Reuse for retries.")
+			@RequestHeader(value = "Idempotency-Key", required = false) String operationKey,
 			@AuthenticationPrincipal Jwt jwt) {
-		return expenseService.createExpense(groupId, jwt.getSubject(), request);
+		return expenseService.createExpense(groupId, jwt.getSubject(), request, operationKey);
 	}
 
 	@GetMapping
 	@Operation(summary = "List expenses in a group")
 	@ApiResponses({
 			@ApiResponse(responseCode = "200", description = "Group expenses",
+                    headers = @Header(name = "X-Next-Before", description = "Exclusive cursor for the next page. Absent at the end.", schema = @Schema(type = "string")),
 					content = @Content(array = @ArraySchema(schema = @Schema(implementation = ExpenseResponse.class)))),
-			@ApiResponse(responseCode = "400", description = "Invalid group ID",
+			@ApiResponse(responseCode = "400", description = "Invalid group ID or history parameters",
 					content = @Content(schema = @Schema(implementation = ApiErrorResponse.class))),
 			@ApiResponse(responseCode = "401", description = "Authentication is required or invalid",
 					content = @Content(schema = @Schema(implementation = ApiErrorResponse.class))),
@@ -76,11 +86,17 @@ public class ExpenseController {
 			@ApiResponse(responseCode = "500", description = "Unexpected server error",
 					content = @Content(schema = @Schema(implementation = ApiErrorResponse.class)))
 	})
-	public List<ExpenseResponse> listExpenses(
-			@PathVariable Long groupId,
-			@AuthenticationPrincipal Jwt jwt) {
-		return expenseService.listExpenses(groupId, jwt.getSubject());
-	}
+    public ResponseEntity<List<ExpenseResponse>> listExpenses(
+            @PathVariable Long groupId,
+            @Parameter(description = "Exclusive descending record-ID cursor.", schema = @Schema(minimum = "1"))
+            @RequestParam(required = false) Long before,
+            @Parameter(description = "Maximum records per page.", schema = @Schema(minimum = "1", maximum = "100", defaultValue = "25"))
+            @RequestParam(defaultValue = "25") int limit,
+            @Parameter(hidden = true) @RequestParam MultiValueMap<String, String> parameters,
+            @AuthenticationPrincipal Jwt jwt) {
+        HistoryPage.validateParameters(parameters, Set.of("limit", "before"));
+        return expenseService.listExpenses(groupId, jwt.getSubject(), before, limit).response();
+    }
 
 	@GetMapping("/{expenseId}")
 	@Operation(summary = "Get a group expense")

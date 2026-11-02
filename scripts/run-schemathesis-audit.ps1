@@ -116,6 +116,9 @@ function Invoke-Api {
 	)
 
 	$headers = @{ Accept = 'application/json' }
+    if ($Method -eq 'POST' -and $Path -match '^/api/groups/[0-9]+/expenses$') {
+        $headers['Idempotency-Key'] = '"' + [Guid]::NewGuid().ToString() + '"'
+    }
 	if (-not [string]::IsNullOrWhiteSpace($Token)) {
 		$headers.Authorization = "Bearer $Token"
 	}

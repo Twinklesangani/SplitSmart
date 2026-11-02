@@ -8,6 +8,7 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.HttpStatusCode;
+import org.springframework.lang.NonNull;
 import org.springframework.http.ResponseEntity;
 import org.springframework.http.converter.HttpMessageNotReadableException;
 import org.springframework.security.authentication.BadCredentialsException;
@@ -99,7 +100,7 @@ public class ApiExceptionHandler {
 			HttpServletRequest request) {
 		HttpStatusCode status = exception.getStatusCode();
 		String message = exception.getReason() == null ? "Request failed." : exception.getReason();
-		return ResponseEntity.status(status).body(error(codeFor(status), message, request));
+		return ResponseEntity.status(status).headers(exception.getHeaders()).body(error(codeFor(status), message, request));
 	}
 
 	@ExceptionHandler(Exception.class)
@@ -112,7 +113,7 @@ public class ApiExceptionHandler {
 	}
 
 	private static ResponseEntity<ApiErrorResponse> response(
-			HttpStatusCode status,
+			@NonNull HttpStatusCode status,
 			String code,
 			String message,
 			HttpServletRequest request) {
@@ -130,6 +131,7 @@ public class ApiExceptionHandler {
 			case 403 -> "forbidden";
 			case 404 -> "not_found";
 			case 409 -> "conflict";
+            case 429 -> "rate_limited";
 			default -> "request_failed";
 		};
 	}

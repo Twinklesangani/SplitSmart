@@ -15,6 +15,7 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.autoconfigure.web.servlet.AutoConfigureMockMvc;
 import org.springframework.boot.test.context.SpringBootTest;
 import org.springframework.http.MediaType;
+import org.springframework.lang.NonNull;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.security.oauth2.jose.jws.MacAlgorithm;
 import org.springframework.security.oauth2.jwt.Jwt;
@@ -84,18 +85,18 @@ class AuthControllerTest {
 		createUser("Login User", "login@example.com");
 
 		String wrongPassword = mockMvc.perform(post("/api/auth/login")
-						.contentType(MediaType.APPLICATION_JSON)
+						.contentType(MediaType.APPLICATION_JSON_VALUE)
 						.content(loginJson("login@example.com", "WrongPassword123!")))
 				.andExpect(status().isUnauthorized())
-				.andExpect(content().contentTypeCompatibleWith(MediaType.APPLICATION_JSON))
+				.andExpect(content().contentTypeCompatibleWith(MediaType.APPLICATION_JSON_VALUE))
 				.andExpect(jsonPath("$.code").value("unauthorized"))
 				.andExpect(jsonPath("$.message").value("Invalid email or password."))
 				.andReturn().getResponse().getContentAsString();
 		String unknownEmail = mockMvc.perform(post("/api/auth/login")
-						.contentType(MediaType.APPLICATION_JSON)
+						.contentType(MediaType.APPLICATION_JSON_VALUE)
 						.content(loginJson("unknown@example.com", VALID_PASSWORD)))
 				.andExpect(status().isUnauthorized())
-				.andExpect(content().contentTypeCompatibleWith(MediaType.APPLICATION_JSON))
+				.andExpect(content().contentTypeCompatibleWith(MediaType.APPLICATION_JSON_VALUE))
 				.andExpect(jsonPath("$.code").value("unauthorized"))
 				.andExpect(jsonPath("$.message").value("Invalid email or password."))
 				.andReturn().getResponse().getContentAsString();
@@ -111,11 +112,11 @@ class AuthControllerTest {
 	@Test
 	void malformedLoginRequestReturnsBadRequest() throws Exception {
 		mockMvc.perform(post("/api/auth/login")
-						.contentType(MediaType.APPLICATION_JSON)
+						.contentType(MediaType.APPLICATION_JSON_VALUE)
 						.content("{"))
 				.andExpect(status().isBadRequest());
 		mockMvc.perform(post("/api/auth/login")
-						.contentType(MediaType.APPLICATION_JSON)
+						.contentType(MediaType.APPLICATION_JSON_VALUE)
 						.content("{\"email\":\"login@example.com\"}"))
 				.andExpect(status().isBadRequest());
 	}
@@ -132,7 +133,7 @@ class AuthControllerTest {
 						.param("id", otherUser.getId().toString())
 						.header("Authorization", "Bearer " + token))
 				.andExpect(status().isOk())
-				.andExpect(content().contentTypeCompatibleWith(MediaType.APPLICATION_JSON))
+				.andExpect(content().contentTypeCompatibleWith(MediaType.APPLICATION_JSON_VALUE))
 				.andExpect(jsonPath("$.id").value(authenticatedUser.getId()))
 				.andExpect(jsonPath("$.name").value("Authenticated User"))
 				.andExpect(jsonPath("$.email").value("authenticated@example.com"))
@@ -176,12 +177,12 @@ class AuthControllerTest {
 	@Test
 	void registrationReturnsNormalizedUserWithoutPassword() throws Exception {
 		String response = mockMvc.perform(post("/api/auth/register")
-						.contentType(MediaType.APPLICATION_JSON)
+						.contentType(MediaType.APPLICATION_JSON_VALUE)
 						.content("""
 								{"name":" Test User ","email":" Test@Example.COM ","password":"SecurePass123!"}
 								"""))
 				.andExpect(status().isCreated())
-				.andExpect(content().contentTypeCompatibleWith(MediaType.APPLICATION_JSON))
+				.andExpect(content().contentTypeCompatibleWith(MediaType.APPLICATION_JSON_VALUE))
 				.andExpect(jsonPath("$.id").isNumber())
 				.andExpect(jsonPath("$.name").value("Test User"))
 				.andExpect(jsonPath("$.email").value("test@example.com"))
@@ -203,7 +204,7 @@ class AuthControllerTest {
 		registerValidUser();
 
 		mockMvc.perform(post("/api/auth/register")
-						.contentType(MediaType.APPLICATION_JSON)
+						.contentType(MediaType.APPLICATION_JSON_VALUE)
 						.content("""
 								{"name":"Another User","email":"test@example.com","password":"SecurePass123!"}
 								"""))
@@ -215,7 +216,7 @@ class AuthControllerTest {
 		registerValidUser();
 
 		mockMvc.perform(post("/api/auth/register")
-						.contentType(MediaType.APPLICATION_JSON)
+						.contentType(MediaType.APPLICATION_JSON_VALUE)
 						.content("""
 								{"name":"Another User","email":" TEST@EXAMPLE.COM ","password":"SecurePass123!"}
 								"""))
@@ -225,7 +226,7 @@ class AuthControllerTest {
 	@Test
 	void invalidEmailReturnsBadRequest() throws Exception {
 		mockMvc.perform(post("/api/auth/register")
-						.contentType(MediaType.APPLICATION_JSON)
+						.contentType(MediaType.APPLICATION_JSON_VALUE)
 						.content("""
 								{"name":"Test User","email":"not-an-email","password":"SecurePass123!"}
 								"""))
@@ -237,7 +238,7 @@ class AuthControllerTest {
 	@Test
 	void blankNameReturnsBadRequest() throws Exception {
 		mockMvc.perform(post("/api/auth/register")
-						.contentType(MediaType.APPLICATION_JSON)
+						.contentType(MediaType.APPLICATION_JSON_VALUE)
 						.content("""
 								{"name":"   ","email":"test@example.com","password":"SecurePass123!"}
 								"""))
@@ -258,7 +259,7 @@ class AuthControllerTest {
 				{"name":"Test User","email":"test@example.com","password":12345678}
 				""")) {
 			mockMvc.perform(post("/api/auth/register")
-							.contentType(MediaType.APPLICATION_JSON)
+							.contentType(MediaType.APPLICATION_JSON_VALUE)
 							.content(requestBody))
 					.andExpect(status().isBadRequest());
 		}
@@ -279,7 +280,7 @@ class AuthControllerTest {
 				{"name":"Test User","email":"test@example.com","password":"        "}
 				""")) {
 			mockMvc.perform(post("/api/auth/register")
-							.contentType(MediaType.APPLICATION_JSON)
+							.contentType(MediaType.APPLICATION_JSON_VALUE)
 							.content(requestBody))
 					.andExpect(status().isBadRequest());
 		}
@@ -289,7 +290,7 @@ class AuthControllerTest {
 	@Test
 	void shortPasswordReturnsBadRequest() throws Exception {
 		mockMvc.perform(post("/api/auth/register")
-						.contentType(MediaType.APPLICATION_JSON)
+						.contentType(MediaType.APPLICATION_JSON_VALUE)
 						.content("""
 								{"name":"Test User","email":"test@example.com","password":"short"}
 								"""))
@@ -301,7 +302,7 @@ class AuthControllerTest {
 		String password = "A".repeat(72);
 
 		mockMvc.perform(post("/api/auth/register")
-						.contentType(MediaType.APPLICATION_JSON)
+						.contentType(MediaType.APPLICATION_JSON_VALUE)
 						.content("""
 								{"name":"Boundary User","email":"ascii-boundary@example.com","password":"%s"}
 								""".formatted(password)))
@@ -317,7 +318,7 @@ class AuthControllerTest {
 		String password = "€".repeat(24);
 
 		mockMvc.perform(post("/api/auth/register")
-						.contentType(MediaType.APPLICATION_JSON)
+						.contentType(MediaType.APPLICATION_JSON_VALUE)
 						.content("""
 								{"name":"Boundary User","email":"unicode-boundary@example.com","password":"%s"}
 								""".formatted(password)))
@@ -334,7 +335,7 @@ class AuthControllerTest {
 		String password = "€".repeat(24) + "a";
 
 		mockMvc.perform(post("/api/auth/register")
-						.contentType(MediaType.APPLICATION_JSON)
+						.contentType(MediaType.APPLICATION_JSON_VALUE)
 						.content("""
 								{"name":"Boundary User","email":"over-boundary@example.com","password":"%s"}
 								""".formatted(password)))
@@ -348,7 +349,7 @@ class AuthControllerTest {
 		String password = "😀".repeat(19);
 
 		mockMvc.perform(post("/api/auth/register")
-						.contentType(MediaType.APPLICATION_JSON)
+						.contentType(MediaType.APPLICATION_JSON_VALUE)
 						.content("""
 								{"name":"Test User","email":"test@example.com","password":"%s"}
 								""".formatted(password)))
@@ -358,10 +359,10 @@ class AuthControllerTest {
 	@Test
 	void malformedJsonReturnsBadRequest() throws Exception {
 		mockMvc.perform(post("/api/auth/register")
-						.contentType(MediaType.APPLICATION_JSON)
+						.contentType(MediaType.APPLICATION_JSON_VALUE)
 						.content("{"))
 				.andExpect(status().isBadRequest())
-				.andExpect(content().contentTypeCompatibleWith(MediaType.APPLICATION_JSON))
+				.andExpect(content().contentTypeCompatibleWith(MediaType.APPLICATION_JSON_VALUE))
 				.andExpect(jsonPath("$.code").value("malformed_request"))
 				.andExpect(jsonPath("$.timestamp").isNotEmpty())
 				.andExpect(jsonPath("$.path").value("/api/auth/register"));
@@ -369,20 +370,20 @@ class AuthControllerTest {
 
 	private void registerValidUser() throws Exception {
 		mockMvc.perform(post("/api/auth/register")
-						.contentType(MediaType.APPLICATION_JSON)
+						.contentType(MediaType.APPLICATION_JSON_VALUE)
 						.content("""
 								{"name":"Test User","email":"test@example.com","password":"SecurePass123!"}
 								"""))
 				.andExpect(status().isCreated());
 	}
 
-	private User createUser(String name, String email) {
+	private @NonNull User createUser(String name, String email) {
 		return userRepository.saveAndFlush(new User(name, email, passwordEncoder.encode(VALID_PASSWORD)));
 	}
 
 	private String login(String email, String password) throws Exception {
 		return mockMvc.perform(post("/api/auth/login")
-						.contentType(MediaType.APPLICATION_JSON)
+						.contentType(MediaType.APPLICATION_JSON_VALUE)
 						.content(loginJson(email, password)))
 				.andExpect(status().isOk())
 				.andExpect(jsonPath("$.tokenType").value("Bearer"))

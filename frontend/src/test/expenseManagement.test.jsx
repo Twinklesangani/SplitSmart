@@ -1,4 +1,4 @@
-import { render, screen, within } from '@testing-library/react'
+import { act, render, screen, within } from '@testing-library/react'
 import userEvent from '@testing-library/user-event'
 import { MemoryRouter } from 'react-router-dom'
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
@@ -88,7 +88,7 @@ describe('expense money validation', () => {
     expect(formatInr('900.05')).toBe('₹900.05')
   })
 
-  it.each(['0', '-1', '1.001', '1000000000000.00', 'not money'])('rejects unsafe amount %s', (value) => {
+  it.each(['0', '-1', '1.001', '100000000000000000.00', 'not money'])('rejects unsafe amount %s', (value) => {
     expect(parseMoneyToPaise(value)).toBeNull()
   })
 })
@@ -389,5 +389,87 @@ describe('expense editing and deletion', () => {
     expect(await screen.findByRole('heading', { name: 'No expenses yet' })).toBeInTheDocument()
     expect(await screen.findByRole('status')).toHaveTextContent('Expense deleted successfully')
     expect(fetch.mock.calls.some(([url, options]) => url.endsWith('/api/groups/42/expenses/501') && options.method === 'DELETE')).toBe(true)
+  })
+})
+
+describe('expense operation recovery', () => {
+  it('keeps the same operation key after an uncertain response and clears it after success', async () => {
+    const user = userEvent.setup()
+    renderApp('/groups/42/expenses/new', [
+      ...groupSetup(),
+      () => Promise.reject(new TypeError('Synthetic lost response')),
+      jsonResponse(expense(), 201),
+      ...expenseDetailSetup(),
+    ])
+    const form = await screen.findByRole('form', { name: 'Create expense' })
+    await user.type(within(form).getByLabelText(/Description/), 'Retry meal')
+    await user.type(within(form).getByLabelText(/Total amount/), '30')
+    await user.click(within(form).getByRole('button', { name: 'Save expense' }))
+    expect(await screen.findByRole('alert')).toHaveTextContent('outcome is uncertain')
+    const first = fetch.mock.calls.find(([, options]) => options?.method === 'POST')
+    const operation = first[1].headers['Idempotency-Key']
+    expect(operation).toMatch(/^"[0-9a-f-]{36}"$/)
+    expect(window.sessionStorage.getItem('splitsmart.expenseOperation.8.42')).toBe(operation.slice(1, -1))
+    await user.click(within(form).getByRole('button', { name: 'Save expense' }))
+    expect(await screen.findByRole('heading', { name: 'Dinner', level: 2 })).toBeInTheDocument()
+    const posts = fetch.mock.calls.filter(([, options]) => options?.method === 'POST')
+    expect(posts[1][1].headers['Idempotency-Key']).toBe(operation)
+    expect(window.sessionStorage.getItem('splitsmart.expenseOperation.8.42')).toBeNull()
+  })
+})
+
+describe('bounded expense history', () => {
+  const paged = (items, before = null) => ({
+    ...jsonResponse(items),
+    headers: new Headers(before ? { 'X-Next-Before': before } : {}),
+  })
+
+  it('keeps loaded rows on a page error and deduplicates a retried page', async () => {
+    const user = userEvent.setup()
+    const first = expense({ id: 502, description: 'First page expense' })
+    const older = expense({ id: 501, description: 'Older page expense' })
+    renderApp('/groups/42/expenses', [
+      ...groupSetup(), paged([first], '502'),
+      () => Promise.reject(new TypeError('Synthetic page failure')),
+      paged([first, older]),
+    ])
+    await screen.findByRole('heading', { name: 'First page expense' })
+    await user.click(screen.getByRole('button', { name: 'Load more expenses' }))
+    expect(await screen.findByRole('alert')).toBeInTheDocument()
+    expect(screen.getByRole('heading', { name: 'First page expense' })).toBeInTheDocument()
+    await user.click(screen.getByRole('button', { name: 'Try again' }))
+    await screen.findByRole('heading', { name: 'Older page expense' })
+    expect(document.querySelectorAll('.expense-list-card')).toHaveLength(2)
+    expect(screen.queryByRole('button', { name: 'Load more expenses' })).not.toBeInTheDocument()
+    expect(fetch.mock.calls.filter(([url]) => new URL(url).searchParams.get('before') === '502')).toHaveLength(2)
+  })
+
+  it('clears old history and ignores a late page when switching groups', async () => {
+    const user = userEvent.setup()
+    const { Link } = await import('react-router-dom')
+    let finishOldPage
+    window.sessionStorage.setItem('splitsmart.accessToken', token)
+    fetch.mockImplementation(async url => {
+      const request = new URL(url)
+      if (request.pathname === '/api/auth/me') return jsonResponse(creator)
+      if (request.pathname === '/api/groups') return jsonResponse([group, { ...group, id: 43, name: 'Second group' }])
+      if (request.pathname.endsWith('/members')) return jsonResponse(members)
+      if (request.pathname === '/api/groups/43/expenses') return paged([expense({ id: 601, groupId: 43, description: 'Second group only' })])
+      if (request.searchParams.has('before')) return new Promise(resolve => { finishOldPage = resolve })
+      return paged([expense({ id: 502, description: 'Old group first' })], '502')
+    })
+    render(
+      <MemoryRouter initialEntries={['/groups/42/expenses']}>
+        <AuthProvider><Link to="/groups/43/expenses">Switch synthetic group</Link><App /></AuthProvider>
+      </MemoryRouter>,
+    )
+    await screen.findByRole('heading', { name: 'Old group first' })
+    await user.click(screen.getByRole('button', { name: 'Load more expenses' }))
+    await user.click(screen.getByRole('link', { name: 'Switch synthetic group' }))
+    await screen.findByRole('heading', { name: 'Second group only' })
+    await act(async () => finishOldPage(paged([expense({ description: 'Late old record' })])))
+    expect(screen.queryByRole('heading', { name: 'Old group first' })).not.toBeInTheDocument()
+    expect(screen.queryByRole('heading', { name: 'Late old record' })).not.toBeInTheDocument()
+    expect(document.querySelectorAll('.expense-list-card')).toHaveLength(1)
   })
 })

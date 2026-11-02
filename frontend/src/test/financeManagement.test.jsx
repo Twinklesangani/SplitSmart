@@ -1,4 +1,4 @@
-import { render, screen, waitFor, within } from '@testing-library/react'
+import { act, render, screen, waitFor, within } from '@testing-library/react'
 import userEvent from '@testing-library/user-event'
 import { MemoryRouter } from 'react-router-dom'
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
@@ -114,7 +114,7 @@ function renderFinance(path, {
     const requestUrl = new URL(url)
     if (responseOverrides[requestUrl.pathname]) {
       const override = responseOverrides[requestUrl.pathname]
-      return typeof override === 'function' ? override(options) : override
+      return typeof override === 'function' ? override(options, requestUrl) : override
     }
     if (requestUrl.pathname === '/api/auth/me') return jsonResponse(user)
     if (requestUrl.pathname === '/api/groups') return jsonResponse(groupList)
@@ -375,5 +375,69 @@ describe('group financial pages', () => {
       expect.stringContaining(`/api/groups/${group.id}/balances`),
       expect.anything(),
     )
+  })
+})
+
+describe('bounded repayment history', () => {
+  const paged = (items, before = null) => ({
+    ...jsonResponse(items),
+    headers: new Headers(before ? { 'X-Next-Before': before } : {}),
+  })
+
+  it('loads the next page once without recomputing authoritative balances', async () => {
+    const user = userEvent.setup()
+    let finishPage
+    let reads = 0
+    renderFinance('/groups/42/settlements', {
+      responseOverrides: {
+        '/api/groups/42/settlements': () => {
+          reads++
+          return reads === 1 ? paged([settlement({ id: 902 })], '902')
+            : new Promise(resolve => { finishPage = resolve })
+        },
+      },
+    })
+    const more = await screen.findByRole('button', { name: 'Load more repayments' })
+    await user.click(more)
+    expect(more).toBeDisabled()
+    await user.click(more)
+    expect(reads).toBe(2)
+    await act(async () => finishPage(paged([settlement({
+      id: 901, amount: '125.00', requestId: '11111111-1111-4111-8111-111111111111',
+    })])))
+    expect(document.querySelectorAll('.settlement-history__item')).toHaveLength(2)
+    expect(screen.queryByRole('button', { name: 'Load more repayments' })).not.toBeInTheDocument()
+    expect(fetch.mock.calls.some(([url]) => new URL(url).searchParams.get('before') === '902')).toBe(true)
+    expect(fetch.mock.calls.filter(([url]) => new URL(url).pathname.endsWith('/balances'))).toHaveLength(1)
+  })
+
+  it('recovers an uncertain older repayment using the request-ID filter without a second POST', async () => {
+    const user = userEvent.setup()
+    let posts = 0
+    renderFinance('/groups/42/settlements', {
+      user: { id: 9, name: 'Alex Morgan', email: 'alex@example.com' },
+      responseOverrides: {
+        '/api/groups/42/settlements': (options, url) => {
+          if (options.method === 'POST') {
+            posts++
+            return Promise.reject(new TypeError('Synthetic lost response'))
+          }
+          if (url.searchParams.get('requestId') === requestId) {
+            return paged([settlement({ id: 901, requestId, amount: '1.00' })])
+          }
+          return paged([settlement({ id: 999, requestId: '11111111-1111-4111-8111-111111111111' })], '999')
+        },
+      },
+    })
+    vi.stubGlobal('crypto', { randomUUID: () => requestId })
+    await waitFor(() => expect(screen.getByRole('button', { name: 'Record repayment' })).toBeEnabled())
+    await user.selectOptions(screen.getByLabelText(/Recipient/), '8')
+    await user.type(screen.getByLabelText(/Amount \(INR\)/), '1.00')
+    await user.click(screen.getByRole('button', { name: 'Record repayment' }))
+    await screen.findByRole('button', { name: 'Refresh settlement history' })
+    await user.click(screen.getByRole('button', { name: 'Refresh settlement history' }))
+    expect(await screen.findByRole('status')).toHaveTextContent('was found in settlement history')
+    expect(posts).toBe(1)
+    expect(fetch.mock.calls.some(([url]) => new URL(url).searchParams.get('requestId') === requestId)).toBe(true)
   })
 })

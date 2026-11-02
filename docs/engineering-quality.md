@@ -31,8 +31,12 @@ fixture value (encoded or decoded) in that exact file; production authentication
 and all other scanning remain enabled, including Git-history scans.
 Never deploy using the test profile or reuse its fixture.
 
-CI is a local draft until run on GitHub. MySQL integration is a manual option pending
-hosted Docker validation. Production deployment additionally needs HTTPS, managed
+Hosted CI has passed 83 backend tests, 76 frontend tests and 10 real MySQL
+Testcontainers tests. Pull requests targeting main are configured to include MySQL
+integration automatically; [PR CI run 41126007661](https://github.com/Twinklesangani/SplitSmart/actions/runs/41126007661)
+verified that trigger and passed all three jobs, including frontend lint and build.
+Manual integration execution remains available. Merge-blocking enforcement is a
+separate repository-plan and branch-protection decision. Production deployment needs HTTPS, managed
 secrets, migration credentials separate from runtime, backups/recovery, monitoring,
 and review of JWT/sessionStorage and token-revocation limitations documented in README.
 No deployment or external AI review is complete.

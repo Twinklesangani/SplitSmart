@@ -66,6 +66,8 @@ class OpenApiContractTest {
 				.path("exclusiveMaximum").decimalValue()
 				.compareTo(new BigDecimal("100000000000000000")));
 		assertEquals(1, expense.path("properties").path("splits").path("minItems").asInt());
+        assertEquals(128, expense.path("properties").path("splits").path("maxItems").asInt());
+        assertEquals(128, expense.path("properties").path("participantUserIds").path("maxItems").asInt());
 		assertEquals(1, expense.path("properties").path("participantUserIds").path("minItems").asInt());
 		assertTrue(containsType(expense.path("properties").path("splits"), "null"));
 		assertTrue(containsType(expense.path("properties").path("participantUserIds"), "null"));

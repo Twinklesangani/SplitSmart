@@ -39,7 +39,7 @@ public record CreateExpenseRequest(
 				minItems = 1,
 				arraySchema = @Schema(
 						description = "Required with EXACT; null or omitted with EQUAL."))
-		List<@Valid CreateExpenseSplitRequest> splits,
+		@Size(min = 1, max = 128) List<@Valid CreateExpenseSplitRequest> splits,
 		@Schema(description = "Defaults to EXACT; EXACT requires splits, EQUAL requires participantUserIds.")
 		SplitType splitType,
 		@Schema(nullable = true)
@@ -48,7 +48,7 @@ public record CreateExpenseRequest(
 				arraySchema = @Schema(
 						description = "Required with EQUAL; null or omitted with EXACT."),
 				schema = @Schema(minimum = "1"))
-		List<@NotNull @Positive Long> participantUserIds) {
+		@Size(min = 1, max = 128) List<@NotNull @Positive Long> participantUserIds) {
 
 	public enum SplitType {
 		EXACT,

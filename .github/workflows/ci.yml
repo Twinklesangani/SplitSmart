@@ -3,6 +3,7 @@ on:
   push:
     branches: [main]
   pull_request:
+    branches: [main]
   workflow_dispatch:
     inputs:
       mysql_integration:
@@ -44,7 +45,9 @@ jobs:
         run: npm run lint
       - run: npm run build
   mysql-integration:
-    if: github.event_name == 'workflow_dispatch' && inputs.mysql_integration
+    if: >-
+      (github.event_name == 'pull_request' && github.base_ref == 'main') ||
+      (github.event_name == 'workflow_dispatch' && inputs.mysql_integration)
     runs-on: ubuntu-latest
     timeout-minutes: 20
     steps:

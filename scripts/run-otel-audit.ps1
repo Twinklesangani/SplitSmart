@@ -279,6 +279,9 @@ function Invoke-AuditRequest {
 	$watch = [System.Diagnostics.Stopwatch]::StartNew()
 	$startedAtMs = [DateTimeOffset]::UtcNow.ToUnixTimeMilliseconds()
 	$headers = @{ Accept = 'application/json' }
+    if ($Method -eq 'POST' -and $Path -match '^/api/groups/[0-9]+/expenses$') {
+        $headers['Idempotency-Key'] = '"' + [Guid]::NewGuid().ToString() + '"'
+    }
 	$invokeArguments = @{
 		Uri = "$apiUrl$Path"
 		Method = $Method

@@ -383,6 +383,9 @@ function Get-HttpResult {
     )
 
     $headers = @{}
+    if ($Method -eq 'POST' -and $Path -match '^/api/groups/[0-9]+/expenses$') {
+        $headers['Idempotency-Key'] = '"' + [Guid]::NewGuid().ToString() + '"'
+    }
     if ($Token) {
         $headers['Authorization'] = "Bearer $Token"
     }

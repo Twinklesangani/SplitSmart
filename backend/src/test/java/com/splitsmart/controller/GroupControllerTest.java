@@ -8,6 +8,7 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.autoconfigure.web.servlet.AutoConfigureMockMvc;
 import org.springframework.boot.test.context.SpringBootTest;
 import org.springframework.http.MediaType;
+import org.springframework.lang.NonNull;
 import org.springframework.security.oauth2.jose.jws.MacAlgorithm;
 import org.springframework.security.oauth2.jwt.JwtClaimsSet;
 import org.springframework.security.oauth2.jwt.JwtEncoder;
@@ -61,12 +62,12 @@ class GroupControllerTest {
 
 		String response = mockMvc.perform(post("/api/groups")
 						.header("Authorization", bearerToken(creator))
-						.contentType(MediaType.APPLICATION_JSON)
+						.contentType(MediaType.APPLICATION_JSON_VALUE)
 						.content("""
 								{"name":"  Goa Trip  ","createdByUserId":999999}
 								"""))
 				.andExpect(status().isCreated())
-				.andExpect(content().contentTypeCompatibleWith(MediaType.APPLICATION_JSON))
+				.andExpect(content().contentTypeCompatibleWith(MediaType.APPLICATION_JSON_VALUE))
 				.andExpect(jsonPath("$.id").isNumber())
 				.andExpect(jsonPath("$.name").value("Goa Trip"))
 				.andExpect(jsonPath("$.createdByUserId").value(creator.getId()))
@@ -86,15 +87,15 @@ class GroupControllerTest {
 		String token = bearerToken(user);
 
 		mockMvc.perform(post("/api/groups").header("Authorization", token)
-						.contentType(MediaType.APPLICATION_JSON)
+						.contentType(MediaType.APPLICATION_JSON_VALUE)
 						.content("{\"name\":\"   \"}"))
 				.andExpect(status().isBadRequest());
 		mockMvc.perform(post("/api/groups").header("Authorization", token)
-						.contentType(MediaType.APPLICATION_JSON)
+						.contentType(MediaType.APPLICATION_JSON_VALUE)
 						.content("{}"))
 				.andExpect(status().isBadRequest());
 		mockMvc.perform(post("/api/groups").header("Authorization", token)
-						.contentType(MediaType.APPLICATION_JSON)
+						.contentType(MediaType.APPLICATION_JSON_VALUE)
 						.content("{\"name\":\"" + "x".repeat(121) + "\"}"))
 				.andExpect(status().isBadRequest());
 	}
@@ -102,7 +103,7 @@ class GroupControllerTest {
 	@Test
 	void groupEndpointsRequireAuthentication() throws Exception {
 		mockMvc.perform(post("/api/groups")
-						.contentType(MediaType.APPLICATION_JSON)
+						.contentType(MediaType.APPLICATION_JSON_VALUE)
 						.content("{\"name\":\"Private\"}"))
 				.andExpect(status().isUnauthorized());
 		mockMvc.perform(get("/api/groups"))
@@ -132,7 +133,7 @@ class GroupControllerTest {
 
 		mockMvc.perform(get("/api/groups").header("Authorization", bearerToken(userA)))
 				.andExpect(status().isOk())
-				.andExpect(content().contentTypeCompatibleWith(MediaType.APPLICATION_JSON))
+				.andExpect(content().contentTypeCompatibleWith(MediaType.APPLICATION_JSON_VALUE))
 				.andExpect(jsonPath("$.length()").value(2))
 				.andExpect(jsonPath("$[0].id").value(joinedGroup.getId()))
 				.andExpect(jsonPath("$[0].name").value("Joined group"))
@@ -158,7 +159,7 @@ class GroupControllerTest {
 		userRepository.flush();
 
 		mockMvc.perform(post("/api/groups").header("Authorization", token)
-						.contentType(MediaType.APPLICATION_JSON)
+						.contentType(MediaType.APPLICATION_JSON_VALUE)
 						.content("{\"name\":\"Must not persist\"}"))
 				.andExpect(status().isUnauthorized());
 		mockMvc.perform(get("/api/groups").header("Authorization", token))
@@ -176,12 +177,12 @@ class GroupControllerTest {
 
 		mockMvc.perform(post("/api/groups/{groupId}/members", group.getId())
 						.header("Authorization", bearerToken(creator))
-						.contentType(MediaType.APPLICATION_JSON)
+						.contentType(MediaType.APPLICATION_JSON_VALUE)
 						.content("""
 								{"email":"  MEMBER.FRIEND@GROUPS.EXAMPLE ","userId":999999}
 								"""))
 				.andExpect(status().isCreated())
-				.andExpect(content().contentTypeCompatibleWith(MediaType.APPLICATION_JSON))
+				.andExpect(content().contentTypeCompatibleWith(MediaType.APPLICATION_JSON_VALUE))
 				.andExpect(jsonPath("$.userId").value(friend.getId()))
 				.andExpect(jsonPath("$.name").value(friend.getName()))
 				.andExpect(jsonPath("$.email").value(friend.getEmail()))
@@ -208,7 +209,7 @@ class GroupControllerTest {
 		String response = mockMvc.perform(get("/api/groups/{groupId}/members", group.getId())
 						.header("Authorization", bearerToken(firstMember)))
 				.andExpect(status().isOk())
-				.andExpect(content().contentTypeCompatibleWith(MediaType.APPLICATION_JSON))
+				.andExpect(content().contentTypeCompatibleWith(MediaType.APPLICATION_JSON_VALUE))
 				.andExpect(jsonPath("$.length()").value(3))
 				.andExpect(jsonPath("$[0].userId").value(creator.getId()))
 				.andExpect(jsonPath("$[1].userId").value(firstMember.getId()))
@@ -254,12 +255,12 @@ class GroupControllerTest {
 				.andExpect(status().isBadRequest());
 		mockMvc.perform(post("/api/groups/{groupId}/members", group.getId())
 						.header("Authorization", token)
-						.contentType(MediaType.APPLICATION_JSON)
+						.contentType(MediaType.APPLICATION_JSON_VALUE)
 						.content("{}"))
 				.andExpect(status().isBadRequest());
 		mockMvc.perform(post("/api/groups/{groupId}/members", group.getId())
 						.header("Authorization", token)
-						.contentType(MediaType.APPLICATION_JSON)
+						.contentType(MediaType.APPLICATION_JSON_VALUE)
 						.content("{"))
 				.andExpect(status().isBadRequest());
 	}
@@ -311,7 +312,7 @@ class GroupControllerTest {
 		mockMvc.perform(get("/api/groups/{groupId}/members", group.getId()))
 				.andExpect(status().isUnauthorized());
 		mockMvc.perform(post("/api/groups/{groupId}/members", group.getId())
-						.contentType(MediaType.APPLICATION_JSON)
+						.contentType(MediaType.APPLICATION_JSON_VALUE)
 						.content(objectMapper.writeValueAsString(java.util.Map.of(
 								"email", creator.getEmail()))))
 				.andExpect(status().isUnauthorized());
@@ -327,7 +328,7 @@ class GroupControllerTest {
 				.andExpect(status().isUnauthorized());
 	}
 
-	private User createUser(String name) {
+	private @NonNull User createUser(String name) {
 		return userRepository.saveAndFlush(new User(
 				name,
 				name.toLowerCase().replace(' ', '.') + "@groups.example",
@@ -346,7 +347,7 @@ class GroupControllerTest {
 			Long groupId, String token, String email) throws Exception {
 		return mockMvc.perform(post("/api/groups/{groupId}/members", groupId)
 				.header("Authorization", token)
-				.contentType(MediaType.APPLICATION_JSON)
+				.contentType(MediaType.APPLICATION_JSON_VALUE)
 				.content(objectMapper.writeValueAsString(java.util.Map.of("email", email))));
 	}
 

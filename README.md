@@ -39,9 +39,21 @@ existing migrations but cannot apply future DDL. Future schema changes require a
 separate authorized migration step. Local performance/tracing results are bounded
 observations, not production-scale guarantees.
 
-The local CI draft uses Java 21 and Node 24, Maven tests, Vitest, Oxlint and Vite.
-MySQL integration is an optional manual job until hosted-runner compatibility is
-verified. No deployment or AI review is enabled by the workflow.
+CI uses Java 21 and Node 24, Maven unit tests, Vitest, Oxlint and Vite. Hosted
+validation passed 83 backend tests, 76 frontend tests and 10 real MySQL tests.
+Pull requests targeting `main` run the disposable MySQL Testcontainers suite through
+`verify -Pmysql-it`, alongside backend and frontend jobs. These financial tests check
+persisted splits, authorization, rollback and concurrent repayment constraints.
+A failing test fails its job; no `continue-on-error` hides failures.
+
+Manual execution remains available through Actions → CI → Run workflow: set
+`mysql_integration` to true to include MySQL tests (false runs backend/frontend only).
+Pushes to `main` run backend/frontend checks. No real database credentials, deployment
+or AI review are enabled. Automatic PR integration passed in
+[CI run 41126007661](https://github.com/Twinklesangani/SplitSmart/actions/runs/41126007661),
+including 83 backend tests, 10 MySQL integration tests, 76 frontend tests, lint and build.
+Running a job is distinct from enforcing it as a merge requirement; branch protection
+or rulesets must be configured separately where the repository plan permits them.
 
 For checks, run `./mvnw.cmd clean test`, `./mvnw.cmd package`, and
 `./mvnw.cmd verify -Pmysql-it` from backend; run `npm.cmd run test -- --pool=threads --maxWorkers=1`,
@@ -379,6 +391,7 @@ Create an expense with `POST /api/groups/{groupId}/expenses`:
 
 ```http
 POST /api/groups/5/expenses
+Idempotency-Key: "00000000-0000-4000-8000-000000000001"
 Authorization: Bearer <JWT>
 Content-Type: application/json
 
@@ -652,3 +665,190 @@ existing group APIs. Step 21 connects expense listing, creation, details,
 editing, and deletion. Step 22 connects group balances, server-generated
 repayment suggestions, and self-reported settlement recording/history. The
 dashboard's financial summary and activity remain placeholders.
+
+## Exact monetary JSON contract
+
+All monetary response fields are decimal JSON strings, including expense shares,
+balances, suggested transfers and settlements. For example, amount is
+"70368744177664.01". Clients must parse those strings using decimal or integer
+minor-unit arithmetic. This response type change requires updating consumers that
+previously expected JSON numbers. The bundled React client is updated together.
+Request amounts retain BigDecimal binding and accept decimal strings (the UI
+sends strings) and exact JSON decimal literals. New individual amounts must be
+positive, have at most two fractional digits and fit DECIMAL(19,2), with maximum
+99999999999999999.99 INR. Existing records remain readable across that range.
+Aggregate balances can exceed the individual amount maximum. The browser uses
+BigInt for paise arithmetic. Legacy numeric browser fixtures are accepted only
+below 10^12 INR, where decimal text retains paise. Larger numeric responses are
+rejected explicitly because precision may already have been lost.
+
+
+## Expense creation operation keys
+
+POST /api/groups/{groupId}/expenses requires Idempotency-Key containing one
+quoted canonical UUID, for example "00000000-0000-4000-8000-000000000001".
+This is an explicit creation-contract change. Existing API callers must add it.
+The bundled UI, browser helpers and local audit request helpers send the header.
+Generate a cryptographically random UUID for each intentional new expense and
+reuse it for every retry of that operation. Missing or malformed keys return 400.
+
+The operation is scoped to authenticated user and group. Successful creation and
+the stored receipt commit in the same transaction, with database-enforced
+uniqueness and the existing group lock. Concurrent identical calls serialize and
+return the same 201 receipt. A key reused with different validated logical details
+returns 409. Amount scale, default INR/EXACT, and participant order are normalized
+for fingerprinting. Split mode, description, payer, total and resolved participant
+shares are material. Membership and validation are checked before replay.
+
+The original receipt is retained even if its expense is edited or deleted.
+Replay confirms that creation occurred and does not restore or overwrite that
+expense. Its ID may now refer to a changed or deleted resource. Keys have no
+time expiry. Receipts remain for the lifetime of their group/account and are
+removed only if that parent is deleted. No automatic retention cleanup is added.
+
+The UI stores only an operation UUID in sessionStorage, scoped by user and group.
+It survives same-tab reloads. Re-enter the same details to recover the original
+receipt. Payloads are not stored. Logout/expiry clears operation IDs. Recovery
+across logout, a closed tab, storage deletion or another device requires a caller
+to retain the original key. Review expense history before starting a separate
+expense. The explicit separate-expense action generates a new key on submission,
+even if content is identical. A request with an uncertain result retains its key.
+
+The header follows the structured-string format in the IETF draft. Conflict
+status 409 is the application's documented policy for changed payloads. This
+implementation waits on the database group lock for concurrent requests rather
+than returning an in-progress receipt. Lock failures remain errors and are safe
+to retry with the same key. Reference [IETF draft](https://datatracker.ietf.org/doc/draft-ietf-httpapi-idempotency-key-header/).
+
+## Authentication and request resource protection
+
+This configuration supports one application instance. All attempts count, including
+successful authentication. Denials do not extend the fixed window, and successful
+authentication does not reset source or account budgets. There are no permanent
+account locks. A caller waits for the current window to expire.
+
+| Property | Default | Purpose |
+| --- | --- | --- |
+| app.security.limit-window-seconds | 60 | Independent fixed windows from first use |
+| app.security.login-source-limit | 60 | Login requests per direct/trusted source |
+| app.security.login-target-limit | 10 | Login requests per resolved account across sources |
+| app.security.registration-source-limit | 10 | Registration requests per source |
+| app.security.max-limiter-entries | 4096 | Total source and target windows |
+| app.security.auth-body-bytes | 4096 | Login/registration body bytes |
+| app.security.api-body-bytes | 65536 | Other API body bytes |
+| app.security.max-query-chars | 2048 | Raw query length |
+| app.security.max-query-parameters | 50 | Raw query parameter count |
+| app.security.trusted-proxies | empty | Exact literal proxy IP addresses, comma separated |
+
+The auth body allowance fits maximum name, email and password fields even with
+JSON Unicode escapes. General request size accommodates at most 128 expense
+participants/shares, 19-digit IDs and exact decimal amounts with substantial
+encoding headroom. New create/update requests enforce 1–128 participants where
+the relevant list is supplied. Existing records remain readable. These size
+and cardinality limits also apply to retries of older requests. A rejected large
+retry must not be turned into a fresh creation key automatically.
+
+Bodies with a declared excessive length return 413 before body reads. Unknown
+length and chunked bodies are read up to the selected cap plus one byte before
+413. Allowed bodies are replayed as unchanged bytes to MVC. Jackson also limits
+nesting to 32, strings to 4096 characters and numeric tokens to 64 characters.
+These parser bounds are additional to DTO validation. Tomcat bounds total
+request headers at 16 KB, form posts and discarded bodies at 64 KB, and parameter
+count at 50. Its connection/read and keep-alive timeouts are 10 seconds, with
+50 worker threads, 200 connections and an accept backlog of 50. JSON body
+limits are enforced by the application guard, independently of form-post limits.
+
+429 replies have generic JSON feedback and Retry-After seconds. The UI waits
+for the user to retry and does not schedule authentication requests. Password
+input is limited to the existing registration capability of 72 UTF-8 bytes.
+Overlong login input is rejected before password hashing.
+
+The limiter stores only bounded ephemeral source addresses, account IDs and
+hashed nonexistent-account targets. After the bounded source check and DTO
+validation, login resolves the account through its existing database lookup.
+Existing accounts are keyed by user ID so MySQL-equivalent email aliases share
+one budget. Nonexistent targets use the normalized email hash. Both receive the
+same quota and generic denial response, before password verification.
+Expired entries are reclaimed lazily on the next authentication request.
+A full map rejects new keys with 429 rather than evicting active counters.
+This trades temporary availability for bounded memory and protection from
+counter-reset bypass. Repeated blocked requests never prolong an existing window.
+An active attacker can still exhaust subsequent windows, and per-account
+protection can temporarily affect a legitimate user's login.
+
+By default all forwarding headers are ignored. Keep
+server.forward-headers-strategy=NONE, which is enforced at startup. A future
+reverse proxy must strip/replace untrusted client forwarding data and be listed
+as an exact literal IP in app.security.trusted-proxies. The application walks
+X-Forwarded-For from the socket peer right to left, stopping at the first
+untrusted address. Malformed, repeated or oversized forwarding data falls back
+to the socket peer. Forwarded and X-Real-IP are ignored. Unknown hosting proxy
+ranges must not be configured as wildcard trust.
+
+Counters reset on process restart and are not shared across replicas. The
+account-target budget covers multiple source addresses reaching this instance.
+A replicated deployment requires a reviewed shared limiter or an upstream
+shared control before these thresholds can be claimed across the deployment.
+MySQL is not used for per-attempt counter writes in this single-instance design.
+Host-level protection is still needed against volumetric attacks and slow clients.
+
+The isolated bulk backend fixture profiles explicitly use larger auth budgets.
+Dedicated abuse tests override them with small limits and a controllable clock
+tests expiration and concurrency. Run the focused real-browser auth checks with
+scripts/run-final-release-e2e.ps1 -Suite auth. Bulk browser scenarios may require
+explicit synthetic-workload quotas or separate runs, since their signup burst is
+intentionally subject to the same configured limits.
+
+Design references are the [OWASP authentication guidance](https://cheatsheetseries.owasp.org/cheatsheets/Authentication_Cheat_Sheet.html)
+and [OWASP anti-automation guidance](https://cheatsheetseries.owasp.org/cheatsheets/Bot_Management_and_Anti-Automation_Cheat_Sheet.html).
+
+## Bounded group financial history
+
+GET /api/groups/{groupId}/expenses and GET /api/groups/{groupId}/settlements now
+return one page. Their JSON bodies remain arrays. The default is 25 records and
+the maximum is 100. Callers must no longer assume that one array is the complete
+history. The bundled UI reads the new metadata and offers manual Load More.
+
+Use limit and before as canonical positive decimal integers. before is an
+exclusive record-ID boundary and records are ordered by ID descending.
+Unsupported parameters, repeated parameters, empty values, negative values,
+malformed cursors and limits above 100 return 400. Offset, page and arbitrary
+sort parameters are unsupported.
+
+When another page exists, X-Next-Before contains the oldest returned record ID
+as a decimal string. Send that string as before on the next request. The header
+is exposed through CORS and absent on the last page. Keep cursors as strings to
+avoid JavaScript integer conversion. There is no total-count query.
+
+New records above an existing cursor appear on refresh, which starts again at
+the newest page. Deletions do not invalidate numeric cursor boundaries. This is
+a traversal of changing data, with no frozen snapshot across requests. Refresh
+after concurrent edits or deletions to see the latest state. Load More preserves
+loaded rows on failure, retries the same cursor and merges by record ID. Group
+or account changes cancel stale requests and clear the displayed scope.
+
+Expense history first selects at most limit+1 IDs in SQL, then fetches complete
+expense details/splits for at most limit selected IDs. Collection fetch joins
+are never paginated directly. Settlement history applies the SQL limit to its
+root query with to-one fetches. Existing group/ID indexes support these seeks.
+
+GET /api/groups/{groupId}/settlements?requestId=UUID returns at most one matching
+repayment from the authorized group. It cannot be combined with before. The
+UI uses this indexed lookup when reconciling an uncertain repayment, including
+a receipt older than the first history page. The same group-authorization rules
+apply, with no cross-group count or existence metadata.
+
+Balances and suggestions continue to use full-ledger database aggregates and
+the complete member roster. History pages are never used as authoritative
+financial totals. Exact decimal strings, BigInt paise and the expense-creation
+Idempotency-Key contract are preserved.
+
+The maximum bounds history roots per request. Selected legacy expenses still
+include their complete splits. Member rosters, group directories and aggregate
+work over a complete ledger have separate scaling considerations. The UI can
+grow its displayed history through deliberate Load More clicks. No automatic
+infinite scrolling, new dependency, index or migration is introduced.
+
+Run the isolated relevant browser journeys with
+scripts/run-final-release-e2e.ps1 -Suite history. They use synthetic data and the
+existing resource-ownership and cleanup checks.

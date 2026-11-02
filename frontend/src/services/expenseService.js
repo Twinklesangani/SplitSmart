@@ -1,9 +1,10 @@
-import { ApiError, apiRequest } from './apiClient.js'
+import { ApiError, apiRequest, apiHistory } from './apiClient.js'
 
-const MAX_AMOUNT_PAISE = 99999999999999n
-const MONEY_PATTERN = /^(0|[1-9]\d{0,11})(?:\.(\d{1,2}))?$/
+const MAX_AMOUNT_PAISE = 9999999999999999999n
+const MONEY_PATTERN = /^(0|[1-9]\d{0,16})(?:\.(\d{1,2}))?$/
 
 export function parseMoneyToPaise(value) {
+  if (typeof value === 'number' && (!Number.isFinite(value) || Math.abs(value) >= 1e12)) return null
   const text = typeof value === 'number' && Number.isFinite(value)
     ? String(value)
     : typeof value === 'string'
@@ -81,17 +82,19 @@ function expensePath(groupId, expenseId) {
   return `/api/groups/${encodeURIComponent(groupId)}/expenses${expenseId === undefined ? '' : `/${encodeURIComponent(expenseId)}`}`
 }
 
-export async function listExpenses(groupId, { signal } = {}) {
-  return requireExpenses(await apiRequest(expensePath(groupId), { signal }), groupId)
+export async function listExpenses(groupId, options = {}) {
+  const page = await apiHistory(expensePath(groupId), options)
+  return { ...page, items: requireExpenses(page.items, groupId) }
 }
 
 export async function getExpense(groupId, expenseId, { signal } = {}) {
   return requireExpense(await apiRequest(expensePath(groupId, expenseId), { signal }), groupId, expenseId)
 }
 
-export async function createExpense(groupId, payload, { signal } = {}) {
+export async function createExpense(groupId, payload, { signal, operationKey } = {}) {
   const expense = await apiRequest(expensePath(groupId), {
     method: 'POST',
+    operationKey,
     body: payload,
     expectedStatus: 201,
     signal,

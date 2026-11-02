@@ -35,7 +35,10 @@ public interface SettlementRepository extends JpaRepository<Settlement, Long> {
 			join fetch settlement.toUser
 			join fetch settlement.recordedBy
 			where settlement.group.id = :groupId
+              and (:before is null or settlement.id < :before)
+              and (:requestId is null or settlement.requestId = :requestId)
 			order by settlement.id desc
 			""")
-	List<Settlement> findAllWithUsersByGroupIdOrderByIdDesc(@Param("groupId") Long groupId);
+	List<Settlement> findHistory(@Param("groupId") Long groupId, @Param("before") Long before,
+            @Param("requestId") String requestId, org.springframework.data.domain.Pageable pageable);
 }

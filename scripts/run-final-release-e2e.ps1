@@ -1,5 +1,15 @@
-param([ValidateSet('smoke', 'all')][string]$Suite = 'smoke')
+param([ValidateSet('smoke', 'auth', 'expenses', 'groups', 'history', 'responsive', 'all')][string]$Suite = 'smoke')
 $ErrorActionPreference = 'Stop'
+
+if ($Suite -eq 'all') {
+	foreach ($isolatedSuite in @('auth', 'expenses', 'groups', 'history', 'responsive')) {
+		& powershell -NoProfile -File $PSCommandPath -Suite $isolatedSuite
+		if ($LASTEXITCODE -ne 0) {
+			exit $LASTEXITCODE
+		}
+	}
+	exit 0
+}
 
 $repositoryRoot = Split-Path -Parent $PSScriptRoot
 $backendRoot = Join-Path $repositoryRoot 'backend'
@@ -41,7 +51,7 @@ $containerRemoved = $false
 $volumeRemoved = $false
 $apiProcess = $null
 $viteProcess = $null
-$originalMysqlPid = $null
+$originalMysqlListeners = $null
 $originalApiOwners = @()
 $failure = $null
 $cleanupIssues = @()
@@ -112,6 +122,7 @@ function Invoke-TestDatabaseQuery([string]$Sql, [switch]$AllowFailure) {
 		"--user=$env:MYSQL_USER",
 		"--database=$env:MYSQL_DATABASE",
 		'--batch',
+		'--raw',
 		'--skip-column-names',
 		"--execute=$Sql"
 	) -AllowFailure:$AllowFailure
@@ -180,11 +191,10 @@ try {
 		throw 'The verified MySQL 8.4.13 image is not available locally; no image was pulled.'
 	}
 
-	$mysqlListeners = @(Get-NetTCPConnection -LocalPort 3306 -State Listen -ErrorAction SilentlyContinue)
-	if ($mysqlListeners.Count -ne 1) {
-		throw 'The original development MySQL listener could not be uniquely identified.'
-	}
-	$originalMysqlPid = [int]$mysqlListeners[0].OwningProcess
+	# An absent development server is a valid baseline. Preserve every listener,
+	# rather than requiring an unrelated server to be running for isolated tests.
+	$originalMysqlListeners = @(Get-NetTCPConnection -LocalPort 3306 -State Listen -ErrorAction SilentlyContinue |
+		ForEach-Object { "$($_.LocalAddress):$($_.LocalPort):$($_.OwningProcess)" } | Sort-Object)
 	$originalApiOwners = @(Get-NetTCPConnection -LocalPort 8081 -State Listen -ErrorAction SilentlyContinue | Select-Object -ExpandProperty OwningProcess -Unique)
 
 	$rootPassword = New-UrlSafeSecret 32
@@ -250,6 +260,17 @@ try {
 		throw 'The disposable MySQL port was not bound exclusively to loopback.'
 	}
 	$databasePort = [int]$matches[1]
+	if ($databasePort -eq 3306) { throw 'Disposable database must not use the development port.' }
+	$grants = Invoke-TestDatabaseQuery 'SHOW GRANTS'
+	"ISOLATED_DATABASE_GRANTS=$grants"
+	foreach ($grant in ($grants -split "[\r\n]+")) {
+		if ($grant -notmatch '^GRANT USAGE ON \*\.\* TO ' -and
+			$grant -notmatch '^GRANT ALL PRIVILEGES ON `splitsmart\\?_e2e`\.\* TO ') {
+			throw 'Unexpected disposable application account privileges.'
+		}
+	}
+	"ISOLATED_DATABASE_PORT=$databasePort"
+	"ISOLATED_DATABASE_PRIVILEGES=SCHEMA_ONLY"
 	$env:DB_URL = "jdbc:mysql://127.0.0.1:$databasePort/splitsmart_e2e?serverTimezone=UTC&useSSL=false&allowPublicKeyRetrieval=true"
 	$env:DB_USERNAME = 'splitsmart_e2e'
 	$env:DB_PASSWORD = $applicationPassword
@@ -278,17 +299,17 @@ try {
 	$apiListener = @(Get-NetTCPConnection -LocalPort $apiPort -State Listen)
 	if ($apiListener.Count -ne 1 -or $apiListener[0].OwningProcess -ne $apiProcess.Id -or $apiListener[0].LocalAddress -ne '127.0.0.1') { throw 'API listener ownership mismatch.' }
 
-	$emptyCounts = Invoke-TestDatabaseQuery 'SELECT (SELECT COUNT(*) FROM users), (SELECT COUNT(*) FROM expense_groups), (SELECT COUNT(*) FROM group_members), (SELECT COUNT(*) FROM expenses), (SELECT COUNT(*) FROM expense_splits), (SELECT COUNT(*) FROM settlements)'
-	if ($emptyCounts -ne "0`t0`t0`t0`t0`t0") {
+	$emptyCounts = Invoke-TestDatabaseQuery 'SELECT (SELECT COUNT(*) FROM users), (SELECT COUNT(*) FROM expense_groups), (SELECT COUNT(*) FROM group_members), (SELECT COUNT(*) FROM expenses), (SELECT COUNT(*) FROM expense_splits), (SELECT COUNT(*) FROM settlements), (SELECT COUNT(*) FROM expense_creation_operations)'
+	if ($emptyCounts -ne "0`t0`t0`t0`t0`t0`t0") {
 		throw 'The isolated database contained unexpected data before browser scenarios began.'
 	}
 	$flywayVersions = Invoke-TestDatabaseQuery "SELECT GROUP_CONCAT(version ORDER BY installed_rank SEPARATOR ',') FROM flyway_schema_history"
-	if ($flywayVersions -ne '1,2,3') {
-		throw 'The isolated database did not apply exactly the existing Flyway V1-V3 migrations.'
+	if ($flywayVersions -ne '1,2,3,4') {
+		throw 'The isolated database did not apply exactly the existing Flyway V1-V4 migrations.'
 	}
 	$flywayChecksums = Invoke-TestDatabaseQuery "SELECT GROUP_CONCAT(checksum ORDER BY installed_rank SEPARATOR ',') FROM flyway_schema_history"
-	if ($flywayChecksums -ne '1632565820,-1885547116,-722028687') {
-		throw 'The isolated database migration checksums did not match the established V1-V3 baseline.'
+	if ($flywayChecksums -ne '1632565820,-1885547116,-722028687,-1841320934') {
+		throw 'The isolated database migration checksums did not match the established V1-V4 baseline.'
 	}
 
 	$node = (Get-Command node -ErrorAction Stop).Source
@@ -308,8 +329,13 @@ try {
 
 	Push-Location $frontendRoot
 	try {
-		if ($Suite -eq 'smoke') { & node node_modules/@playwright/test/cli.js test smoke.spec.js }
-		else { & node node_modules/@playwright/test/cli.js test }
+		if ($Suite -eq 'history') { & node node_modules/@playwright/test/cli.js test financial-workflow.spec.js history-pagination.spec.js monetary-precision.spec.js }
+		elseif ($Suite -eq 'auth') { & node node_modules/@playwright/test/cli.js test authentication.spec.js auth-resource-limits.spec.js smoke.spec.js }
+		elseif ($Suite -eq 'expenses') { & node node_modules/@playwright/test/cli.js test expense-management.spec.js }
+		elseif ($Suite -eq 'groups') { & node node_modules/@playwright/test/cli.js test group-management.spec.js }
+		elseif ($Suite -eq 'responsive') { & node node_modules/@playwright/test/cli.js test responsive-ui.spec.js }
+		elseif ($Suite -eq 'smoke') { & node node_modules/@playwright/test/cli.js test smoke.spec.js }
+		else { throw "Unsupported E2E suite: $Suite." }
 		$playwrightExitCode = $LASTEXITCODE
 	} finally {
 		Pop-Location
@@ -318,13 +344,15 @@ try {
 		throw "Playwright exited with code $playwrightExitCode."
 	}
 
-	$finalCounts = Invoke-TestDatabaseQuery 'SELECT (SELECT COUNT(*) FROM users), (SELECT COUNT(*) FROM expense_groups), (SELECT COUNT(*) FROM group_members), (SELECT COUNT(*) FROM expenses), (SELECT COUNT(*) FROM expense_splits), (SELECT COUNT(*) FROM settlements)'
+	$precisionRows = Invoke-TestDatabaseQuery "SELECT description, CAST(amount AS CHAR) FROM expenses WHERE description LIKE 'Precision-%' ORDER BY id"
+	"ISOLATED_PRECISION_ROWS=$precisionRows"
+	$finalCounts = Invoke-TestDatabaseQuery 'SELECT (SELECT COUNT(*) FROM users), (SELECT COUNT(*) FROM expense_groups), (SELECT COUNT(*) FROM group_members), (SELECT COUNT(*) FROM expenses), (SELECT COUNT(*) FROM expense_splits), (SELECT COUNT(*) FROM settlements), (SELECT COUNT(*) FROM expense_creation_operations)'
 	$finalFlywayVersions = Invoke-TestDatabaseQuery "SELECT GROUP_CONCAT(version ORDER BY installed_rank SEPARATOR ',') FROM flyway_schema_history"
-	if ($finalFlywayVersions -ne '1,2,3') {
+	if ($finalFlywayVersions -ne '1,2,3,4') {
 		throw 'The E2E scenarios altered the disposable Flyway history.'
 	}
 	$finalFlywayChecksums = Invoke-TestDatabaseQuery "SELECT GROUP_CONCAT(checksum ORDER BY installed_rank SEPARATOR ',') FROM flyway_schema_history"
-	if ($finalFlywayChecksums -ne '1632565820,-1885547116,-722028687') {
+	if ($finalFlywayChecksums -ne '1632565820,-1885547116,-722028687,-1841320934') {
 		throw 'The E2E scenarios altered the disposable Flyway migration checksums.'
 	}
 	"ISOLATED_E2E_RUN=$runId"
@@ -370,12 +398,15 @@ try {
 	if (-not (Test-PortAvailable $frontendPort)) {
 		$cleanupIssues += 'The isolated Vite port remains occupied after cleanup.'
 	}
-	$mysqlAfter = @(Get-NetTCPConnection -LocalPort 3306 -State Listen -ErrorAction SilentlyContinue)
-	if ($null -ne $originalMysqlPid -and ($mysqlAfter.Count -ne 1 -or [int]$mysqlAfter[0].OwningProcess -ne $originalMysqlPid)) {
-		$cleanupIssues += 'The original development MySQL listener did not remain unchanged.'
+	$mysqlAfter = @(Get-NetTCPConnection -LocalPort 3306 -State Listen -ErrorAction SilentlyContinue |
+		ForEach-Object { "$($_.LocalAddress):$($_.LocalPort):$($_.OwningProcess)" } | Sort-Object)
+	if ($null -ne $originalMysqlListeners -and ($mysqlAfter -join ',') -ne ($originalMysqlListeners -join ',')) {
+		$cleanupIssues += 'The development MySQL listener state changed.'
 	}
 	$apiOwnersAfter = @(Get-NetTCPConnection -LocalPort 8081 -State Listen -ErrorAction SilentlyContinue | Select-Object -ExpandProperty OwningProcess -Unique)
-	if ($null -ne $originalMysqlPid -and ($originalApiOwners -join ',') -ne ($apiOwnersAfter -join ',')) { $cleanupIssues += 'Development API listener changed.' }
+	if ($null -ne $originalMysqlListeners -and ($originalApiOwners -join ',') -ne ($apiOwnersAfter -join ',')) {
+		$cleanupIssues += 'Development API listener changed.'
+	}
 
 	$logPaths = @($apiStdout, $apiStderr, $viteStdout, $viteStderr)
 	$secretValues = @($rootPassword, $applicationPassword, $jwtSecret) | Where-Object { $_ }
@@ -432,3 +463,4 @@ if ($failure) {
 "ISOLATED_LOG_CREDENTIAL_CHECK=PASS"
 "TEST_OWNED_CONTAINER_REMOVED=$containerRemoved"
 "TEST_OWNED_VOLUME_REMOVED=$volumeRemoved"
+exit 0
