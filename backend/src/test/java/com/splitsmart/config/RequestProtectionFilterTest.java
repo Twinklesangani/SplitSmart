@@ -1,6 +1,5 @@
 package com.splitsmart.config;
 
-import java.io.IOException;
 import java.time.Clock;
 import java.util.concurrent.atomic.AtomicInteger;
 import jakarta.servlet.ReadListener;

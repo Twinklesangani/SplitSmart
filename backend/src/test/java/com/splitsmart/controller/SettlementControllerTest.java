@@ -9,6 +9,7 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.autoconfigure.web.servlet.AutoConfigureMockMvc;
 import org.springframework.boot.test.context.SpringBootTest;
 import org.springframework.http.MediaType;
+import org.springframework.lang.NonNull;
 import org.springframework.security.oauth2.jose.jws.MacAlgorithm;
 import org.springframework.security.oauth2.jwt.JwtClaimsSet;
 import org.springframework.security.oauth2.jwt.JwtEncoder;
@@ -158,7 +159,7 @@ class SettlementControllerTest {
 		mockMvc.perform(get("/api/groups/{groupId}/settlements", group.getId()))
 				.andExpect(status().isUnauthorized());
 		mockMvc.perform(post("/api/groups/{groupId}/settlements", group.getId())
-						.contentType(MediaType.APPLICATION_JSON)
+						.contentType(MediaType.APPLICATION_JSON_VALUE)
 						.content(request(debtor, creditor, "10.00")))
 				.andExpect(status().isUnauthorized());
 		mockMvc.perform(get("/api/groups/{groupId}/settlements", group.getId())
@@ -232,7 +233,7 @@ class SettlementControllerTest {
 				""".formatted(description, amount, payer.getId(), splitFields);
 		mockMvc.perform(post("/api/groups/{groupId}/expenses", groupId).header("Idempotency-Key", "\"" + java.util.UUID.randomUUID() + "\"")
 						.header("Authorization", bearerToken(payer))
-						.contentType(MediaType.APPLICATION_JSON)
+						.contentType(MediaType.APPLICATION_JSON_VALUE)
 						.content(request))
 				.andExpect(status().isCreated());
 	}
@@ -240,7 +241,7 @@ class SettlementControllerTest {
 	private ResultActions postSettlement(Long groupId, User requester, String body) throws Exception {
 		return mockMvc.perform(post("/api/groups/{groupId}/settlements", groupId)
 				.header("Authorization", bearerToken(requester))
-				.contentType(MediaType.APPLICATION_JSON)
+				.contentType(MediaType.APPLICATION_JSON_VALUE)
 				.content(body));
 	}
 
@@ -250,7 +251,7 @@ class SettlementControllerTest {
 				""".formatted(from.getId(), to.getId(), amount, UUID.randomUUID());
 	}
 
-	private User createUser(String name) {
+	private @NonNull User createUser(String name) {
 		String suffix = UUID.randomUUID().toString();
 		return userRepository.saveAndFlush(new User(
 				name,

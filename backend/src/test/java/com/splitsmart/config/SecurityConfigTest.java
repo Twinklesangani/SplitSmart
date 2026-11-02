@@ -56,7 +56,7 @@ class SecurityConfigTest {
 		mockMvc.perform(get("/api/groups").header(HttpHeaders.ORIGIN, FRONTEND_ORIGIN))
 				.andExpect(status().isUnauthorized())
 				.andExpect(header().string(HttpHeaders.ACCESS_CONTROL_ALLOW_ORIGIN, FRONTEND_ORIGIN))
-				.andExpect(content().contentTypeCompatibleWith(MediaType.APPLICATION_JSON))
+				.andExpect(content().contentTypeCompatibleWith(MediaType.APPLICATION_JSON_VALUE))
 				.andExpect(jsonPath("$.code").value("unauthorized"))
 				.andExpect(jsonPath("$.message").value("Authentication is required."))
 				.andExpect(jsonPath("$.path").value("/api/groups"));
@@ -84,10 +84,10 @@ class SecurityConfigTest {
 	@Test
 	void unsupportedContentTypeReturnsSafeJsonError() throws Exception {
 		mockMvc.perform(post("/api/auth/register")
-						.contentType(MediaType.TEXT_PLAIN)
+						.contentType(MediaType.TEXT_PLAIN_VALUE)
 						.content("sensitive-request-value"))
 				.andExpect(status().isUnsupportedMediaType())
-				.andExpect(content().contentTypeCompatibleWith(MediaType.APPLICATION_JSON))
+				.andExpect(content().contentTypeCompatibleWith(MediaType.APPLICATION_JSON_VALUE))
 				.andExpect(jsonPath("$.code").value("unsupported_media_type"))
 				.andExpect(jsonPath("$.message").value("Content type is not supported."));
 	}

@@ -427,12 +427,12 @@ public class ExpenseService {
 	}
 
 	private User loadUser(String subject) {
-		final Long userId;
+		final long userId;
 		if (subject == null) {
 			throw new ResponseStatusException(HttpStatus.UNAUTHORIZED, INVALID_USER_MESSAGE);
 		}
 		try {
-			userId = Long.valueOf(subject);
+			userId = Long.parseLong(subject);
 		} catch (NumberFormatException exception) {
 			throw new ResponseStatusException(HttpStatus.UNAUTHORIZED, INVALID_USER_MESSAGE);
 		}

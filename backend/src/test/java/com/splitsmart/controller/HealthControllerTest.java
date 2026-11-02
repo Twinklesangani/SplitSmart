@@ -25,7 +25,7 @@ class HealthControllerTest {
 	void healthReturnsUpStatus() throws Exception {
 		mockMvc.perform(get("/api/health"))
 				.andExpect(status().isOk())
-				.andExpect(content().contentTypeCompatibleWith(MediaType.APPLICATION_JSON))
+				.andExpect(content().contentTypeCompatibleWith(MediaType.APPLICATION_JSON_VALUE))
 				.andExpect(content().json("{\"status\":\"UP\"}", JsonCompareMode.STRICT));
 	}
 }

@@ -44,7 +44,6 @@ import org.springframework.test.context.bean.override.mockito.MockitoSpyBean;
 import org.springframework.test.context.ActiveProfiles;
 import org.springframework.test.context.DynamicPropertyRegistry;
 import org.springframework.test.context.DynamicPropertySource;
-import org.springframework.transaction.PlatformTransactionManager;
 import org.springframework.transaction.support.TransactionTemplate;
 
 import com.fasterxml.jackson.core.JsonProcessingException;
@@ -86,18 +85,19 @@ class SplitSmartMySqlIT {
 	private static final String DATABASE_NAME = "splitsmart_it";
 	private static final String MYSQL_IMAGE = "mysql:8.4.13";
 	private static final String TEST_JWT_SECRET = newTestSecret();
-	private static final MySQLContainer MYSQL = new MySQLContainer(DockerImageName.parse(MYSQL_IMAGE))
-			.withDatabaseName(DATABASE_NAME)
-			.withUsername("splitsmart_it_user")
-			.withPassword(newTestSecret())
-			.withStartupTimeout(Duration.ofMinutes(2));
+	private static final MySQLContainer MYSQL;
 
 	static {
+		MYSQL = new MySQLContainer(DockerImageName.parse(MYSQL_IMAGE));
 		try {
+			MYSQL.withDatabaseName(DATABASE_NAME)
+					.withUsername("splitsmart_it_user")
+					.withPassword(newTestSecret())
+					.withStartupTimeout(Duration.ofMinutes(2));
 			MYSQL.start();
 			assertIsolatedContainerConfiguration();
 		} catch (RuntimeException | Error failure) {
-			MYSQL.stop();
+			MYSQL.close();
 			throw failure;
 		}
 	}
@@ -142,7 +142,7 @@ class SplitSmartMySqlIT {
 	private SettlementSuggestionService settlementSuggestionService;
 
 	@Autowired
-	private PlatformTransactionManager transactionManager;
+	private TransactionTemplate transactions;
 
 	@MockitoSpyBean
 	private ExpenseSplitRepository expenseSplitRepositorySpy;
@@ -165,7 +165,7 @@ class SplitSmartMySqlIT {
 
 	@AfterAll
 	static void stopMySqlContainer() {
-		MYSQL.stop();
+		MYSQL.close();
 	}
 
 	@BeforeEach
@@ -600,6 +600,7 @@ class SplitSmartMySqlIT {
     static class HistorySqlCapture implements org.hibernate.resource.jdbc.spi.StatementInspector {
         volatile boolean recording;
         final java.util.List<String> statements = new java.util.concurrent.CopyOnWriteArrayList<>();
+        @Override
         public String inspect(String sql) {
             if (recording) statements.add(sql.toLowerCase(java.util.Locale.ROOT).replaceAll("\\s+", " "));
             return sql;
@@ -778,7 +779,7 @@ class SplitSmartMySqlIT {
     }
 
     private void seedExpenseHistory(Fixture fixture, int count) {
-        new TransactionTemplate(transactionManager).executeWithoutResult(status -> {
+        transactions.executeWithoutResult(status -> {
             var group = expenseGroupRepository.findById(fixture.groupId()).orElseThrow();
             var payer = userRepository.getReferenceById(fixture.memberIds().get(0));
             var borrower = userRepository.getReferenceById(fixture.memberIds().get(1));
@@ -791,9 +792,8 @@ class SplitSmartMySqlIT {
     }
 
 	private Fixture createFixture(String label, int memberCount) {
-		TransactionTemplate transaction = new TransactionTemplate(transactionManager);
 		String suffix = UUID.randomUUID().toString();
-		return transaction.execute(status -> {
+		return transactions.execute(status -> {
 			List<Long> memberIds = new ArrayList<>();
 			for (int index = 0; index < memberCount; index++) {
 				User user = userRepository.saveAndFlush(new User(
@@ -996,7 +996,7 @@ class SplitSmartMySqlIT {
         ExpenseService fresh = applicationContext.getAutowireCapableBeanFactory().createBean(ExpenseService.class);
         var request = new CreateExpenseRequest("Rollback", new BigDecimal("10.0"), ids.get(0), null,
                 List.of(new CreateExpenseSplitRequest(ids.get(1), new BigDecimal("10.00"))));
-        var replay = new TransactionTemplate(transactionManager).execute(status ->
+        var replay = transactions.execute(status ->
                 fresh.createExpense(fixture.groupId(), ids.get(0).toString(), request, "\"" + key + "\""));
         assertNotNull(replay, "Expected the committed expense on replay");
         assertEquals(read(created, ExpenseResponse.class).id(), replay.id());

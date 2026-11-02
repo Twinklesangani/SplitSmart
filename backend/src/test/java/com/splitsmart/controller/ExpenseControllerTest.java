@@ -13,6 +13,7 @@ import org.springframework.jdbc.core.JdbcTemplate;
 import org.springframework.boot.test.autoconfigure.web.servlet.AutoConfigureMockMvc;
 import org.springframework.boot.test.context.SpringBootTest;
 import org.springframework.http.MediaType;
+import org.springframework.lang.NonNull;
 import org.springframework.security.oauth2.jose.jws.MacAlgorithm;
 import org.springframework.security.oauth2.jwt.JwtClaimsSet;
 import org.springframework.security.oauth2.jwt.JwtEncoder;
@@ -278,7 +279,7 @@ class ExpenseControllerTest {
 				.andExpect(status().isCreated())
 				.andExpect(jsonPath("$.splits[0].amount").value("2.00"));
 		mockMvc.perform(post("/api/groups/{groupId}/expenses", group.getId())
-						.contentType(MediaType.APPLICATION_JSON)
+						.contentType(MediaType.APPLICATION_JSON_VALUE)
 						.content(equalExpenseJson("Unauthenticated equal", "1.00",
 								creator.getId(), List.of(creator.getId()))))
 				.andExpect(status().isUnauthorized());
@@ -345,7 +346,7 @@ class ExpenseControllerTest {
 				""".formatted(member.getId(), participant.getId(), creator.getId(), member.getId(), member.getId());
 		mockMvc.perform(put("/api/groups/{groupId}/expenses/{expenseId}", group.getId(), expenseId)
 						.header("Authorization", bearerToken(creator))
-						.contentType(MediaType.APPLICATION_JSON)
+						.contentType(MediaType.APPLICATION_JSON_VALUE)
 						.content(equalUpdate))
 				.andExpect(status().isOk())
 				.andExpect(jsonPath("$.id").value(expenseId))
@@ -368,7 +369,7 @@ class ExpenseControllerTest {
 
 		mockMvc.perform(put("/api/groups/{groupId}/expenses/{expenseId}", group.getId(), expenseId)
 						.header("Authorization", bearerToken(creator))
-						.contentType(MediaType.APPLICATION_JSON)
+						.contentType(MediaType.APPLICATION_JSON_VALUE)
 						.content("""
 								{"description":"Exact correction","amount":12.00,"paidByUserId":%d,
 								 "splits":[{"userId":%d,"amount":4.00},
@@ -412,14 +413,14 @@ class ExpenseControllerTest {
 
 		mockMvc.perform(put("/api/groups/{groupId}/expenses/{expenseId}", group.getId(), expenseId)
 						.header("Authorization", bearerToken(member))
-						.contentType(MediaType.APPLICATION_JSON).content(invalid))
+						.contentType(MediaType.APPLICATION_JSON_VALUE).content(invalid))
 				.andExpect(status().isForbidden());
 		mockMvc.perform(put("/api/groups/{groupId}/expenses/{expenseId}", group.getId(), expenseId)
 						.header("Authorization", bearerToken(unrelated))
-						.contentType(MediaType.APPLICATION_JSON).content(invalid))
+						.contentType(MediaType.APPLICATION_JSON_VALUE).content(invalid))
 				.andExpect(status().isNotFound());
 		mockMvc.perform(put("/api/groups/{groupId}/expenses/{expenseId}", group.getId(), expenseId)
-						.contentType(MediaType.APPLICATION_JSON).content(invalid))
+						.contentType(MediaType.APPLICATION_JSON_VALUE).content(invalid))
 				.andExpect(status().isUnauthorized());
 		for (String invalidRequest : List.of(
 				"""
@@ -436,7 +437,7 @@ class ExpenseControllerTest {
 				""".formatted(creator.getId(), creator.getId()))) {
 			mockMvc.perform(put("/api/groups/{groupId}/expenses/{expenseId}", group.getId(), expenseId)
 							.header("Authorization", bearerToken(creator))
-							.contentType(MediaType.APPLICATION_JSON).content(invalidRequest))
+							.contentType(MediaType.APPLICATION_JSON_VALUE).content(invalidRequest))
 					.andExpect(status().isBadRequest());
 		}
 		String outsidePayer = """
@@ -445,7 +446,7 @@ class ExpenseControllerTest {
 				""".formatted(unrelated.getId(), creator.getId());
 		mockMvc.perform(put("/api/groups/{groupId}/expenses/{expenseId}", group.getId(), expenseId)
 						.header("Authorization", bearerToken(creator))
-						.contentType(MediaType.APPLICATION_JSON).content(outsidePayer))
+						.contentType(MediaType.APPLICATION_JSON_VALUE).content(outsidePayer))
 				.andExpect(status().isBadRequest())
 				.andExpect(jsonPath("$.code").value("bad_request"))
 				.andExpect(jsonPath("$.message").value("The payer must be a member of this group."));
@@ -627,7 +628,7 @@ class ExpenseControllerTest {
 
 		mockMvc.perform(put("/api/groups/{groupId}/expenses/{expenseId}", group.getId(), targetExpenseId)
 						.header("Authorization", bearerToken(creator))
-						.contentType(MediaType.APPLICATION_JSON)
+						.contentType(MediaType.APPLICATION_JSON_VALUE)
 						.content("""
 								{"description":"Updated target","amount":12.00,"paidByUserId":%d,
 								 "splits":[{"userId":%d,"amount":2.00},
@@ -764,12 +765,12 @@ class ExpenseControllerTest {
 		String body = expenseJson(creator, creator, "No token", "1.00");
 
 		mockMvc.perform(post("/api/groups/{groupId}/expenses", group.getId())
-						.contentType(MediaType.APPLICATION_JSON)
+						.contentType(MediaType.APPLICATION_JSON_VALUE)
 						.content(body))
 				.andExpect(status().isUnauthorized());
 		mockMvc.perform(post("/api/groups/{groupId}/expenses", group.getId())
 						.header("Authorization", "Bearer invalid")
-						.contentType(MediaType.APPLICATION_JSON)
+						.contentType(MediaType.APPLICATION_JSON_VALUE)
 						.content(body))
 				.andExpect(status().isUnauthorized());
 		mockMvc.perform(get("/api/groups/{groupId}/expenses", group.getId())
@@ -795,7 +796,7 @@ class ExpenseControllerTest {
 		return mockMvc.perform(post("/api/groups/{groupId}/expenses", groupId)
 				.header("Idempotency-Key", "\"" + java.util.UUID.randomUUID() + "\"")
 				.header("Authorization", token)
-				.contentType(MediaType.APPLICATION_JSON)
+				.contentType(MediaType.APPLICATION_JSON_VALUE)
 				.content(body));
 	}
 
@@ -881,7 +882,7 @@ class ExpenseControllerTest {
 			String netBalance) {
 	}
 
-	private User createUser(String name) {
+	private @NonNull User createUser(String name) {
 		return userRepository.saveAndFlush(new User(
 				name,
 				name.toLowerCase().replace(' ', '.') + "@expenses.example",

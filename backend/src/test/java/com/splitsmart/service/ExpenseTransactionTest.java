@@ -12,7 +12,6 @@ import org.springframework.dao.DataIntegrityViolationException;
 import org.springframework.http.HttpStatus;
 import org.springframework.test.context.bean.override.mockito.MockitoSpyBean;
 import org.springframework.test.context.ActiveProfiles;
-import org.springframework.transaction.PlatformTransactionManager;
 import org.springframework.transaction.support.TransactionTemplate;
 import org.springframework.web.server.ResponseStatusException;
 
@@ -61,7 +60,7 @@ class ExpenseTransactionTest {
 	private ExpenseSplitRepository expenseSplitRepository;
 
 	@Autowired
-	private PlatformTransactionManager transactionManager;
+	private TransactionTemplate transactions;
 
 	@MockitoSpyBean
 	private ExpenseSplitRepository splitRepositorySpy;
@@ -80,7 +79,6 @@ class ExpenseTransactionTest {
 
 	@Test
 	void expenseMutationsAcquireTheSharedGroupLock() {
-		TransactionTemplate transactions = new TransactionTemplate(transactionManager);
 		String suffix = UUID.randomUUID().toString();
 		User creator = Objects.requireNonNull(transactions.execute(status -> userRepository.saveAndFlush(
 				new User("Lock Creator", "lock.creator." + suffix + "@example.com", "{bcrypt}test"))));
@@ -125,7 +123,6 @@ class ExpenseTransactionTest {
 
 	@Test
 	void splitPersistenceFailureRollsBackExpenseAndEverySplit() {
-		TransactionTemplate transactions = new TransactionTemplate(transactionManager);
 		User creator = Objects.requireNonNull(transactions.execute(status -> userRepository.saveAndFlush(
 				new User("Rollback Creator", "rollback.creator@example.com", "{bcrypt}test"))));
 		ExpenseGroup group = Objects.requireNonNull(transactions.execute(status -> {
@@ -165,7 +162,6 @@ class ExpenseTransactionTest {
 
 	@Test
 	void replacementSplitFailureRollsBackExpenseAndPreviousShares() {
-		TransactionTemplate transactions = new TransactionTemplate(transactionManager);
 		String suffix = UUID.randomUUID().toString();
 		User creator = Objects.requireNonNull(transactions.execute(status -> userRepository.saveAndFlush(
 				new User("Update Rollback Creator", "update.rollback." + suffix + "@example.com", "{bcrypt}test"))));

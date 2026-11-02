@@ -1,7 +1,6 @@
 package com.splitsmart.service;
 
 import java.math.BigDecimal;
-import java.util.List;
 import java.util.UUID;
 
 import org.hibernate.exception.ConstraintViolationException;
@@ -58,7 +57,7 @@ public class SettlementService {
 			Long groupId,
 			String subject,
 			CreateSettlementRequest request) {
-		Long requesterId = parseSubject(subject);
+		long requesterId = parseSubject(subject);
 		ExpenseGroup group = expenseGroupRepository.findByIdForUpdate(groupId)
 				.orElseThrow(() -> notFound("Group not found."));
 		User requester = userRepository.findById(requesterId)
@@ -110,7 +109,7 @@ public class SettlementService {
 
 	@Transactional(readOnly = true)
 	public HistoryPage<SettlementResponse> listSettlements(Long groupId, String subject, Long before, int limit, String requestId) {
-		Long requesterId = parseSubject(subject);
+		long requesterId = parseSubject(subject);
 		userRepository.findById(requesterId)
 				.orElseThrow(() -> new ResponseStatusException(
 						HttpStatus.UNAUTHORIZED, "Invalid authenticated user."));
@@ -130,12 +129,12 @@ public class SettlementService {
                 more ? selected.get(selected.size() - 1).getId() : null);
 	}
 
-	private static Long parseSubject(String subject) {
+	private static long parseSubject(String subject) {
 		if (subject == null) {
 			throw new ResponseStatusException(HttpStatus.UNAUTHORIZED, "Invalid authenticated user.");
 		}
 		try {
-			return Long.valueOf(subject);
+			return Long.parseLong(subject);
 		} catch (NumberFormatException exception) {
 			throw new ResponseStatusException(HttpStatus.UNAUTHORIZED, "Invalid authenticated user.");
 		}

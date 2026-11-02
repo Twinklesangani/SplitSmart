@@ -113,12 +113,12 @@ public class AuthService {
     }
 
 	public RegisterResponse currentUser(String subject) {
-		final Long userId;
+		final long userId;
 		if (subject == null) {
 			throw new BadCredentialsException(INVALID_CREDENTIALS_MESSAGE);
 		}
 		try {
-			userId = Long.valueOf(subject);
+			userId = Long.parseLong(subject);
 		} catch (NumberFormatException exception) {
 			throw new BadCredentialsException(INVALID_CREDENTIALS_MESSAGE);
 		}

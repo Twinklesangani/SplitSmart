@@ -10,6 +10,7 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.autoconfigure.web.servlet.AutoConfigureMockMvc;
 import org.springframework.boot.test.context.SpringBootTest;
 import org.springframework.http.MediaType;
+import org.springframework.lang.NonNull;
 import org.springframework.security.oauth2.jose.jws.MacAlgorithm;
 import org.springframework.security.oauth2.jwt.JwtClaimsSet;
 import org.springframework.security.oauth2.jwt.JwtEncoder;
@@ -121,7 +122,7 @@ class SettlementSuggestionControllerTest {
 
 		mockMvc.perform(post("/api/groups/{groupId}/settlements", group.getId())
 						.header("Authorization", bearerToken(debtorA))
-						.contentType(MediaType.APPLICATION_JSON)
+						.contentType(MediaType.APPLICATION_JSON_VALUE)
 						.content("""
 								{"fromUserId":%d,"toUserId":%d,"amount":1.01,"requestId":"%s"}
 								""".formatted(debtorA.getId(), creditor.getId(), UUID.randomUUID())))
@@ -129,7 +130,7 @@ class SettlementSuggestionControllerTest {
 
 		mockMvc.perform(post("/api/groups/{groupId}/settlements", group.getId())
 						.header("Authorization", bearerToken(debtorA))
-						.contentType(MediaType.APPLICATION_JSON)
+						.contentType(MediaType.APPLICATION_JSON_VALUE)
 						.content("""
 								{"fromUserId":%d,"toUserId":%d,"amount":3.34,"requestId":"%s"}
 								""".formatted(debtorA.getId(), creditor.getId(), UUID.randomUUID())))
@@ -193,7 +194,7 @@ class SettlementSuggestionControllerTest {
 
 		mockMvc.perform(put("/api/groups/{groupId}/expenses/{expenseId}", group.getId(), expense.getId())
 						.header("Authorization", token)
-						.contentType(MediaType.APPLICATION_JSON)
+						.contentType(MediaType.APPLICATION_JSON_VALUE)
 						.content(expenseJson(creator, member, "20.00")))
 				.andExpect(status().isOk());
 		mockMvc.perform(get(suggestionsPath(group)).header("Authorization", token))
@@ -283,11 +284,11 @@ class SettlementSuggestionControllerTest {
 			ExpenseGroup group, User creator, String body) throws Exception {
 		return mockMvc.perform(post("/api/groups/{groupId}/expenses", group.getId()).header("Idempotency-Key", "\"" + java.util.UUID.randomUUID() + "\"")
 				.header("Authorization", bearerToken(creator))
-				.contentType(MediaType.APPLICATION_JSON)
+				.contentType(MediaType.APPLICATION_JSON_VALUE)
 				.content(body));
 	}
 
-	private String suggestionsPath(ExpenseGroup group) {
+	private @NonNull String suggestionsPath(ExpenseGroup group) {
 		return "/api/groups/" + group.getId() + "/settlement-suggestions";
 	}
 
@@ -299,7 +300,7 @@ class SettlementSuggestionControllerTest {
 		return group;
 	}
 
-	private User createUser(String name) {
+	private @NonNull User createUser(String name) {
 		String suffix = UUID.randomUUID().toString();
 		return userRepository.saveAndFlush(new User(name, suffix + "@suggestions.example", "{bcrypt}test"));
 	}
