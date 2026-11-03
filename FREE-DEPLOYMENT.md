@@ -12,13 +12,15 @@ Render runtime environment names:
 
 - DB_URL, DB_USERNAME, DB_PASSWORD
 - FLYWAY_DB_URL, FLYWAY_DB_USERNAME, FLYWAY_DB_PASSWORD
-- DB_TLS_TRUST_STORE_URL, DB_TLS_TRUST_STORE_PASSWORD
+- DB_TLS_TRUST_STORE_URL, DB_TLS_TRUST_STORE_PASSWORD, DB_TLS_TRUST_STORE_BASE64
+- SPRING_FLYWAY_ENABLED: disable automatic Flyway execution after separately approved migrations have been applied.
+- SPRING_DATASOURCE_HIKARI_CONNECTIONTIMEOUT: use 15000 milliseconds for the tested free-instance startup. Remove the hyphen in connection-timeout when converting it to an environment variable. An underscore between CONNECTION and TIMEOUT binds connection.timeout and can invoke getConnection() during binding.
 - JWT_SECRET: independently generated Base64-encoded key of at least 32 random bytes before encoding.
 - APP_CORS_ALLOWED_ORIGINS: exact HTTPS Pages production origin; no wildcard or preview domains.
 
-Download the Aiven project CA through the authenticated console. On a trusted machine, import it with keytool -importcert into a new PKCS12 truststore; enter its password interactively. Base64-encode the truststore **offline**, put the encoded contents in a Render secret file named trust.p12.b64, and use the following Docker Command override. Set the truststore URL to the file URI for /tmp/aiven-trust.p12. The production profile configures VERIFY_IDENTITY for both JDBC clients. Do not enable shell tracing or print environment variables.
+Download the Aiven project CA through the authenticated console. On a trusted machine, import it with keytool -importcert into a new PKCS12 truststore and enter its password interactively. Base64-encode the truststore offline and configure DB_TLS_TRUST_STORE_BASE64 as a private Render runtime environment variable. Set DB_TLS_TRUST_STORE_URL to the file URI for /tmp/aiven-trust.p12. The image CMD creates that file with owner-only permissions before starting Java and removes the base64 variable from Java's environment. Leave Render's Docker Command override empty so it uses the tested image CMD. Both JDBC clients retain VERIFY_IDENTITY.
 
-    sh -ec 'umask 077; base64 -d /etc/secrets/trust.p12.b64 > /tmp/aiven-trust.p12; exec java -jar /app/app.jar --server.port="${PORT:-8080}"'
+Set SPRING_FLYWAY_ENABLED to false for this deployment because hosted V1–V4 were applied separately. Provide only the splitsmart_app runtime identity. Keep migration credentials outside the backend service. Configure the exact HTTPS frontend origin before enabling browser access. Until that origin is assigned, use an unresolvable HTTPS origin to reject browser callers.
 
 Keep application rate limiting and forwarded-header defaults. Clients behind the same untrusted proxy can share an authentication quota; do not trust arbitrary forwarded IPs to avoid this. Recheck CA and outbound address changes. Verify readiness and that the real hostname validates before allowing demo traffic.
 
@@ -37,3 +39,11 @@ Provider references: [Render Free limits](https://render.com/docs/free), [Render
 ## Local startup evidence
 
 For the demo, set Render runtime JAVA_TOOL_OPTIONS to the single JVM option -XX:TieredStopAtLevel=1. This is a startup-oriented compiler setting; leave heap sizing at the Java 21 container default. A local run under a 512,000,000-byte hard memory limit, no extra swap, and 0.1 CPU reached database-backed HTTP readiness after 182 seconds. Cgroup peak was 254,418,944 bytes. All four original migrations succeeded on empty TLS-only MySQL 8.4.13 with required primary keys. The first capped default-JVM run failed during JDBC metadata initialization; a one-CPU control passed in 30 seconds. These are individual startup observations, not a load test or a cold-start guarantee. Check the first real deploy and one resume from idle before sharing the public URL.
+
+## Verified Render startup correction
+
+The corrected image reached database-backed readiness in 169 seconds with a 0.1 CPU limit and 512 MB RAM against Aiven. The application used splitsmart_app, verified TLS and automatic Flyway disabled. All seven application tables remained empty and Flyway remained at V4.
+
+A focused binding regression test reproduces the incorrect SPRING_DATASOURCE_HIKARI_CONNECTION_TIMEOUT name invoking HikariDataSource.getConnection() during configuration binding. That premature pool startup seals the configuration before remaining TLS properties can bind. The tested SPRING_DATASOURCE_HIKARI_CONNECTIONTIMEOUT spelling binds the 15000 ms timeout before any connection is requested. See the [Spring Boot issue](https://github.com/spring-projects/spring-boot/issues/51363).
+
+Before deploying this correction, clear the old Render Docker Command override and use the image CMD. Set the correctly spelled timeout environment variable and remove the incorrectly spelled variant if present. Keep auto-deploy Off, Free compute, and SPRING_FLYWAY_ENABLED=false. The historical Render failures with exit 127/128 came from Docker Command parsing. The reproduced Hikari binding exception came from the incorrectly spelled diagnostic environment variable, independently of CPU exhaustion.
