@@ -29,7 +29,7 @@ export function InviteForm({ groupId }) {
     }
   }
 
-  return <Card>
+  return <Card className="invite-card">
     <h2>Invite a member</h2>
     <p>Recipients can register later. They join only after accepting in My groups.</p>
     <form onSubmit={invite}>
@@ -80,7 +80,7 @@ export function InvitationInbox({ userId, onAccepted }) {
     }
   }
 
-  return <Card>
+  return <Card className="invitation-inbox-card">
     <h2>Group invitations</h2>
     <Button type="button" variant="secondary" onClick={() => { setOpen(true); setAttempt(value => value + 1) }}>Check invitations</Button>
     {open && invitations.length === 0 && <p>No pending invitations.</p>}

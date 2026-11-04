@@ -207,6 +207,8 @@ describe('expense creation', () => {
     const post = fetch.mock.calls.find(([url, options]) => url.endsWith('/api/groups/42/expenses') && options.method === 'POST')
     expect(post[1].body).toBe(JSON.stringify({
       description: 'Shared lunch',
+      expenseDate: new Date().toISOString().slice(0, 10),
+      category: 'OTHER',
       amount: '20.00',
       paidByUserId: 10,
       currencyCode: 'INR',
@@ -241,6 +243,8 @@ describe('expense creation', () => {
     const post = fetch.mock.calls.find(([url, options]) => url.endsWith('/api/groups/42/expenses') && options.method === 'POST')
     expect(JSON.parse(post[1].body)).toEqual({
       description: 'Dinner',
+      expenseDate: new Date().toISOString().slice(0, 10),
+      category: 'OTHER',
       amount: '900.00',
       paidByUserId: creator.id,
       currencyCode: 'INR',

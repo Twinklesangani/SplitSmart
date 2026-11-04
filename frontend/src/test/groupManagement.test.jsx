@@ -87,12 +87,15 @@ describe('authenticated group management', () => {
   })
 
   it('shows real groups and counts on the dashboard without inventing financial totals', async () => {
-    renderApp('/dashboard', [groupsResponse([group, { ...group, id: 43, name: 'Book club' }])])
+    renderApp('/dashboard', [jsonResponse({ groups: [group, { ...group, id: 43, name: 'Book club' }],
+      totalExpenses: '30.00', owed: '5.00', receivable: '10.00', activity: [] })])
 
     expect(await screen.findByRole('link', { name: /Weekend cabin/ })).toBeInTheDocument()
-    expect(screen.getByText('2', { selector: '.summary-card__value' })).toBeInTheDocument()
+    expect(screen.getByText('2', { selector: '.dashboard-ledger dd' })).toBeInTheDocument()
     expect(screen.getByRole('link', { name: /Book club/ })).toHaveAttribute('href', '/groups/43')
-    expect(screen.getByText('Available after expense integration')).toBeInTheDocument()
+    expect(screen.getByText('₹30.00', { selector: '.dashboard-ledger dd' })).toBeInTheDocument()
+    expect(screen.getByText('₹5.00', { selector: '.dashboard-ledger dd' })).toBeInTheDocument()
+    expect(screen.getByText('₹10.00', { selector: '.dashboard-ledger dd' })).toBeInTheDocument()
     expect(screen.queryByText('$1,240.00')).not.toBeInTheDocument()
   })
 
@@ -177,9 +180,9 @@ describe('authenticated group management', () => {
 
     expect(await screen.findByRole('heading', { name: 'Weekend cabin', level: 1 })).toBeInTheDocument()
     expect(screen.getByText('3', { selector: '.meta-line strong' })).toBeInTheDocument()
-    expect(screen.getByText('Alex Morgan')).toBeInTheDocument()
+    expect(screen.getByText('Alex Morgan', { selector: '.member-card strong' })).toBeInTheDocument()
     expect(screen.getByText('alex@example.com')).toBeInTheDocument()
-    expect(screen.getByText('Riley Chen')).toBeInTheDocument()
+    expect(screen.getByText('Riley Chen', { selector: '.member-card strong' })).toBeInTheDocument()
     expect(screen.getAllByText('Creator')).toHaveLength(2)
     expect(screen.getByRole('button', { name: 'Add member' })).toBeInTheDocument()
   })

@@ -25,7 +25,7 @@ class SplitSmartApplicationTests {
 	@Test
 	void migrationCreatesExpectedSchema() {
 		var appliedMigrations = flyway.info().applied();
-		assertEquals(5, appliedMigrations.length);
+		assertEquals(7, appliedMigrations.length);
 		assertEquals(MigrationState.SUCCESS, appliedMigrations[0].getState());
 		assertEquals("1", appliedMigrations[0].getVersion().getVersion());
 		assertEquals(MigrationState.SUCCESS, appliedMigrations[1].getState());

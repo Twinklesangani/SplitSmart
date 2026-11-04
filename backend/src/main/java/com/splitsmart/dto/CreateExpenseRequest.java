@@ -48,7 +48,15 @@ public record CreateExpenseRequest(
 				arraySchema = @Schema(
 						description = "Required with EQUAL; null or omitted with EXACT."),
 				schema = @Schema(minimum = "1"))
-		@Size(min = 1, max = 128) List<@NotNull @Positive Long> participantUserIds) {
+		@Size(min = 1, max = 128) List<@NotNull @Positive Long> participantUserIds,
+        @Schema(type = "string", format = "date", description = "Calendar date; omitted defaults to today in UTC on create and is preserved on update.") java.time.LocalDate expenseDate,
+        com.splitsmart.entity.ExpenseCategory category) {
+
+    public CreateExpenseRequest(String description, BigDecimal amount, Long paidByUserId,
+            String currencyCode, List<CreateExpenseSplitRequest> splits, SplitType splitType,
+            List<Long> participantUserIds) {
+        this(description, amount, paidByUserId, currencyCode, splits, splitType, participantUserIds, null, null);
+    }
 
 	public enum SplitType {
 		EXACT,

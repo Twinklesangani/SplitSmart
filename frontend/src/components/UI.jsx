@@ -56,6 +56,7 @@ export function GroupCard({ group }) {
       <span className="group-card__main">
         <span className="group-card__name">{group.name}</span>
         <span className="group-card__meta">Group ID {group.id}</span>
+        {group.archived && <span className="eyebrow">Archived · Read-only</span>}
       </span>
       <Icon name="arrowRight" size={18} className="group-card__arrow" />
     </Link>

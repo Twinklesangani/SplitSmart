@@ -41,6 +41,7 @@ public class InvitationService {
         User owner = user(subject);
         // The group lock serializes invitation creation and acceptance for this group.
         var group = groups.findByIdForUpdate(groupId).orElseThrow(InvitationService::notFound);
+        group.requireActive();
         if (!Objects.equals(group.getCreatedBy().getId(), owner.getId())
                 || !members.existsByGroup_IdAndUser_Id(groupId, owner.getId())) {
             throw new ResponseStatusException(HttpStatus.NOT_FOUND, "Group not found.");
@@ -74,7 +75,7 @@ public class InvitationService {
         var invitation = invitations.findById(id).orElseThrow(InvitationService::notFound);
         if (!recipient.getEmail().equals(invitation.getEmail())) throw notFound();
         Long groupId = invitation.getGroup().getId();
-        groups.findByIdForUpdate(groupId).orElseThrow(InvitationService::notFound);
+        groups.findByIdForUpdate(groupId).orElseThrow(InvitationService::notFound).requireActive();
         entityManager.refresh(invitation, jakarta.persistence.LockModeType.PESSIMISTIC_WRITE);
         resolveLocked(invitation, groupId, recipient, accept);
     }

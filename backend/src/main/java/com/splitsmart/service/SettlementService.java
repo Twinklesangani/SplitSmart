@@ -64,6 +64,7 @@ public class SettlementService {
 				.orElseThrow(() -> new ResponseStatusException(
 						HttpStatus.UNAUTHORIZED, "Invalid authenticated user."));
 		requireMembership(groupId, requesterId);
+        group.requireActive();
 
 		validateRequest(request);
 		if (!request.fromUserId().equals(requesterId)) {

@@ -77,7 +77,7 @@ function notifyExpiredGroupSession(path, status) {
 }
 
 function isProtectedPath(path) {
-  return /^\/api\/(groups|invitations)(\/|$)/.test(path)
+  return /^\/api\/(groups|invitations|dashboard)(\/|$)/.test(path)
 }
 
 function isAbortError(error) {

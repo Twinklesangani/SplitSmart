@@ -2,6 +2,8 @@ package com.splitsmart.entity;
 
 import java.math.BigDecimal;
 import java.time.LocalDateTime;
+import java.time.LocalDate;
+import java.time.ZoneOffset;
 import java.util.ArrayList;
 import java.util.List;
 
@@ -52,6 +54,18 @@ public class Expense {
 
 	@Column(name = "created_at", nullable = false, insertable = false, updatable = false)
 	private LocalDateTime createdAt;
+	@Column(name = "expense_date")
+	private LocalDate expenseDate = LocalDate.now(ZoneOffset.UTC);
+	@jakarta.persistence.Enumerated(jakarta.persistence.EnumType.STRING)
+	@Column(nullable = false, length = 24)
+	private ExpenseCategory category = ExpenseCategory.OTHER;
+
+	public LocalDate getExpenseDate() { return expenseDate; }
+	public ExpenseCategory getCategory() { return category; }
+	public void updateMetadata(LocalDate date, ExpenseCategory category) {
+		if (date != null) this.expenseDate = date;
+		if (category != null) this.category = category;
+	}
 
 	@OneToMany(mappedBy = "expense", fetch = FetchType.LAZY)
 	private List<ExpenseSplit> splits = new ArrayList<>();

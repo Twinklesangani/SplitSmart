@@ -178,7 +178,7 @@ class SplitSmartMySqlIT {
 	void flywayAndHibernateUseTheIsolatedMySqlSchema() throws Exception {
 		assertTrue(MYSQL.isRunning());
 		assertNotNull(MYSQL.getContainerId());
-        assertEquals(5, flyway.info().applied().length);
+        assertEquals(7, flyway.info().applied().length);
 		assertEquals(MigrationState.SUCCESS, flyway.info().applied()[0].getState());
 		assertEquals("1", flyway.info().applied()[0].getVersion().getVersion());
 		assertEquals(MigrationState.SUCCESS, flyway.info().applied()[1].getState());
@@ -847,6 +847,105 @@ class SplitSmartMySqlIT {
         assertTrue(third != second);
         assertEquals(409, send("POST", "/api/invitations/" + second + "/accept", recipient, null).statusCode());
         assertEquals(204, send("POST", "/api/invitations/" + third + "/accept", recipient, null).statusCode());
+    }
+
+    @Test
+    void dashboardUsesExactScopedTotalsAndExpenseMetadataSurvivesUpdatesAndRetries() throws Exception {
+        Fixture first = createFixture("product-dashboard", 2);
+        Fixture second = createFixture("product-dashboard-second", 1);
+        long ownerId = first.memberIds().get(0);
+        String owner = token(ownerId);
+        transactions.executeWithoutResult(status -> groupMemberRepository.saveAndFlush(new GroupMember(
+                expenseGroupRepository.getReferenceById(second.groupId()), userRepository.getReferenceById(ownerId))));
+        var payload = new HashMap<String, Object>();
+        payload.put("description", "Dated meal");
+        payload.put("amount", "10.00");
+        payload.put("paidByUserId", ownerId);
+        payload.put("splitType", "EQUAL");
+        payload.put("participantUserIds", first.memberIds());
+        payload.put("expenseDate", "2024-06-10");
+        payload.put("category", "FOOD_DRINKS");
+        String operation = UUID.randomUUID().toString();
+        var created = sendExpense(first.groupId(), owner, payload, operation);
+        assertEquals(201, created.statusCode(), created.body());
+        var expense = objectMapper.readTree(created.body());
+        assertEquals("2024-06-10", expense.get("expenseDate").asText());
+        assertEquals("FOOD_DRINKS", expense.get("category").asText());
+        assertEquals(created.body(), sendExpense(first.groupId(), owner, payload, operation).body());
+        payload.put("expenseDate", "2024-06-11");
+        assertEquals(409, sendExpense(first.groupId(), owner, payload, operation).statusCode());
+        payload.put("expenseDate", "2999-01-01");
+        assertEquals(400, sendExpense(first.groupId(), owner, payload, UUID.randomUUID().toString()).statusCode());
+        payload.put("expenseDate", "2024-06-10");
+        payload.put("category", "INVALID");
+        assertEquals(400, sendExpense(first.groupId(), owner, payload, UUID.randomUUID().toString()).statusCode());
+        payload.remove("category");
+        payload.remove("expenseDate");
+        var updated = send("PUT", expensesPath(first.groupId()) + "/" + expense.get("id").asLong(), owner, payload);
+        assertEquals(200, updated.statusCode());
+        assertEquals("FOOD_DRINKS", objectMapper.readTree(updated.body()).get("category").asText());
+        assertEquals("2024-06-10", objectMapper.readTree(updated.body()).get("expenseDate").asText());
+        assertEquals(201, sendExpense(second.groupId(), token(second.memberIds().get(0)), Map.of(
+                "description", "Travel", "amount", "20.00", "paidByUserId", second.memberIds().get(0),
+                "splits", List.of(Map.of("userId", ownerId, "amount", "20.00"))), UUID.randomUUID().toString()).statusCode());
+        var dashboard = objectMapper.readTree(send("GET", "/api/dashboard", owner, null).body());
+        assertEquals("30.00", dashboard.get("totalExpenses").asText());
+        assertEquals("20.00", dashboard.get("owed").asText());
+        assertEquals("5.00", dashboard.get("receivable").asText());
+        assertEquals(2, dashboard.get("groups").size());
+        assertEquals(2, dashboard.get("activity").size());
+        assertEquals(201, send("POST", settlementsPath(first.groupId()), token(first.memberIds().get(1)), Map.of(
+                "fromUserId", first.memberIds().get(1), "toUserId", ownerId, "amount", "2.00", "requestId", UUID.randomUUID().toString())).statusCode());
+        var after = objectMapper.readTree(send("GET", "/api/dashboard", owner, null).body());
+        assertEquals("3.00", after.get("receivable").asText());
+        assertEquals(3, after.get("activity").size());
+        assertEquals(401, send("GET", "/api/dashboard", null, null).statusCode());
+        Fixture outsider = createFixture("dashboard-private", 1);
+        var privateDashboard = objectMapper.readTree(send("GET", "/api/dashboard", token(outsider.memberIds().get(0)), null).body());
+        assertEquals("0.00", privateDashboard.get("totalExpenses").asText());
+        assertEquals(0, privateDashboard.get("activity").size());
+    }
+
+    @Test
+    void groupManagementProtectsHistoryPermissionsAndArchivedGroups() throws Exception {
+        Fixture group = createFixture("managed-group", 3);
+        Fixture outsider = createFixture("managed-outsider", 1);
+        long ownerId = group.memberIds().get(0);
+        long debtorId = group.memberIds().get(1);
+        long freshId = group.memberIds().get(2);
+        String owner = token(ownerId);
+        String base = "/api/groups/" + group.groupId();
+        var payload = Map.of("description", "Preserved expense", "amount", "10.00", "paidByUserId", ownerId,
+                "splits", List.of(Map.of("userId", debtorId, "amount", "10.00")));
+        assertEquals(201, sendExpense(group.groupId(), owner, payload, UUID.randomUUID().toString()).statusCode());
+        assertEquals(401, send("DELETE", base, null, null).statusCode());
+        assertEquals(404, send("DELETE", base, token(outsider.memberIds().get(0)), null).statusCode());
+        assertEquals(403, send("DELETE", base, token(debtorId), null).statusCode());
+        assertEquals(403, send("DELETE", base + "/members/" + freshId, token(debtorId), null).statusCode());
+        assertEquals(409, send("DELETE", base, owner, null).statusCode());
+        assertEquals(409, send("POST", base + "/leave", token(debtorId), null).statusCode());
+        assertEquals(409, send("POST", base + "/leave", owner, null).statusCode());
+        assertEquals(204, send("DELETE", base + "/members/" + freshId, owner, null).statusCode());
+        assertEquals(404, send("GET", base + "/members", token(freshId), null).statusCode());
+        String email = userRepository.findById(freshId).orElseThrow().getEmail();
+        assertEquals(201, send("POST", base + "/members", owner, Map.of("email", email)).statusCode());
+        assertEquals(204, send("POST", base + "/leave", token(freshId), null).statusCode());
+        assertEquals(201, send("POST", settlementsPath(group.groupId()), token(debtorId), Map.of(
+                "fromUserId", debtorId, "toUserId", ownerId, "amount", "10.00", "requestId", UUID.randomUUID().toString())).statusCode());
+        assertEquals(409, send("DELETE", base + "/members/" + debtorId, owner, null).statusCode());
+        assertEquals(204, send("DELETE", base, owner, null).statusCode());
+        assertTrue(expenseGroupRepository.findById(group.groupId()).orElseThrow().isArchived());
+        assertEquals(1, expenseRepository.countByGroup_Id(group.groupId()));
+        assertEquals(1, settlementCount(group.groupId()));
+        assertEquals(200, send("GET", expensesPath(group.groupId()), token(debtorId), null).statusCode());
+        assertEquals(409, sendExpense(group.groupId(), owner, payload, UUID.randomUUID().toString()).statusCode());
+        assertEquals(409, send("POST", base + "/members", owner, Map.of("email", email)).statusCode());
+        assertEquals(409, send("POST", base + "/invitations", owner, Map.of("email", email)).statusCode());
+        var dashboard = objectMapper.readTree(send("GET", "/api/dashboard", owner, null).body());
+        assertEquals(0, dashboard.get("groups").size());
+        assertEquals("0.00", dashboard.get("totalExpenses").asText());
+        Fixture empty = createFixture("last-owner", 1);
+        assertEquals(204, send("DELETE", "/api/groups/" + empty.groupId(), token(empty.memberIds().get(0)), null).statusCode());
     }
 
 	private Fixture createFixture(String label, int memberCount) {

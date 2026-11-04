@@ -140,7 +140,7 @@ class OpenApiContractTest {
 				}
 			}
 		}
-		assertEquals(21, operationCount);
+		assertEquals(25, operationCount);
 		assertEquals(12, linkCount);
 
 		assertEquals("addMember", groupCreation.path("responses").path("201").path("links")

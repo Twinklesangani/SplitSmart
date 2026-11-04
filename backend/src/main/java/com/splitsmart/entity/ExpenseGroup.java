@@ -32,6 +32,15 @@ public class ExpenseGroup {
 
 	@Column(name = "created_at", nullable = false, insertable = false, updatable = false)
 	private LocalDateTime createdAt;
+	@Column(nullable = false)
+	private boolean archived;
+
+	public boolean isArchived() { return archived; }
+	public void archive() { archived = true; }
+	public void requireActive() {
+		if (archived) throw new org.springframework.web.server.ResponseStatusException(
+				org.springframework.http.HttpStatus.CONFLICT, "This group is archived and read-only.");
+	}
 
 	protected ExpenseGroup() {
 	}

@@ -66,6 +66,7 @@ public class GroupService {
 		ExpenseGroup group = expenseGroupRepository.findByIdForUpdate(groupId)
 				.orElseThrow(() -> notFound("Group not found."));
 		requireMembership(groupId, requester.getId());
+		group.requireActive();
 		if (!Objects.equals(group.getCreatedBy().getId(), requester.getId())) {
 			throw new ResponseStatusException(HttpStatus.FORBIDDEN, "Only the group creator can add members.");
 		}
@@ -148,7 +149,7 @@ public class GroupService {
 	}
 
 	private static GroupResponse toResponse(ExpenseGroup group) {
-		return new GroupResponse(group.getId(), group.getName(), group.getCreatedBy().getId());
+		return new GroupResponse(group.getId(), group.getName(), group.getCreatedBy().getId(), group.isArchived());
 	}
 
 	private static GroupMemberResponse toMemberResponse(User user) {

@@ -7,6 +7,7 @@ import { ApiError } from '../services/apiClient.js'
 import { addGroupMember, listGroupMembers } from '../services/groupService.js'
 import { useGroupData } from './groupData.js'
 import { InviteForm } from './Invitations.jsx'
+import GroupManagement from './GroupManagement.jsx'
 
 const tabs = [
   { path: '', label: 'Overview', icon: 'home', end: true },
@@ -33,6 +34,7 @@ export function GroupPageLayout({ group, activeTitle, eyebrow, description, chil
           description={description ?? `Group ID ${group.id}`}
         />
       </div>
+      {group.archived && <p className="inline-notice" role="status">Archived group · Financial history is read-only.</p>}
       <nav className="group-tabs" aria-label="Group sections">
         {tabs.map((tab) => (
           <NavLink
@@ -162,7 +164,8 @@ function GroupOverviewContent({ data, user }) {
 
   return (
     <div className="group-overview-grid">
-      {isCreator && <InviteForm groupId={group.id} />}
+      <GroupManagement group={group} members={members} user={user} reload={data.reload} />
+      {isCreator && !group.archived && <InviteForm groupId={group.id} />}
       <Card className="group-overview-welcome">
         <span className="welcome-icon"><Icon name="spark" size={21} /></span>
         <p className="eyebrow">GROUP SPACE</p>
@@ -180,7 +183,7 @@ function GroupOverviewContent({ data, user }) {
       <Card className="group-members-card">
         <div className="section-heading">
           <div><h2>Members</h2><p>{members.length} {members.length === 1 ? 'person' : 'people'} in this group</p></div>
-          {isCreator && <Button type="button" icon="plus" onClick={openMemberForm}>Add member</Button>}
+          {isCreator && !group.archived && <Button type="button" icon="plus" onClick={openMemberForm}>Add member</Button>}
         </div>
         {members.length > 0
           ? <ul className="member-list">{members.map((member) => <MemberCard key={member.userId} member={member} isCreator={String(member.userId) === String(group.createdByUserId)} />)}</ul>

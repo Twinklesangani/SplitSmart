@@ -11,6 +11,6 @@ import com.splitsmart.entity.GroupInvitation;
 public interface GroupInvitationRepository extends JpaRepository<GroupInvitation, Long> {
     Optional<GroupInvitation> findByGroup_IdAndEmailAndActiveSlot(Long groupId, String email, String activeSlot);
 
-    @Query("select i from GroupInvitation i join fetch i.group where i.email = :email and i.status = 'PENDING' and i.expiresAt > :now order by i.id desc")
+    @Query("select i from GroupInvitation i join fetch i.group where i.email = :email and i.status = 'PENDING' and i.expiresAt > :now and i.group.archived = false order by i.id desc")
     List<GroupInvitation> findPending(@Param("email") String email, @Param("now") Instant now);
 }

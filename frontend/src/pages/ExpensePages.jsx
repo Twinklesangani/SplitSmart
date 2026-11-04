@@ -1,4 +1,6 @@
 import { useEffect, useMemo, useRef, useState } from 'react'
+import ExpenseMetadata from '../components/ExpenseMetadata.jsx'
+import { expenseCategories } from '../services/expenseMetadata.js'
 import { useRefreshOnReturn } from './useRefreshOnReturn.js'
 import { Link, useLocation, useNavigate, useParams } from 'react-router-dom'
 import { Button, Card, EmptyState, PageHeader } from '../components/UI.jsx'
@@ -157,6 +159,7 @@ function useExpenseRecord(groupId, expenseId, userId, groupStatus) {
 
 function ExpenseListContent({ group, members, userId }) {
   const result = useExpenseList(group.id, userId, 'success')
+  const [categoryFilter, setCategoryFilter] = useState('ALL')
   const location = useLocation()
   const navigate = useNavigate()
   const notice = location.state?.expenseNotice
@@ -183,7 +186,7 @@ function ExpenseListContent({ group, members, userId }) {
             icon="receipt"
             title="No expenses yet"
             description="Create the first expense to start keeping this group's spending clear."
-            action={<Button to={`/groups/${group.id}/expenses/new`} icon="plus">Create expense</Button>}
+            action={!group.archived && <Button to={`/groups/${group.id}/expenses/new`} icon="plus">Create expense</Button>}
           />
         </Card>
       </>
@@ -194,12 +197,20 @@ function ExpenseListContent({ group, members, userId }) {
     <>
       {notice && <p className="inline-notice" role="status">{notice}<button type="button" className="notice-dismiss" onClick={clearNotice} aria-label="Dismiss confirmation">Dismiss</button></p>}
       <Button type="button" variant="secondary" onClick={result.reload}>Refresh expenses</Button>
+      <div className="expense-filter"><label htmlFor="category-filter">Filter loaded expenses</label>
+        <select id="category-filter" value={categoryFilter} onChange={event => setCategoryFilter(event.target.value)}>
+          <option value="ALL">All categories</option>
+          {Object.entries(expenseCategories).map(([value, [label]]) => <option key={value} value={value}>{label}</option>)}
+        </select></div>
+      {result.expenses.every(expense => categoryFilter !== 'ALL' && (expense.category || 'OTHER') !== categoryFilter)
+        && <p role="status">No loaded expenses in this category. Choose another category or load more history.</p>}
       <div className="expense-list" aria-label="Group expenses">
-        {result.expenses.map((expense) => (
+        {result.expenses.filter(expense => categoryFilter === 'ALL' || (expense.category || 'OTHER') === categoryFilter).map((expense) => (
           <Card className="expense-list-card" key={expense.id}>
             <div className="expense-list-card__main">
               <div className="expense-list-card__title">
                 <h2><Link to={`/groups/${group.id}/expenses/${expense.id}`}>{expense.description}</Link></h2>
+                <ExpenseMetadata expense={expense} />
                 <strong>{formatInr(expense.amount)}</strong>
               </div>
               <p>Paid by {displayMemberName(members, expense.paidByUserId)}</p>
@@ -236,7 +247,7 @@ export function GroupExpensesPage() {
         <div>
           <p>Real expenses recorded for this group.</p>
         </div>
-        <Button to={`/groups/${data.group.id}/expenses/new`} icon="plus">Create expense</Button>
+        {!data.group.archived && <Button to={`/groups/${data.group.id}/expenses/new`} icon="plus">Create expense</Button>}
       </div>
       <ExpenseListContent group={data.group} members={data.members} userId={user.id} />
     </GroupPageLayout>
@@ -291,6 +302,9 @@ function ExpenseForm({ group, members, initialExpense, onSubmit, submitLabel }) 
   const { user } = useAuth()
   const isEditing = Boolean(initialExpense)
   const [description, setDescription] = useState(initialExpense?.description ?? '')
+  const [today] = useState(() => new Date().toISOString().slice(0, 10))
+  const [expenseDate, setExpenseDate] = useState(initialExpense?.expenseDate || today)
+  const [category, setCategory] = useState(initialExpense?.category || 'OTHER')
   const [amount, setAmount] = useState(initialExpense ? normalizeMoney(initialExpense.amount) ?? '' : '')
   const [payerId, setPayerId] = useState(String(initialExpense?.paidByUserId ?? user.id))
   const [splitType, setSplitType] = useState(isEditing ? 'EXACT' : 'EQUAL')
@@ -362,6 +376,11 @@ function ExpenseForm({ group, members, initialExpense, onSubmit, submitLabel }) 
 
   async function handleSubmit(event) {
     event.preventDefault()
+    if (!expenseDate || expenseDate < '1000-01-01' || expenseDate > new Date().toISOString().slice(0, 10)) {
+      setRequestError('Choose a valid expense date on or before today in UTC.')
+      document.getElementById('expense-date')?.focus()
+      return
+    }
     if (submitLock.current) return
 
     setRequestError('')
@@ -383,6 +402,8 @@ function ExpenseForm({ group, members, initialExpense, onSubmit, submitLabel }) 
     const normalizedAmount = normalizeMoney(amount)
     const payload = {
       description: result.normalizedDescription,
+      expenseDate,
+      category,
       amount: normalizedAmount,
       paidByUserId: Number(payerId),
       currencyCode: 'INR',
@@ -434,6 +455,20 @@ function ExpenseForm({ group, members, initialExpense, onSubmit, submitLabel }) 
           setRequestError('A separate expense will use a new operation. Confirm the earlier expense in history first.')
         }}>Start a separate expense</Button>}
       <form className="expense-form" aria-label={isEditing ? 'Edit expense' : 'Create expense'} onSubmit={handleSubmit} noValidate>
+        <div className="expense-metadata-fields">
+          <div className="form-field">
+            <label htmlFor="expense-date">Expense date</label>
+            <input id="expense-date" type="date" required min="1000-01-01" max={today}
+              value={expenseDate} onChange={event => setExpenseDate(event.target.value)} />
+            <span className="form-help">Calendar date, independent of viewing timezone. Defaults to today in UTC.</span>
+          </div>
+          <div className="form-field">
+            <label htmlFor="expense-category">Category</label>
+            <select id="expense-category" value={category} onChange={event => setCategory(event.target.value)}>
+              {Object.entries(expenseCategories).map(([value, [label]]) => <option key={value} value={value}>{label}</option>)}
+            </select>
+          </div>
+        </div>
         {requestError && <div className="request-error" role="alert"><p>{requestError}</p>{!isEditing && <Link className="text-link" to={`/groups/${group.id}/expenses`}>Review expense history</Link>}</div>}
         <div className="form-field">
           <label htmlFor="expense-description">Description <span aria-hidden="true">*</span></label>
@@ -540,7 +575,7 @@ export function ExpenseCreatePage() {
   return (
     <GroupPageLayout group={data.group} activeTitle="New expense" description={`Add a real expense to ${data.group.name}.`} eyebrow="GROUP ACTIVITY">
       <PageHeader eyebrow="NEW EXPENSE" title="Create expense" description="Add a shared expense using this group's current members." />
-      <ExpenseForm
+      {data.group.archived ? <Card><p>This archived group is read-only.</p></Card> : <ExpenseForm
         key={`${data.group.id}:new`}
         group={data.group}
         members={data.members}
@@ -552,7 +587,7 @@ export function ExpenseCreatePage() {
             state: { expenseNotice: 'Expense created successfully.' },
           })
         }}
-      />
+      />}
     </GroupPageLayout>
   )
 }
@@ -626,10 +661,11 @@ function ExpenseDetailContent({ group, members, expense, onReload }) {
   return (
     <>
       {location.state?.expenseNotice && <p className="inline-notice" role="status">{location.state.expenseNotice}</p>}
+      <ExpenseMetadata expense={expense} />
       <div className="expense-detail-actions">
         <Button variant="secondary" to={`/groups/${group.id}/expenses`}>Back to expenses</Button>
-        {isCreator && <Button to={`/groups/${group.id}/expenses/${expense.id}/edit`}>Edit expense</Button>}
-        {isCreator && <Button variant="danger" type="button" onClick={(event) => { deleteTrigger.current = event.currentTarget; setDeleteError(''); setShowDelete(true) }}>Delete expense</Button>}
+        {isCreator && !group.archived && <Button to={`/groups/${group.id}/expenses/${expense.id}/edit`}>Edit expense</Button>}
+        {isCreator && !group.archived && <Button variant="danger" type="button" onClick={(event) => { deleteTrigger.current = event.currentTarget; setDeleteError(''); setShowDelete(true) }}>Delete expense</Button>}
       </div>
       {deleteError && !showDelete && <p className="request-error" role="alert">{deleteError}<button type="button" className="text-button" onClick={onReload}>Refresh expense</button></p>}
       <Card className="expense-detail-card">
@@ -707,7 +743,7 @@ function ExpenseRecordPage({ mode }) {
     return (
       <GroupPageLayout group={data.group} activeTitle="Edit expense" description={`Update ${expense.description}.`} eyebrow="GROUP ACTIVITY">
         <PageHeader eyebrow="EDIT EXPENSE" title="Edit expense" description="Saved shares are loaded as custom amounts. Choose equal split explicitly if you want to recalculate." />
-        <ExpenseForm
+        {data.group.archived ? <Card><p>This archived group is read-only.</p></Card> : <ExpenseForm
           key={`${data.group.id}:${expense.id}:${user.id}`}
           group={data.group}
           members={data.members}
@@ -720,7 +756,7 @@ function ExpenseRecordPage({ mode }) {
               state: { expenseNotice: 'Expense updated successfully.' },
             })
           }}
-        />
+        />}
       </GroupPageLayout>
     )
   }

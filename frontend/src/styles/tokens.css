@@ -1,8 +1,9 @@
 :root {
-  font-family: Inter, ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont,
+  font-family: Manrope, "DM Sans", ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont,
     "Segoe UI", sans-serif;
-  color: #17233b;
-  background: #f6f7fb;
+  color: #F3F0E9;
+  background: #17191D;
+  color-scheme: dark;
   font-synthesis: none;
   text-rendering: optimizeLegibility;
   -webkit-font-smoothing: antialiased;
@@ -10,23 +11,23 @@
   font-optical-sizing: auto;
   font-weight: 400;
 
-  --color-ink: #17233b;
-  --color-muted: #68758c;
-  --color-subtle: #929cb0;
-  --color-line: #e7eaf1;
-  --color-canvas: #f6f7fb;
-  --color-surface: #fff;
-  --color-indigo: #5146e5;
-  --color-indigo-dark: #4036c7;
-  --color-indigo-soft: #f0efff;
-  --color-teal: #14877d;
-  --color-teal-soft: #e8f7f4;
-  --color-green: #18794e;
-  --color-green-soft: #eaf6ef;
-  --color-red: #b54747;
-  --color-red-soft: #fff0ef;
-  --shadow-card: 0 2px 8px rgb(22 35 59 / 3%), 0 12px 32px rgb(22 35 59 / 3%);
-  --radius-card: 16px;
+  --color-ink: #F3F0E9;
+  --color-muted: #B7B6BC;
+  --color-subtle: #ABA9B3;
+  --color-line: #41454F;
+  --color-canvas: #17191D;
+  --color-surface: #252A32;
+  --color-indigo: #A58CF5;
+  --color-indigo-dark: #BBA6FF;
+  --color-indigo-soft: #332C46;
+  --color-teal: #91D3C7;
+  --color-teal-soft: #243F3E;
+  --color-green: #98D6AF;
+  --color-green-soft: #273C32;
+  --color-red: #FFB4AB;
+  --color-red-soft: #492E32;
+  --shadow-card: none;
+  --radius-card: 12px;
   --radius-control: 10px;
   --sidebar-width: 252px;
 }
@@ -80,8 +81,8 @@ input:focus-visible {
 }
 
 ::selection {
-  color: var(--color-ink);
-  background: #dfddff;
+  color: #17191D;
+  background: #A58CF5;
 }
 
 @media (prefers-reduced-motion: reduce) {

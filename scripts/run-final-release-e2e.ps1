@@ -1,8 +1,8 @@
-param([ValidateSet('smoke', 'auth', 'expenses', 'groups', 'history', 'responsive', 'invitations', 'all')][string]$Suite = 'smoke')
+param([ValidateSet('smoke', 'auth', 'expenses', 'groups', 'history', 'responsive', 'invitations', 'product', 'all')][string]$Suite = 'smoke')
 $ErrorActionPreference = 'Stop'
 
 if ($Suite -eq 'all') {
-	foreach ($isolatedSuite in @('auth', 'expenses', 'groups', 'history', 'responsive', 'invitations')) {
+	foreach ($isolatedSuite in @('auth', 'expenses', 'groups', 'history', 'responsive', 'invitations', 'product')) {
 		& powershell -NoProfile -File $PSCommandPath -Suite $isolatedSuite
 		if ($LASTEXITCODE -ne 0) {
 			exit $LASTEXITCODE
@@ -304,8 +304,8 @@ try {
 		throw 'The isolated database contained unexpected data before browser scenarios began.'
 	}
 	$flywayVersions = Invoke-TestDatabaseQuery "SELECT GROUP_CONCAT(version ORDER BY installed_rank SEPARATOR ',') FROM flyway_schema_history"
-	if ($flywayVersions -ne '1,2,3,4,5') {
-		throw 'The isolated database did not apply exactly Flyway V1-V5.'
+	if ($flywayVersions -ne '1,2,3,4,5,6,7') {
+		throw 'The isolated database did not apply exactly Flyway V1-V7.'
 	}
 	$flywayChecksums = Invoke-TestDatabaseQuery "SELECT GROUP_CONCAT(checksum ORDER BY installed_rank SEPARATOR ',') FROM flyway_schema_history WHERE version IN ('1','2','3','4')"
 	if ($flywayChecksums -ne '1632565820,-1885547116,-722028687,-1841320934') {
@@ -330,7 +330,8 @@ try {
 
 	Push-Location $frontendRoot
 	try {
-		if ($Suite -eq 'invitations') { & node node_modules/@playwright/test/cli.js test invitations.spec.js }
+		if ($Suite -eq 'product') { & node node_modules/@playwright/test/cli.js test product-features.spec.js }
+		elseif ($Suite -eq 'invitations') { & node node_modules/@playwright/test/cli.js test invitations.spec.js }
 		elseif ($Suite -eq 'history') { & node node_modules/@playwright/test/cli.js test financial-workflow.spec.js history-pagination.spec.js monetary-precision.spec.js }
 		elseif ($Suite -eq 'auth') { & node node_modules/@playwright/test/cli.js test authentication.spec.js auth-resource-limits.spec.js smoke.spec.js }
 		elseif ($Suite -eq 'expenses') { & node node_modules/@playwright/test/cli.js test expense-management.spec.js }

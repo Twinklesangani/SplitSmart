@@ -23,6 +23,7 @@ import jakarta.persistence.EntityManager;
 import org.springframework.http.HttpStatus;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
+import org.springframework.transaction.annotation.Isolation;
 import org.springframework.web.server.ResponseStatusException;
 
 import com.splitsmart.dto.CreateExpenseRequest;
@@ -83,7 +84,7 @@ public class ExpenseService {
 		this.objectMapper = objectMapper;
 	}
 
-	@Transactional
+	@Transactional(isolation = Isolation.READ_COMMITTED)
 	public ExpenseResponse createExpense(Long groupId, String subject, CreateExpenseRequest request, String operationHeader) {
 		User requester = loadUser(subject);
 		loadGroup(groupId);
@@ -117,13 +118,15 @@ public class ExpenseService {
 		}
 
 		User payer = userRepository.getReferenceById(request.paidByUserId());
-		Expense expense = expenseRepository.saveAndFlush(new Expense(
+		Expense expense = new Expense(
 				group,
 				request.description(),
 				request.amount(),
 				CURRENCY_CODE,
 				payer,
-				requester));
+				requester);
+        expense.updateMetadata(request.expenseDate(), request.category());
+        expense = expenseRepository.saveAndFlush(expense);
 
 		List<ExpenseSplit> splits = new ArrayList<>(requestedSplits.size());
 		for (CreateExpenseSplitRequest split : requestedSplits) {
@@ -144,9 +147,14 @@ public class ExpenseService {
 	private String creationFingerprint(CreateExpenseRequest request, List<CreateExpenseSplitRequest> splits) {
 		var normalizedSplits = splits.stream().sorted(Comparator.comparing(CreateExpenseSplitRequest::userId))
 				.map(split -> List.of(split.userId(), split.amount().stripTrailingZeros().toPlainString())).toList();
-		var logicalRequest = List.of(request.description(), request.amount().stripTrailingZeros().toPlainString(),
+		var logicalRequest = new ArrayList<Object>(List.of(request.description(), request.amount().stripTrailingZeros().toPlainString(),
 				request.paidByUserId(), CURRENCY_CODE,
-				request.splitType() == null ? SplitType.EXACT : request.splitType(), normalizedSplits);
+				request.splitType() == null ? SplitType.EXACT : request.splitType(), normalizedSplits));
+        // Preserve fingerprints of requests made before metadata fields existed.
+        if (request.expenseDate() != null || request.category() != null) {
+            logicalRequest.add(request.expenseDate());
+            logicalRequest.add(request.category());
+        }
 		try {
 			byte[] bytes = objectMapper.writeValueAsBytes(logicalRequest);
 			return HexFormat.of().formatHex(MessageDigest.getInstance("SHA-256").digest(bytes));
@@ -165,7 +173,7 @@ public class ExpenseService {
 		return toResponse(expense, expense.getSplits());
 	}
 
-	@Transactional
+	@Transactional(isolation = Isolation.READ_COMMITTED)
 	public ExpenseResponse updateExpense(
 			Long groupId,
 			Long expenseId,
@@ -191,6 +199,7 @@ public class ExpenseService {
 
 		User payer = userRepository.getReferenceById(request.paidByUserId());
 		expense.updateDetails(request.description(), request.amount(), payer);
+        expense.updateMetadata(request.expenseDate(), request.category());
 		expenseRepository.flush();
 
 		List<ExpenseSplit> replacements = new ArrayList<>(requestedSplits.size());
@@ -205,7 +214,7 @@ public class ExpenseService {
 		return toResponse(expense, savedSplits);
 	}
 
-	@Transactional
+	@Transactional(isolation = Isolation.READ_COMMITTED)
 	public void deleteExpense(Long groupId, Long expenseId, String subject) {
 		User requester = loadUser(subject);
 		loadGroup(groupId);
@@ -328,6 +337,10 @@ public class ExpenseService {
 			throw badRequest("Description must be nonblank and at most 255 characters.");
 		}
 		validateAmount(request.amount(), "Expense amount");
+        if (request.expenseDate() != null && (request.expenseDate().getYear() < 1000
+                || request.expenseDate().isAfter(java.time.LocalDate.now(java.time.ZoneOffset.UTC)))) {
+            throw badRequest("Expense date must be between 1000-01-01 and today in UTC.");
+        }
 		if (request.paidByUserId() == null || request.paidByUserId() <= 0) {
 			throw badRequest("Payer must be a valid group member.");
 		}
@@ -447,8 +460,11 @@ public class ExpenseService {
 	}
 
 	private ExpenseGroup lockGroup(Long groupId) {
-		return expenseGroupRepository.findByIdForUpdate(groupId)
+		ExpenseGroup group = expenseGroupRepository.findByIdForUpdate(groupId)
 				.orElseThrow(() -> notFound("Group not found."));
+        entityManager.refresh(group, jakarta.persistence.LockModeType.PESSIMISTIC_WRITE);
+        group.requireActive();
+        return group;
 	}
 
 	private Expense loadExpense(Long groupId, Long expenseId) {
@@ -488,7 +504,7 @@ public class ExpenseService {
 				expense.getCurrencyCode(),
 				expense.getPaidBy().getId(),
 				expense.getCreatedBy().getId(),
-				splitResponses);
+				splitResponses, expense.getExpenseDate(), expense.getCategory());
 	}
 
 	private static ResponseStatusException notFound(String message) {

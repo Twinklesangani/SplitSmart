@@ -655,14 +655,14 @@ function GroupSettlementsContent({ data, user }) {
 
   return (
     <GroupPageLayout group={data.group} activeTitle="Settlements" description={`Reported repayments for ${data.group.name}.`} eyebrow="REPAYMENT HISTORY">
-      <SettlementForm
+      {!data.group.archived && <SettlementForm
         key={`${user.id}:${data.group.id}`}
         groupId={data.group.id}
         members={data.members}
         currentUser={user}
         finance={finance}
         onRefresh={finance.refresh}
-      />
+      />}
       <Card className="finance-section">
         <div className="section-heading">
           <div><h2>Settlement history</h2><p>Reported repayments recorded for this group, newest first.</p></div>

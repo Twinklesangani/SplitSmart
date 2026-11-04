@@ -203,7 +203,7 @@ describe('login and session', () => {
     fetch
       .mockImplementationOnce(() => new Promise((resolve) => { finishLogin = resolve }))
       .mockResolvedValueOnce(jsonResponse(profile))
-      .mockResolvedValueOnce(jsonResponse([]))
+      .mockResolvedValueOnce(jsonResponse({ groups: [], activity: [], totalExpenses: '0.00', owed: '0.00', receivable: '0.00' }))
     renderApp()
 
     await user.type(await screen.findByLabelText('Email address'), profile.email)
@@ -277,7 +277,7 @@ describe('login and session', () => {
     window.sessionStorage.setItem('splitsmart.accessToken', placeholderToken)
     fetch
       .mockResolvedValueOnce(jsonResponse(profile))
-      .mockResolvedValueOnce(jsonResponse([]))
+      .mockResolvedValueOnce(jsonResponse({ groups: [], activity: [], totalExpenses: '0.00', owed: '0.00', receivable: '0.00' }))
       .mockResolvedValueOnce(jsonResponse([]))
     renderApp('/dashboard')
 
