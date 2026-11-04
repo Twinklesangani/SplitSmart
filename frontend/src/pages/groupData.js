@@ -3,6 +3,7 @@ import { useParams } from 'react-router-dom'
 import { useAuth } from '../context/useAuth.js'
 import { ApiError } from '../services/apiClient.js'
 import { listGroupMembers, listGroups } from '../services/groupService.js'
+import { useRefreshOnReturn } from './useRefreshOnReturn.js'
 
 function isValidGroupId(groupId) {
   return /^\d+$/.test(groupId) && Number.isSafeInteger(Number(groupId)) && Number(groupId) > 0
@@ -13,6 +14,7 @@ export function useGroupData() {
   const { user } = useAuth()
   const [data, setData] = useState({ scope: '', status: 'loading', group: null, members: [], error: '' })
   const [loadAttempt, setLoadAttempt] = useState(0)
+  useRefreshOnReturn(setLoadAttempt)
   const scope = `${user.id}:${groupId}:${loadAttempt}`
 
   useEffect(() => {
@@ -61,7 +63,7 @@ export function useGroupData() {
 
   const visibleData = !isValidGroupId(groupId)
     ? { status: 'not-found', group: null, members: [], error: '' }
-    : data.scope === scope
+    : data.scope.split(':').slice(0, 2).join(':') === `${user.id}:${groupId}`
       ? data
       : { status: 'loading', group: null, members: [], error: '' }
 

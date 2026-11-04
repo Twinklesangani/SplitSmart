@@ -1,4 +1,5 @@
 import { useEffect, useMemo, useRef, useState } from 'react'
+import { useRefreshOnReturn } from './useRefreshOnReturn.js'
 import { Link, useLocation, useNavigate, useParams } from 'react-router-dom'
 import { Button, Card, EmptyState, PageHeader } from '../components/UI.jsx'
 import { useAuth } from '../context/useAuth.js'
@@ -48,6 +49,7 @@ function RequestError({ error, onRetry }) {
 function useExpenseList(groupId, userId, groupStatus) {
   const moreRef = useRef(null)
   const [attempt, setAttempt] = useState(0)
+  useRefreshOnReturn(setAttempt)
   const [result, setResult] = useState({ scope: '', status: 'loading', expenses: [], error: '' })
   const scope = `${userId}:${groupId}:${attempt}`
 

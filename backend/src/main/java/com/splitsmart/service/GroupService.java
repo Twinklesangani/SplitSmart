@@ -63,7 +63,8 @@ public class GroupService {
 	@Transactional
 	public GroupMemberResponse addMember(Long groupId, String subject, AddGroupMemberRequest request) {
 		User requester = loadUser(subject);
-		ExpenseGroup group = loadGroup(groupId);
+		ExpenseGroup group = expenseGroupRepository.findByIdForUpdate(groupId)
+				.orElseThrow(() -> notFound("Group not found."));
 		requireMembership(groupId, requester.getId());
 		if (!Objects.equals(group.getCreatedBy().getId(), requester.getId())) {
 			throw new ResponseStatusException(HttpStatus.FORBIDDEN, "Only the group creator can add members.");

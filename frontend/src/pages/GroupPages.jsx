@@ -6,6 +6,7 @@ import { useAuth } from '../context/useAuth.js'
 import { ApiError } from '../services/apiClient.js'
 import { addGroupMember, listGroupMembers } from '../services/groupService.js'
 import { useGroupData } from './groupData.js'
+import { InviteForm } from './Invitations.jsx'
 
 const tabs = [
   { path: '', label: 'Overview', icon: 'home', end: true },
@@ -161,6 +162,7 @@ function GroupOverviewContent({ data, user }) {
 
   return (
     <div className="group-overview-grid">
+      {isCreator && <InviteForm groupId={group.id} />}
       <Card className="group-overview-welcome">
         <span className="welcome-icon"><Icon name="spark" size={21} /></span>
         <p className="eyebrow">GROUP SPACE</p>

@@ -178,7 +178,7 @@ class SplitSmartMySqlIT {
 	void flywayAndHibernateUseTheIsolatedMySqlSchema() throws Exception {
 		assertTrue(MYSQL.isRunning());
 		assertNotNull(MYSQL.getContainerId());
-		assertEquals(4, flyway.info().applied().length);
+        assertEquals(5, flyway.info().applied().length);
 		assertEquals(MigrationState.SUCCESS, flyway.info().applied()[0].getState());
 		assertEquals("1", flyway.info().applied()[0].getVersion().getVersion());
 		assertEquals(MigrationState.SUCCESS, flyway.info().applied()[1].getState());
@@ -200,7 +200,7 @@ class SplitSmartMySqlIT {
 			assertTrue(mysqlVersion.startsWith("8.4."));
 		}
 
-		assertEquals(14, jdbcTemplate.queryForObject(
+		assertEquals(15, jdbcTemplate.queryForObject(
 				"SELECT COUNT(*) FROM information_schema.table_constraints "
 						+ "WHERE constraint_schema = DATABASE() AND constraint_type = 'FOREIGN KEY'",
 				Integer.class));
@@ -789,6 +789,64 @@ class SplitSmartMySqlIT {
                 expenseSplitRepository.saveAndFlush(new ExpenseSplit(expense, borrower, new BigDecimal("1.00")));
             }
         });
+    }
+
+    @Test
+    void invitationSurvivesRegistrationAndOnlyRecipientCanAcceptOnce() throws Exception {
+        Fixture group = createFixture("invitation", 1);
+        Fixture outsider = createFixture("invitation-outsider", 1);
+        String owner = token(group.memberIds().get(0));
+        String email = "invite-" + UUID.randomUUID() + "@example.invalid";
+        String path = "/api/groups/" + group.groupId() + "/invitations";
+        assertEquals(404, send("POST", path, token(outsider.memberIds().get(0)), Map.of("email", email)).statusCode());
+        var attempts = concurrently(List.of(
+                () -> send("POST", path, owner, Map.of("email", email)),
+                () -> send("POST", path, owner, Map.of("email", email))));
+        assertEquals(List.of(201, 409), attempts.stream().map(HttpResponse::statusCode).sorted().toList());
+        var created = attempts.stream().filter(response -> response.statusCode() == 201).findFirst().orElseThrow();
+        assertEquals(201, created.statusCode(), created.body());
+        long id = objectMapper.readTree(created.body()).get("id").asLong();
+        assertEquals(409, send("POST", path, owner, Map.of("email", email)).statusCode());
+        assertEquals(1, groupMemberRepository.findAllWithUserByGroupIdOrderByIdAsc(group.groupId()).size());
+        assertEquals(201, send("POST", "/api/auth/register", null,
+                Map.of("name", "Invited later", "email", email, "password", newTestSecret())).statusCode());
+        long userId = userRepository.findByEmail(email).orElseThrow().getId();
+        String recipient = token(userId);
+        String decision = "/api/invitations/" + id + "/accept";
+        assertEquals(404, send("POST", decision, owner, null).statusCode());
+        assertEquals(404, send("GET", "/api/groups/" + group.groupId() + "/members", recipient, null).statusCode());
+        assertTrue(send("GET", "/api/invitations", recipient, null).body().contains("\"id\":" + id));
+        var accepted = concurrently(List.of(
+                () -> send("POST", decision, recipient, null),
+                () -> send("POST", decision, recipient, null)));
+        assertEquals(List.of(204, 409), accepted.stream().map(HttpResponse::statusCode).sorted().toList());
+        assertTrue(groupMemberRepository.existsByGroup_IdAndUser_Id(group.groupId(), userId));
+        assertEquals(200, send("GET", balancesPath(group.groupId()), recipient, null).statusCode());
+        assertEquals("[]", send("GET", "/api/invitations", recipient, null).body());
+    }
+
+    @Test
+    void declinedAndExpiredInvitationsCannotCreateMembershipOrBeReused() throws Exception {
+        Fixture group = createFixture("invite-expiry", 1);
+        Fixture recipientGroup = createFixture("invite-recipient", 1);
+        long recipientId = recipientGroup.memberIds().get(0);
+        String email = userRepository.findById(recipientId).orElseThrow().getEmail();
+        String owner = token(group.memberIds().get(0));
+        String recipient = token(recipientId);
+        String path = "/api/groups/" + group.groupId() + "/invitations";
+        long first = objectMapper.readTree(send("POST", path, owner, Map.of("email", email)).body()).get("id").asLong();
+        assertEquals(204, send("POST", "/api/invitations/" + first + "/decline", recipient, null).statusCode());
+        assertFalse(groupMemberRepository.existsByGroup_IdAndUser_Id(group.groupId(), recipientId));
+        assertEquals(409, send("POST", "/api/invitations/" + first + "/accept", recipient, null).statusCode());
+        long second = objectMapper.readTree(send("POST", path, owner, Map.of("email", email)).body()).get("id").asLong();
+        assertTrue(second != first);
+        jdbcTemplate.update("UPDATE group_invitations SET expires_at = CURRENT_TIMESTAMP - INTERVAL 1 DAY WHERE id = ?", second);
+        assertEquals(409, send("POST", "/api/invitations/" + second + "/accept", recipient, null).statusCode());
+        assertFalse(groupMemberRepository.existsByGroup_IdAndUser_Id(group.groupId(), recipientId));
+        long third = objectMapper.readTree(send("POST", path, owner, Map.of("email", email)).body()).get("id").asLong();
+        assertTrue(third != second);
+        assertEquals(409, send("POST", "/api/invitations/" + second + "/accept", recipient, null).statusCode());
+        assertEquals(204, send("POST", "/api/invitations/" + third + "/accept", recipient, null).statusCode());
     }
 
 	private Fixture createFixture(String label, int memberCount) {

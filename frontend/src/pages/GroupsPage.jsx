@@ -4,6 +4,8 @@ import { Button, Card, EmptyState, FormField, GroupCard, PageHeader } from '../c
 import { useAuth } from '../context/useAuth.js'
 import { ApiError } from '../services/apiClient.js'
 import { createGroup, listGroups } from '../services/groupService.js'
+import { InvitationInbox } from './Invitations.jsx'
+import { useRefreshOnReturn } from './useRefreshOnReturn.js'
 
 const GROUP_NAME_MAX_LENGTH = 120
 
@@ -12,6 +14,7 @@ export default function GroupsPage() {
   const navigate = useNavigate()
   const [data, setData] = useState({ scope: '', status: 'loading', groups: [], error: '' })
   const [loadAttempt, setLoadAttempt] = useState(0)
+  useRefreshOnReturn(setLoadAttempt)
   const scope = `${user.id}:${loadAttempt}`
   const [createOpen, setCreateOpen] = useState(false)
   const [groupName, setGroupName] = useState('')
@@ -136,6 +139,7 @@ export default function GroupsPage() {
         </Card>
       )}
 
+      <InvitationInbox key={user.id} userId={user.id} onAccepted={() => setLoadAttempt(value => value + 1)} />
       {createNotice && <p className="inline-notice" role="status">{createNotice}</p>}
 
       {visibleData.status === 'loading' && (

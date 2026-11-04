@@ -44,7 +44,7 @@ class GroupServiceTest {
 		User target = new User("Target", "target@example.com", "{bcrypt}hash");
 		ExpenseGroup group = new ExpenseGroup("Test group", creator);
 		when(userRepository.findById(1L)).thenReturn(Optional.of(creator));
-		when(expenseGroupRepository.findById(5L)).thenReturn(Optional.of(group));
+		when(expenseGroupRepository.findByIdForUpdate(5L)).thenReturn(Optional.of(group));
 		when(groupMemberRepository.existsByGroup_IdAndUser_Id(5L, null)).thenReturn(true, false);
 		when(userRepository.findByEmail("target@example.com")).thenReturn(Optional.of(target));
 		when(groupMemberRepository.saveAndFlush(any())).thenThrow(
@@ -68,7 +68,7 @@ class GroupServiceTest {
 				"Different constraint violation",
 				new ConstraintViolationException("Other constraint", null, "fk_other_constraint"));
 		when(userRepository.findById(1L)).thenReturn(Optional.of(creator));
-		when(expenseGroupRepository.findById(5L)).thenReturn(Optional.of(group));
+		when(expenseGroupRepository.findByIdForUpdate(5L)).thenReturn(Optional.of(group));
 		when(groupMemberRepository.existsByGroup_IdAndUser_Id(5L, null)).thenReturn(true, false);
 		when(userRepository.findByEmail("target@example.com")).thenReturn(Optional.of(target));
 		when(groupMemberRepository.saveAndFlush(any())).thenThrow(databaseFailure);

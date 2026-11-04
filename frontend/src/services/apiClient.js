@@ -71,9 +71,13 @@ function safeMessage(status, code, path) {
 }
 
 function notifyExpiredGroupSession(path, status) {
-  if (status === 401 && path.startsWith('/api/groups')) {
+  if (status === 401 && isProtectedPath(path)) {
     window.dispatchEvent(new Event('splitsmart:session-expired'))
   }
+}
+
+function isProtectedPath(path) {
+  return /^\/api\/(groups|invitations)(\/|$)/.test(path)
 }
 
 function isAbortError(error) {
@@ -83,7 +87,7 @@ function isAbortError(error) {
 export async function apiRequest(path, { method = 'GET', body, token, signal, expectedStatus, operationKey, includeCursor = false } = {}) {
   const url = resolveApiUrl(path)
   let requestToken = token
-  if (requestToken === undefined && path.startsWith('/api/groups')) {
+  if (requestToken === undefined && isProtectedPath(path)) {
     try {
       requestToken = window.sessionStorage.getItem('splitsmart.accessToken')
     } catch {

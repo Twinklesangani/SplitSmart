@@ -1,8 +1,8 @@
-param([ValidateSet('smoke', 'auth', 'expenses', 'groups', 'history', 'responsive', 'all')][string]$Suite = 'smoke')
+param([ValidateSet('smoke', 'auth', 'expenses', 'groups', 'history', 'responsive', 'invitations', 'all')][string]$Suite = 'smoke')
 $ErrorActionPreference = 'Stop'
 
 if ($Suite -eq 'all') {
-	foreach ($isolatedSuite in @('auth', 'expenses', 'groups', 'history', 'responsive')) {
+	foreach ($isolatedSuite in @('auth', 'expenses', 'groups', 'history', 'responsive', 'invitations')) {
 		& powershell -NoProfile -File $PSCommandPath -Suite $isolatedSuite
 		if ($LASTEXITCODE -ne 0) {
 			exit $LASTEXITCODE
@@ -304,13 +304,14 @@ try {
 		throw 'The isolated database contained unexpected data before browser scenarios began.'
 	}
 	$flywayVersions = Invoke-TestDatabaseQuery "SELECT GROUP_CONCAT(version ORDER BY installed_rank SEPARATOR ',') FROM flyway_schema_history"
-	if ($flywayVersions -ne '1,2,3,4') {
-		throw 'The isolated database did not apply exactly the existing Flyway V1-V4 migrations.'
+	if ($flywayVersions -ne '1,2,3,4,5') {
+		throw 'The isolated database did not apply exactly Flyway V1-V5.'
 	}
-	$flywayChecksums = Invoke-TestDatabaseQuery "SELECT GROUP_CONCAT(checksum ORDER BY installed_rank SEPARATOR ',') FROM flyway_schema_history"
+	$flywayChecksums = Invoke-TestDatabaseQuery "SELECT GROUP_CONCAT(checksum ORDER BY installed_rank SEPARATOR ',') FROM flyway_schema_history WHERE version IN ('1','2','3','4')"
 	if ($flywayChecksums -ne '1632565820,-1885547116,-722028687,-1841320934') {
 		throw 'The isolated database migration checksums did not match the established V1-V4 baseline.'
 	}
+	$allFlywayChecksums = Invoke-TestDatabaseQuery "SELECT GROUP_CONCAT(checksum ORDER BY installed_rank SEPARATOR ',') FROM flyway_schema_history"
 
 	$node = (Get-Command node -ErrorAction Stop).Source
 	$quotedViteScript = '"' + $viteScript + '"'
@@ -329,7 +330,8 @@ try {
 
 	Push-Location $frontendRoot
 	try {
-		if ($Suite -eq 'history') { & node node_modules/@playwright/test/cli.js test financial-workflow.spec.js history-pagination.spec.js monetary-precision.spec.js }
+		if ($Suite -eq 'invitations') { & node node_modules/@playwright/test/cli.js test invitations.spec.js }
+		elseif ($Suite -eq 'history') { & node node_modules/@playwright/test/cli.js test financial-workflow.spec.js history-pagination.spec.js monetary-precision.spec.js }
 		elseif ($Suite -eq 'auth') { & node node_modules/@playwright/test/cli.js test authentication.spec.js auth-resource-limits.spec.js smoke.spec.js }
 		elseif ($Suite -eq 'expenses') { & node node_modules/@playwright/test/cli.js test expense-management.spec.js }
 		elseif ($Suite -eq 'groups') { & node node_modules/@playwright/test/cli.js test group-management.spec.js }
@@ -348,11 +350,11 @@ try {
 	"ISOLATED_PRECISION_ROWS=$precisionRows"
 	$finalCounts = Invoke-TestDatabaseQuery 'SELECT (SELECT COUNT(*) FROM users), (SELECT COUNT(*) FROM expense_groups), (SELECT COUNT(*) FROM group_members), (SELECT COUNT(*) FROM expenses), (SELECT COUNT(*) FROM expense_splits), (SELECT COUNT(*) FROM settlements), (SELECT COUNT(*) FROM expense_creation_operations)'
 	$finalFlywayVersions = Invoke-TestDatabaseQuery "SELECT GROUP_CONCAT(version ORDER BY installed_rank SEPARATOR ',') FROM flyway_schema_history"
-	if ($finalFlywayVersions -ne '1,2,3,4') {
+	if ($finalFlywayVersions -ne $flywayVersions) {
 		throw 'The E2E scenarios altered the disposable Flyway history.'
 	}
 	$finalFlywayChecksums = Invoke-TestDatabaseQuery "SELECT GROUP_CONCAT(checksum ORDER BY installed_rank SEPARATOR ',') FROM flyway_schema_history"
-	if ($finalFlywayChecksums -ne '1632565820,-1885547116,-722028687,-1841320934') {
+	if ($finalFlywayChecksums -ne $allFlywayChecksums) {
 		throw 'The E2E scenarios altered the disposable Flyway migration checksums.'
 	}
 	"ISOLATED_E2E_RUN=$runId"
