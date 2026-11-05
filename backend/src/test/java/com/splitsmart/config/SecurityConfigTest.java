@@ -13,6 +13,7 @@ import org.springframework.test.web.servlet.MockMvc;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.hamcrest.Matchers.containsString;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.get;
+import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.head;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.options;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.post;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.content;
@@ -29,6 +30,21 @@ class SecurityConfigTest {
 
 	@Autowired
 	private MockMvc mockMvc;
+
+	@Test
+	void publicHealthSupportsHeadWithoutOpeningProtectedApiRoutes() throws Exception {
+		mockMvc.perform(get("/api/health"))
+				.andExpect(status().isOk())
+				.andExpect(content().json("{\"status\":\"UP\"}", JsonCompareMode.STRICT));
+		mockMvc.perform(head("/api/health"))
+				.andExpect(status().isOk())
+				.andExpect(content().contentTypeCompatibleWith(MediaType.APPLICATION_JSON_VALUE));
+		for (String path : new String[] {"/api/groups", "/api/auth/me", "/api/health/private"}) {
+			mockMvc.perform(get(path)).andExpect(status().isUnauthorized());
+			mockMvc.perform(head(path)).andExpect(status().isUnauthorized());
+		}
+		mockMvc.perform(post("/api/health")).andExpect(status().isUnauthorized());
+	}
 
 	@Test
 	void allowsPreflightFromConfiguredFrontendOrigin() throws Exception {
