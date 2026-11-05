@@ -39,4 +39,5 @@ Manual integration execution remains available. Merge-blocking enforcement is a
 separate repository-plan and branch-protection decision. Production deployment needs HTTPS, managed
 secrets, migration credentials separate from runtime, backups/recovery, monitoring,
 and review of JWT/sessionStorage and token-revocation limitations documented in README.
-No deployment or external AI review is complete.
+A live portfolio deployment is identified in README; that deployed SHA must be
+distinguished from later local engineering work. External AI review is not complete.

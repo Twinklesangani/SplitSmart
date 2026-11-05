@@ -3,6 +3,75 @@
 SplitSmart is a group expense management application intended to help people
 track and manage shared expenses.
 
+## Live portfolio and release identity
+
+- Frontend: [SplitSmart on Cloudflare Pages](https://splitsmart-92b.pages.dev/).
+- Backend: [public health check](https://splitsmart-backend-ydj2.onrender.com/api/health).
+- Latest verified deployed backend release: `bc59921336f148784317550a5f29202edbeda825`
+  on `codex/product-completion`; its GitHub CI completed successfully.
+- This checkout also contains later engineering work. Its branch and feature
+  documentation must not be treated as proof that those changes are deployed.
+  The frontend deployment SHA needs separate confirmation in Pages.
+
+### Free hosting availability
+
+This is a portfolio demo with best-effort availability, not guaranteed 24/7 service.
+[Render Free](https://render.com/docs/free) sleeps after 15 idle minutes, can restart,
+and shares 750 instance-hours per workspace per calendar month. One continuously
+running service needs 720 hours in November or 744 in a 31-day month; other services
+consume the same allowance. No card was on file and November usage was 1.93 hours
+when inspected on 5 November 2026; these are observations, not ongoing guarantees.
+Without a payment method, exhausted allowances can suspend service rather than
+create paid capacity. Do not add billing to keep this demo online.
+
+[Aiven Free](https://aiven.io/docs/platform/concepts/service-pricing#free-tier)
+may power off inactive databases after notification. A public process health check
+does not query MySQL and cannot prevent this. The existing database was recovered
+from power-off; readiness includes the database health contributor. Monitor provider
+notifications and recover the existing Free service manually when needed, preserving
+MySQL compatibility and keeping credentials and backup files outside Git.
+
+[Cloudflare Pages limits](https://developers.cloudflare.com/pages/platform/limits/)
+include 500 builds/month, 20,000 files and 25 MiB per asset on Free; Pages Functions
+have separate Workers quotas. Static frontend delivery does not ensure API/database
+availability. [UptimeRobot Free](https://uptimerobot.com/pricing/) supports five-minute
+monitoring; use one private monitor within its
+[fair-use policy](https://uptimerobot.com/terms-fair-use/).
+
+The existing HTTP monitor has email alerts and no attached public status page.
+Its Free configuration uses HEAD: the deployed `/api/health` allows GET but currently
+returns HTTP 401 to HEAD. A DOWN monitor therefore does not necessarily mean GET
+or MySQL is unavailable. Do not upgrade or claim monitoring recovery until this
+method mismatch is resolved through a separately reviewed minimal change or a
+verified Free GET-capable monitoring option. No such code change is included here.
+
+### Publication gate (5 November 2026)
+
+GitHub is private, with no open PRs at review time. The deployed release and recent
+CI runs passed; tests were not repeated for this documentation-only review.
+The local checkout differs from the deployed branch and has a pre-existing test
+edit that is not part of this documentation commit. Compare release SHAs before
+publishing. Build/run instructions below describe this checkout.
+
+Tracked-file checks found no generated build trees, raw logs, private-key files or
+local environment files. Ignore rules cover environment files, local credentials,
+database data and operational reports. A bounded heuristic scan of 67 text blobs
+reachable from local branches and remote-tracking refs found no provider-token or
+private-key pattern matches; literal-password candidates still need classification
+with the established secret scanner. This is not a clean-history certification.
+GitHub reported Dependabot alerts and secret scanning disabled, so unresolved
+security alerts cannot be ruled out from those services. The prior revoked-account
+incident is documented in the engineering summary; do not publish until historical
+credentials, logs and scanner findings have been reviewed. No Git history was rewritten.
+
+Recommendation: keep the current MySQL-compatible services for an honestly labelled
+best-effort portfolio, retain TLS identity verification and private credentials,
+review provider inactivity emails and maintain private recoverable backups.
+Do not migrate to an unverified free provider for an always-on promise. Five-minute
+monitoring is a documented Free feature, not a provider uptime guarantee or a way
+to override suspension limits. Render had no card and projected $0 charges at review;
+Aiven and Cloudflare account-wide payment settings were not independently verified.
+
 ## Technology stack
 
 - Backend: Java 21, Spring Boot 3.5.x, Maven, and MySQL 8
@@ -23,8 +92,8 @@ The old exposed database account's access has been removed and the application
 uses a dedicated DML-only runtime account. Publication still requires the owner's
 GitHub account selection and final content review; see
 [engineering quality summary](docs/engineering-quality.md).
-JWT runtime verification is recorded in the final release report. No publication
-or production deployment has been completed.
+JWT runtime verification is recorded in the local final release report. A live
+portfolio deployment exists as identified above; GitHub remains private.
 
 ```text
 React frontend → REST / JWT → Spring Boot controllers
