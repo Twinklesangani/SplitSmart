@@ -11,7 +11,8 @@ track and manage shared expenses.
   on `codex/product-completion`; its GitHub CI completed successfully.
 - This checkout also contains later engineering work. Its branch and feature
   documentation must not be treated as proof that those changes are deployed.
-  The frontend deployment SHA needs separate confirmation in Pages.
+  Cloudflare Pages also confirms production source `bc59921336f148784317550a5f29202edbeda825`;
+  automatic frontend deployments are paused.
 
 ### Free hosting availability
 
@@ -19,7 +20,7 @@ This is a portfolio demo with best-effort availability, not guaranteed 24/7 serv
 [Render Free](https://render.com/docs/free) sleeps after 15 idle minutes, can restart,
 and shares 750 instance-hours per workspace per calendar month. One continuously
 running service needs 720 hours in November or 744 in a 31-day month; other services
-consume the same allowance. No card was on file and November usage was 1.93 hours
+consume the same allowance. No card was on file and November usage was 2.07 hours
 when inspected on 5 November 2026; these are observations, not ongoing guarantees.
 Without a payment method, exhausted allowances can suspend service rather than
 create paid capacity. Do not add billing to keep this demo online.
@@ -42,27 +43,38 @@ The existing HTTP monitor has email alerts and no attached public status page.
 Its Free configuration uses HEAD: the deployed `/api/health` allows GET but currently
 returns HTTP 401 to HEAD. A DOWN monitor therefore does not necessarily mean GET
 or MySQL is unavailable. Do not upgrade or claim monitoring recovery until this
-method mismatch is resolved through a separately reviewed minimal change or a
-verified Free GET-capable monitoring option. No such code change is included here.
+method mismatch is resolved. Free GET selection is disabled in the monitor UI.
+The prepared security fix permits unauthenticated HEAD only for `/api/health`;
+protected routes retain authentication. It requires separate deployment approval,
+then a successful scheduled monitor check before declaring recovery. Apply only the
+focused security fix to the deployed branch; do not deploy this entire development
+branch, which includes other engineering work.
 
 ### Publication gate (5 November 2026)
 
 GitHub is private, with no open PRs at review time. The deployed release and recent
-CI runs passed; tests were not repeated for this documentation-only review.
+CI runs passed. The monitoring change adds a focused GET/HEAD authorization regression;
+the affected security and health classes passed all 9 tests, including the new
+regression. No full-suite or live-database test run was repeated.
 The local checkout differs from the deployed branch and has a pre-existing test
-edit that is not part of this documentation commit. Compare release SHAs before
+edit that is not part of the monitoring fix or documentation commits. Compare release SHAs before
 publishing. Build/run instructions below describe this checkout.
 
 Tracked-file checks found no generated build trees, raw logs, private-key files or
 local environment files. Ignore rules cover environment files, local credentials,
-database data and operational reports. A bounded heuristic scan of 67 text blobs
-reachable from local branches and remote-tracking refs found no provider-token or
-private-key pattern matches; literal-password candidates still need classification
-with the established secret scanner. This is not a clean-history certification.
+database data and operational reports. Official Gitleaks v8.30.1, verified against
+its published SHA-256 checksum, found no leaks in the tracked source export or
+all 94 commits reachable through local Git refs before the monitoring-fix commits.
+The repository is not shallow; the scan used `git --log-opts=--all`.
+The repository configuration extends default rules and permits only the exact
+synthetic H2 signing fixture in its test-profile file. Reports are redacted and kept
+in ignored `audit-output/release-clearance/`. This bounded result does not cover
+unfetched remote history, provider logs, ignored credentials or prove absence of all secrets.
 GitHub reported Dependabot alerts and secret scanning disabled, so unresolved
 security alerts cannot be ruled out from those services. The prior revoked-account
-incident is documented in the engineering summary; do not publish until historical
-credentials, logs and scanner findings have been reviewed. No Git history was rewritten.
+incident is documented in the engineering summary. No leak was detected in the scanned
+history; provider logs and security configuration still require owner review before
+publication. No Git history was rewritten and no repository visibility was changed.
 
 Recommendation: keep the current MySQL-compatible services for an honestly labelled
 best-effort portfolio, retain TLS identity verification and private credentials,
