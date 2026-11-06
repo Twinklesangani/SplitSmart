@@ -23,6 +23,7 @@ it('creates a private link and shows expiry/revocation controls without enrollin
 })
 
 it('reports verification unavailable without suggesting mailbox ownership is established', async () => {
+  vi.stubEnv('VITE_EMAIL_ACTIONS_ENABLED', 'true')
   const user = userEvent.setup()
   apiRequest.mockRejectedValue(new Error('Email verification is currently unavailable. Ask the group owner for a private invitation link.'))
   render(<InvitationInbox userId={1} onAccepted={vi.fn()} />)

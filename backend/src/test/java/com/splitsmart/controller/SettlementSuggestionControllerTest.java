@@ -100,6 +100,35 @@ class SettlementSuggestionControllerTest {
 	}
 
 	@Test
+	void fourPersonFiftyRupeeCycleNeedsNoTransfersAndPreservesEveryObligation() throws Exception {
+		User a = createUser("Cycle A"), b = createUser("Cycle B"), c = createUser("Cycle C"), d = createUser("Cycle D");
+		ExpenseGroup group = createGroup("Fifty rupee circle", a, b, c, d);
+		createExpense(group, b, a, "50.00"); // A owes B
+		createExpense(group, c, b, "50.00");
+		createExpense(group, d, c, "50.00");
+		createExpense(group, a, d, "50.00");
+		var originalIds = expenseRepository.findAll().stream().map(Expense::getId).sorted().toList();
+		long settlementsBefore = settlementRepository.count();
+		for (User member : new User[]{a,b,c,d}) {
+			mockMvc.perform(get(suggestionsPath(group)).header("Authorization", bearerToken(member)))
+					.andExpect(status().isOk())
+					.andExpect(jsonPath("$.totalSuggestedAmount").value("0.00"))
+					.andExpect(jsonPath("$.suggestions.length()").value(0));
+		}
+		mockMvc.perform(get("/api/groups/{id}/balances", group.getId()).header("Authorization", bearerToken(a)))
+				.andExpect(status().isOk())
+				.andExpect(jsonPath("$.balances.length()").value(4))
+				.andExpect(jsonPath("$.balances[*].netBalance").value(org.hamcrest.Matchers.everyItem(org.hamcrest.Matchers.is("0.00"))));
+		assertEquals(originalIds, expenseRepository.findAll().stream().map(Expense::getId).sorted().toList());
+		assertEquals(settlementsBefore, settlementRepository.count());
+		var jdbc = new org.springframework.jdbc.core.JdbcTemplate(dataSource);
+		assertEquals(4, jdbc.queryForObject("SELECT COUNT(*) FROM expenses WHERE group_id=? AND amount=50.00", Integer.class, group.getId()));
+		assertEquals(4, jdbc.queryForObject("SELECT COUNT(*) FROM expense_splits s JOIN expenses e ON e.id=s.expense_id WHERE e.group_id=? AND s.amount=50.00", Integer.class, group.getId()));
+	}
+
+	@Autowired private javax.sql.DataSource dataSource;
+
+	@Test
 	void suggestionsUseExactPaiseAndReflectPartialSettlement() throws Exception {
 		User creditor = createUser("Suggestion Paise Creditor");
 		User debtorA = createUser("Suggestion Paise Debtor A");

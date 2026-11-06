@@ -34,6 +34,7 @@ function messageForHttpError(status, code, path) {
   if (status === 503 && path === '/api/auth/email-verification') return 'Email verification is currently unavailable. Ask the group owner for a private invitation link.'
   if (status === 403 && /^\/api\/invitations\/.+\/accept$/.test(path)) return 'Verify ownership of your email before accepting, or ask the owner for a private group link.'
   if (status === 503 && path === '/api/auth/forgot-password') return 'Email recovery is currently unavailable. Please try again later.'
+  if ([502, 503, 504].includes(status)) return 'SplitSmart is temporarily unavailable or starting up. Please wait a moment and retry. Check history before repeating an expense or repayment.'
   if (status === 429) return 'Too many requests. Please wait before trying again.'
   if (status === 413) return 'This request is too large. Reduce its size and try again.'
   if (status === 401) {
@@ -123,9 +124,9 @@ export async function apiRequest(path, { method = 'GET', body, token, signal, ex
       })
     } catch (error) {
       if (isAbortError(error)) {
-        throw new ApiError('The request timed out. Check your connection and try again.', { code: 'timeout' })
+        throw new ApiError('The request timed out. SplitSmart may be starting up. Please wait a moment and retry; check history before repeating an expense or repayment.', { code: 'timeout' })
       }
-      throw new ApiError('Could not reach SplitSmart. Check that the backend is running and try again.', { code: 'network_error' })
+      throw new ApiError('Could not reach SplitSmart. Check your connection; the service may be starting up. Please wait a moment and retry.', { code: 'network_error' })
     }
 
     if (response.status === 204) {

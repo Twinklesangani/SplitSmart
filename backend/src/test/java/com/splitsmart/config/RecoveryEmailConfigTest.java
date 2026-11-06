@@ -5,6 +5,18 @@ import static org.junit.jupiter.api.Assertions.*;
 
 class RecoveryEmailConfigTest {
     @Test
+    void disabledDeliveryHasNoUsableEmailChannelOrTokenShortcut() {
+        var delivery = new PasswordRecoveryConfig().passwordResetDelivery(
+                new RecoveryEmailProperties(false, false, "", "", ""));
+        assertFalse(delivery.isConfigured());
+        assertFalse(delivery.isAvailable());
+        var expiry = java.time.Instant.now().plusSeconds(1800);
+        assertThrows(IllegalStateException.class, () -> delivery.sendReset("test@example.invalid", "test-only", expiry));
+        assertThrows(IllegalStateException.class, () -> delivery.sendVerification("test@example.invalid", "test-only", expiry));
+        assertThrows(IllegalStateException.class, () -> delivery.sendInvitation("test@example.invalid", "Test group"));
+        assertThrows(IllegalStateException.class, () -> delivery.sendPasswordChanged("test@example.invalid"));
+    }
+    @Test
     void requiresBothExplicitEnableAndVerifiedDeliveryBeforeAvailability() {
         var config = new PasswordRecoveryConfig();
         for (var settings : new RecoveryEmailProperties[]{

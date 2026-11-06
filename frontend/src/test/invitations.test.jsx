@@ -6,7 +6,7 @@ import { apiRequest } from '../services/apiClient.js'
 
 vi.mock('../services/apiClient.js', () => ({ apiRequest: vi.fn() }))
 
-beforeEach(() => vi.resetAllMocks())
+beforeEach(() => { vi.resetAllMocks(); vi.stubEnv('VITE_EMAIL_ACTIONS_ENABLED', 'true') })
 afterEach(() => vi.restoreAllMocks())
 
 it('invites an email without adding membership or claiming email delivery', async () => {

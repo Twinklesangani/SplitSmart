@@ -1,5 +1,14 @@
 # Password recovery email: configuration handoff
 
+Email-disabled release update: `VITE_EMAIL_ACTIONS_ENABLED=false` is the default UI
+gate. Keep both backend delivery flags false independently. Recovery/check-email pages
+explain unavailability; email-invitation creation is hidden and verification requests
+disabled. Private invitation links and other product features do not depend on Brevo.
+Later approved activation also needs a frontend rebuild with this flag true, after
+eligibility and real inbox/reset verification; changing a UI flag cannot enable sending.
+Support ticket [#5661752](https://help.brevo.com/hc/requests/5661752) has been confirmed
+submitted. No need to wait for its reply to prepare an email-disabled release.
+
 Account-specific update, 7 November 2026: signed-in account shows Free plan, 300 shared
 marketing/transactional emails/day and no configured payment method. SplitSmart sender
 is Verified with a freemail/DMARC warning. Phone verification still blocks key creation

@@ -7,12 +7,34 @@ track and manage shared expenses.
 
 - Frontend: [SplitSmart on Cloudflare Pages](https://splitsmart-92b.pages.dev/).
 - Backend: [public health check](https://splitsmart-backend-ydj2.onrender.com/api/health).
-- Latest verified deployed backend release: `bc59921336f148784317550a5f29202edbeda825`
+- Historical verified deployed snapshot (5 November 2026): `bc59921336f148784317550a5f29202edbeda825`
   on `codex/product-completion`; its GitHub CI completed successfully.
 - This checkout also contains later engineering work. Its branch and feature
   documentation must not be treated as proof that those changes are deployed.
   Cloudflare Pages also confirms production source `bc59921336f148784317550a5f29202edbeda825`;
   automatic frontend deployments are paused.
+
+### Local email-disabled release candidate
+
+The owner-supplied later production baseline is `418d757855dd10965c2872176022f93ac5e35a8a`.
+It is an ancestor of `codex/password-recovery-backend`; verify actual live SHA/history
+at the separately approved release preflight. Local M1B–M4 are implemented and require
+the combined version-aware backend plus additive V8–V10 before the matching frontend.
+They have not been pushed or deployed by this work.
+
+This release can operate without Brevo: consent-based private invite links, authorized
+notifications, balances, expenses and settlement suggestions remain available. Leave
+both backend email flags false and `VITE_EMAIL_ACTIONS_ENABLED=false` (the UI default).
+Recovery explains temporary unavailability, new email-invitation controls are hidden,
+and mailbox-verification requests are disabled. Existing authorized in-app invitation
+management remains available; no email is attempted. Existing reset/proof tokens still
+require their original security checks, and JWT version validation remains active.
+
+See [production release runbook](docs/production-release-readiness.md) for approvals,
+backup/migration prerequisites, deployment order, smoke checks and safe forward fixes.
+Brevo ticket [#5661752](https://help.brevo.com/hc/requests/5661752) concerns later email
+activation; it does not block an approved email-disabled release. Never revert to V7
+after password resets or restore older authentication versions under live traffic.
 
 ### Free hosting availability
 

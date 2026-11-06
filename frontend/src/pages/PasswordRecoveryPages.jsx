@@ -5,6 +5,7 @@ import { useAuth } from '../context/useAuth.js'
 import { ApiError, apiRequest } from '../services/apiClient.js'
 import { clearRecoveryToken, getRecoveryToken } from '../services/recoveryLink.js'
 import '../styles/recovery.css'
+import { emailActionsEnabled } from '../services/emailAvailability.js'
 
 function RecoveryCard({ title, description, children }) {
   const heading = useRef(null)
@@ -20,6 +21,12 @@ function RecoveryCard({ title, description, children }) {
   )
 }
 
+function RecoveryUnavailable() {
+  return <RecoveryCard title="Password recovery unavailable" description="Email recovery is temporarily unavailable. Please try again later.">
+    <p>If you remember your password, you can still sign in below.</p>
+  </RecoveryCard>
+}
+
 export function ForgotPasswordPage() {
   const navigate = useNavigate()
   const input = useRef(null)
@@ -28,6 +35,8 @@ export function ForgotPasswordPage() {
   const [error, setError] = useState('')
   const [message, setMessage] = useState('')
   const [busy, setBusy] = useState(false)
+
+  if (!emailActionsEnabled()) return <RecoveryUnavailable />
 
   async function submit(event) {
     event.preventDefault()
@@ -67,6 +76,7 @@ export function ForgotPasswordPage() {
 
 export function CheckEmailPage() {
   const { state } = useLocation()
+  if (!emailActionsEnabled()) return <RecoveryUnavailable />
   return (
     <RecoveryCard title={state?.requested ? 'Check your email' : 'Need a reset link?'}
       description={state?.requested ? 'Your request was received. Email delivery has not been confirmed.' : 'Start with your account email to request a password reset.'}>

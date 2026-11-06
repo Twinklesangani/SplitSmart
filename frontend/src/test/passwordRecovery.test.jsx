@@ -25,6 +25,7 @@ async function fillReset(user) {
 }
 
 beforeEach(() => {
+  vi.stubEnv('VITE_EMAIL_ACTIONS_ENABLED', 'true')
   window.history.replaceState(null, '', '/')
   clearRecoveryToken()
   vi.stubGlobal('fetch', vi.fn())

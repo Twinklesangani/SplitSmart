@@ -1,11 +1,54 @@
 # Production release handoff — 7 November 2026
 
 Prepared locally; no release or production database operation is authorized. Work in
-`audit-output/m1a`, branch `codex/password-recovery-backend`. Application candidate:
-`afb782432bf08fdbca9b0eddf15d713a5e7b9025`. Later readiness commits add tests/docs only.
+`audit-output/m1a`, branch `codex/password-recovery-backend`. M4 implementation baseline:
+`afb782432bf08fdbca9b0eddf15d713a5e7b9025`. The final email-disabled release commit also
+adds the default-off UI gate, cold-start guidance and focused regressions.
 Use `git rev-parse HEAD` to identify the exact reviewed release commit before approval.
 
+## Email-disabled release scope (does not wait for Brevo)
+
+M2 private links, M3 notifications and M4 dashboard/finance work without email, but are
+not standalone frontend deployments. The backend maps V8 user authentication fields,
+V9 invitation/proof fields and V10 notification tables; synchronous activity events
+also require V10 when expenses/membership change. Deploy the combined backend after
+all V8–V10 migrations, then its matching frontend. Do not omit V8 just because reset
+email is off. Do not disable JWT version checks: existing revocation fences must hold.
+
+For the initial release keep both server email flags false, no provider key needed,
+and build Pages with `VITE_EMAIL_ACTIONS_ENABLED=false` (also defaults false when absent).
+This public build flag gates UI only; the server's two false flags prevent delivery
+even if a client bypasses its UI. The forgot/check-email pages show unavailable before
+collecting an address; email-invitation creation UI is hidden and proof-request button
+disabled. Existing authorized pending-invitation checks/revocations/acceptance remain
+available, requiring existing mailbox proof for acceptance. Legacy direct API creation
+may save an in-app invitation but the unavailable transport never sends it. Prefer the
+secure private-link flow for everyone without prior proof. No insecure proof fallback.
+
+Timeout/502/503/504 feedback now explains possible free-host startup and manual retry;
+no automatic mutation replay, session deletion or artificial keep-alive. Uncertain
+expense/repayment requests still require history checks/existing idempotency handling.
+Cold starts are not eliminated by these messages.
+
+Brevo approval, inbox testing and subsequent email activation are a **separate later
+release**, not prerequisites for deploying this default-off mode. Ticket #5661752 is
+submitted; await its reply. Once eligibility and authorized delivery tests pass, separately
+approve both server enablement and a frontend rebuild with `VITE_EMAIL_ACTIONS_ENABLED=true`.
+Enabling the UI flag alone cannot activate delivery. If transport is disabled again,
+also rebuild with the UI flag false; the backend always fails closed independently.
+
 ## Evidence and outstanding gates
+
+Final email-disabled verification: 13 focused backend scenarios and 1 disposable
+MySQL disabled-email/private-link scenario passed; 67 unique affected frontend scenarios
+passed across initial 66 and final 21 overlapping checks, with lint/build passing after
+the final UI change. Two real Edge/MySQL flows passed: onboarding/invitations plus
+notifications, and four-person ₹50 circular debt with unchanged original history.
+Logs: `backend/email-disabled-backend.log`, `backend/email-disabled-mysql.log`,
+`frontend/email-disabled-ui.log`, `frontend/email-disabled-final-ui.log`,
+`email-disabled-e2e.log` (ignored local evidence). Original MySQL listener preserved;
+test ports/container/volume cleaned. Backend runtime and V1–V10 migrations did not
+change, so existing migration/permissions/reset-security results below were reused.
 
 The deployed baseline supplied by the owner is
 `418d757855dd10965c2872176022f93ac5e35a8a`; it is an ancestor of HEAD.
@@ -165,6 +208,7 @@ JWT rejection before reopening. Never restore an old snapshot directly under liv
    old instance has stopped serving authenticated traffic before enabling reset delivery.
 5. Deploy the approved static React build to the existing Cloudflare Pages Free project;
    preserve exact public `VITE_API_BASE_URL`, nested-route fallback and exact CORS origin.
+   Explicitly set `VITE_EMAIL_ACTIONS_ENABLED=false` for this initial release.
    No backend secret belongs in Pages. Retain prior static artifact for a compatible
    frontend-only rollback; keep the secure backend running.
 6. With explicitly authorized disposable accounts, verify existing login/expense/balances,
@@ -178,8 +222,27 @@ JWT rejection before reopening. Never restore an old snapshot directly under liv
    controlled window explicitly; delivery is otherwise kept off. No blanket enablement
    follows from account verification or an isolated test.
 
-Remaining approvals are distinct: human phone/OTP/provider approval and private key
+Remaining approvals are distinct: later human phone/OTP/provider approval and private key
 configuration; named inbox/message approval; production read-only preflight/backup;
 any necessary exact privilege adjustment; private push/merge; production maintenance,
 V8–V10 migration; Render deployment; Pages deployment; and final email enablement.
 No paid service, new database/domain, public release or credential replacement is included.
+
+## Initial release smoke and abort criteria
+
+Use explicitly approved disposable accounts only: sign in with a still-valid legacy
+zero-version session and a new login; check a nonmember receives no protected group or
+notification data; create/revoke a private link, confirm revoked link is rejected, create
+a new link and accept explicitly after registration. Verify member/expense notifications,
+read/unread count, deep links, dashboard totals and exact repayment accounting. Confirm
+forgot/check-email show unavailable, no email creation/proof request is offered, and
+direct forgot/proof POSTs give generic unavailable responses with no sends. Check mobile
+navigation/keyboard focus and manual retry after a cold start. The four-user ₹50 cycle
+must produce zero recommendations while its four original expense/split records remain.
+Real reset/JWT revocation smoke is deferred to separately authorized email activation;
+local versioning/replay/concurrency evidence already exists and must remain green.
+
+Abort reopening for missing history/checksum mismatch, loss/change of financial rows,
+authorization failure, unexpected sender activation, runtime DDL privileges or an old
+unversioned backend still serving. Keep traffic closed and forward-fix; follow the
+security-preserving recovery section, not Render's pre-V8 rollback button.

@@ -75,6 +75,29 @@ class InvitationSecurityTest {
         return json.readTree(result.getContentAsString()).get("token").asText();
     }
     private String body(String token)throws Exception{return json.writeValueAsString(Map.of("token",token));}
+    @Test void emailDisabledKeepsPrivateLinksUsableWithoutSendingOrRevealingAccounts() throws Exception {
+        when(delivery.isConfigured()).thenReturn(false);
+        when(delivery.isAvailable()).thenReturn(false);
+        for(String email : new String[]{recipient.getEmail(),"absent@example.invalid"}) {
+            mvc.perform(post("/api/auth/forgot-password").contentType(MediaType.APPLICATION_JSON)
+                    .content(json.writeValueAsString(Map.of("email",email))))
+                    .andExpect(status().isServiceUnavailable()).andExpect(header().string("Cache-Control",org.hamcrest.Matchers.containsString("no-store")));
+        }
+        mvc.perform(post("/api/auth/email-verification").header("Authorization",auth(recipient)))
+                .andExpect(status().isServiceUnavailable());
+        // Legacy in-app invitations may be retained; disabled transport must never send them.
+        mvc.perform(post("/api/groups/{id}/invitations",group.getId()).header("Authorization",auth(owner))
+                .contentType(MediaType.APPLICATION_JSON).content(json.writeValueAsString(Map.of("email",recipient.getEmail()))))
+                .andExpect(status().isCreated());
+        String token=link();
+        mvc.perform(post("/api/invitations/link-accept").header("Authorization",auth(recipient))
+                .contentType(MediaType.APPLICATION_JSON).content(body(token))).andExpect(status().isOk());
+        assertTrue(members.existsByGroup_IdAndUser_Id(group.getId(),recipient.getId()));
+        worker.submit(()->{}).get(5,TimeUnit.SECONDS);
+        verify(delivery,never()).sendReset(anyString(),anyString(),any());
+        verify(delivery,never()).sendVerification(anyString(),anyString(),any());
+        verify(delivery,never()).sendInvitation(anyString(),anyString());
+    }
     @Test void directEnrollmentDisabledAndUnverifiedEmailDoesNotDiscloseInboxOrGrantMembership()throws Exception {
         mvc.perform(post("/api/groups/{id}/members",group.getId()).header("Authorization",auth(owner))
                 .contentType(MediaType.APPLICATION_JSON).content(json.writeValueAsString(Map.of("email",recipient.getEmail())))).andExpect(status().isConflict());
