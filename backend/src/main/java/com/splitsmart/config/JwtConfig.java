@@ -42,11 +42,13 @@ public class JwtConfig {
 	}
 
 	@Bean
-	JwtDecoder jwtDecoder(SecretKey jwtSecretKey) {
+	JwtDecoder jwtDecoder(SecretKey jwtSecretKey, com.splitsmart.repository.UserRepository users) {
 		NimbusJwtDecoder decoder = NimbusJwtDecoder.withSecretKey(jwtSecretKey)
 				.macAlgorithm(MacAlgorithm.HS256)
 				.build();
-		decoder.setJwtValidator(JwtValidators.createDefaultWithIssuer("https://splitsmart.local"));
+		decoder.setJwtValidator(new org.springframework.security.oauth2.core.DelegatingOAuth2TokenValidator<>(
+				JwtValidators.createDefaultWithIssuer("https://splitsmart.local"),
+				new UserTokenVersionValidator(users)));
 		return decoder;
 	}
 }

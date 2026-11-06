@@ -77,7 +77,8 @@ class AuthControllerTest {
 		assertEquals("https://splitsmart.local", decoded.getIssuer().toString());
 		assertEquals(user.getId().toString(), decoded.getSubject());
 		assertEquals(3600, Duration.between(decoded.getIssuedAt(), decoded.getExpiresAt()).getSeconds());
-		assertEquals(java.util.Set.of("iss", "sub", "iat", "exp"), decoded.getClaims().keySet());
+		assertEquals(java.util.Set.of("iss", "sub", "iat", "exp", "ver"), decoded.getClaims().keySet());
+		assertEquals(0L, ((Number) decoded.getClaim("ver")).longValue());
 	}
 
 	@Test

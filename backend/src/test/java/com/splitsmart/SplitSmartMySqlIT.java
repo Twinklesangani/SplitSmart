@@ -178,7 +178,7 @@ class SplitSmartMySqlIT {
 	void flywayAndHibernateUseTheIsolatedMySqlSchema() throws Exception {
 		assertTrue(MYSQL.isRunning());
 		assertNotNull(MYSQL.getContainerId());
-        assertEquals(7, flyway.info().applied().length);
+        assertEquals(8, flyway.info().applied().length);
 		assertEquals(MigrationState.SUCCESS, flyway.info().applied()[0].getState());
 		assertEquals("1", flyway.info().applied()[0].getVersion().getVersion());
 		assertEquals(MigrationState.SUCCESS, flyway.info().applied()[1].getState());
@@ -200,7 +200,7 @@ class SplitSmartMySqlIT {
 			assertTrue(mysqlVersion.startsWith("8.4."));
 		}
 
-		assertEquals(15, jdbcTemplate.queryForObject(
+		assertEquals(16, jdbcTemplate.queryForObject(
 				"SELECT COUNT(*) FROM information_schema.table_constraints "
 						+ "WHERE constraint_schema = DATABASE() AND constraint_type = 'FOREIGN KEY'",
 				Integer.class));

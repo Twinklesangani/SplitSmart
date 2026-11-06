@@ -56,7 +56,9 @@ public final class RequestProtectionFilter extends OncePerRequestFilter {
         }
         boolean login = "POST".equals(request.getMethod()) && "/api/auth/login".equals(path);
         boolean register = "POST".equals(request.getMethod()) && "/api/auth/register".equals(path);
-        int maximum = login || register ? limits.authBodyBytes() : limits.apiBodyBytes();
+        boolean recovery = "POST".equals(request.getMethod())
+                && ("/api/auth/forgot-password".equals(path) || "/api/auth/reset-password".equals(path));
+        int maximum = login || register || recovery ? limits.authBodyBytes() : limits.apiBodyBytes();
         if (request.getContentLengthLong() > maximum) {
             error(request, response, 413, "payload_too_large", "The request body exceeds the supported size.");
             return;
@@ -66,6 +68,8 @@ public final class RequestProtectionFilter extends OncePerRequestFilter {
                     login ? limits.loginSourceLimit() : limits.registrationSourceLimit());
             if (rejectLimited(request, response, retry)) return;
         }
+        if (recovery && rejectLimited(request, response,
+                limiter.acquire("recovery-source:" + path + ":" + clientAddress(request), 10))) return;
         // Read at most the limit plus one byte, even for chunked/unknown-length input.
         byte[] body = request.getInputStream().readNBytes(maximum + 1);
         if (body.length > maximum) {

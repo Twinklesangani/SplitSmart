@@ -94,6 +94,7 @@ public class AuthService {
 		JwtClaimsSet claims = JwtClaimsSet.builder()
 				.issuer("https://splitsmart.local")
 				.subject(user.get().getId().toString())
+				.claim("ver", user.get().getAuthTokenVersion())
 				.issuedAt(issuedAt)
 				.expiresAt(expiresAt)
 				.build();

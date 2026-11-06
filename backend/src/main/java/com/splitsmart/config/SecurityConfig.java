@@ -80,6 +80,7 @@ public class SecurityConfig {
 						.requestMatchers(HttpMethod.GET, "/api/health").permitAll()
 						.requestMatchers(HttpMethod.HEAD, "/api/health").permitAll()
 						.requestMatchers(HttpMethod.POST, "/api/auth/register", "/api/auth/login").permitAll()
+						.requestMatchers(HttpMethod.POST, "/api/auth/forgot-password", "/api/auth/reset-password").permitAll()
 						.requestMatchers("/api/**").authenticated()
 						.anyRequest().denyAll())
 				.exceptionHandling(exceptions -> exceptions

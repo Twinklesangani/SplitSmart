@@ -29,7 +29,7 @@ class ExpenseMetadataMigrationIT {
                 var flyway = Flyway.configure().dataSource(url, mysql.getUsername(), mysql.getPassword()).load();
                 flyway.migrate();
                 flyway.validate();
-                assertEquals(7, flyway.info().applied().length);
+                assertEquals(8, flyway.info().applied().length);
                 try (var rows = sql.executeQuery("SELECT expense_date,category,amount,created_at FROM expenses WHERE id=1")) {
                     assertTrue(rows.next());
                     assertEquals("2020-06-10", rows.getString("expense_date"));

@@ -29,6 +29,17 @@ public class User {
 	@Column(name = "password_hash", nullable = false, length = 255)
 	private String passwordHash;
 
+	@Column(name = "auth_token_version", nullable = false)
+	private long authTokenVersion;
+
+	public long getAuthTokenVersion() {
+		return authTokenVersion;
+	}
+
+	public void invalidateAuthenticationTokens() {
+		authTokenVersion = Math.addExact(authTokenVersion, 1);
+	}
+
 	@Column(name = "created_at", nullable = false, insertable = false, updatable = false)
 	private LocalDateTime createdAt;
 
