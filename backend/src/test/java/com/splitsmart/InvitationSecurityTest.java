@@ -51,6 +51,19 @@ class InvitationSecurityTest {
         doAnswer(call -> {mailbox.add(call.getArgument(1)); return null;}).when(delivery).sendVerification(anyString(),anyString(),any());
     }
     private User user(){return users.saveAndFlush(new User("Disposable",UUID.randomUUID()+"@example.invalid","{bcrypt}synthetic"));}
+    @AfterEach void cleanup() throws Exception {
+        worker.submit(()->{}).get(5,TimeUnit.SECONDS);
+        if(group==null)return;
+        for(var user:java.util.List.of(owner,recipient,outsider)) {
+            jdbc.update("DELETE FROM notifications WHERE recipient_id=?",user.getId());
+            jdbc.update("DELETE FROM email_verification_tokens WHERE user_id=?",user.getId());
+        }
+        jdbc.update("DELETE FROM group_invite_links WHERE group_id=?",group.getId());
+        jdbc.update("DELETE FROM group_invitations WHERE group_id=?",group.getId());
+        jdbc.update("DELETE FROM group_members WHERE group_id=?",group.getId());
+        jdbc.update("DELETE FROM expense_groups WHERE id=?",group.getId());
+        for(var user:java.util.List.of(owner,recipient,outsider)) jdbc.update("DELETE FROM users WHERE id=?",user.getId());
+    }
     private String auth(User user) {
         return "Bearer "+encoder.encode(JwtEncoderParameters.from(JwsHeader.with(MacAlgorithm.HS256).build(),
                 JwtClaimsSet.builder().issuer("https://splitsmart.local").subject(user.getId().toString())

@@ -21,6 +21,7 @@ import com.splitsmart.repository.UserRepository;
 
 @Service
 public class InvitationService {
+    @org.springframework.beans.factory.annotation.Autowired private org.springframework.context.ApplicationEventPublisher activityEvents = event -> {};
     @jakarta.persistence.PersistenceContext
     private jakarta.persistence.EntityManager entityManager;
     private final UserRepository users;
@@ -67,6 +68,7 @@ public class InvitationService {
         invitations.flush();
         GroupInvitation invitation = new GroupInvitation(group, request.email(), now.plus(Duration.ofDays(7)));
         var saved=invitations.saveAndFlush(invitation);
+        activityEvents.publishEvent(new ActivityEvent("INVITATION",groupId,owner.getId(),saved.getId(),"invitation:"+saved.getId()));
         org.springframework.transaction.support.TransactionSynchronizationManager.registerSynchronization(
                 new org.springframework.transaction.support.TransactionSynchronization() {
                     @Override public void afterCommit() {
@@ -110,6 +112,7 @@ public class InvitationService {
             members.saveAndFlush(new GroupMember(invitation.getGroup(), recipient));
         }
         invitation.resolve(accept);
+        if(accept) activityEvents.publishEvent(new ActivityEvent("MEMBER_JOINED",groupId,recipient.getId(),recipient.getId(),"join-email:"+invitation.getId()));
     }
 
     @Transactional

@@ -27,6 +27,7 @@ import jakarta.persistence.EntityManager;
 
 @Service
 public class SettlementService {
+    @org.springframework.beans.factory.annotation.Autowired private org.springframework.context.ApplicationEventPublisher activityEvents = event -> {};
 
 	private static final String REQUEST_UNIQUE_CONSTRAINT = "uk_settlements_group_request";
 
@@ -99,6 +100,7 @@ public class SettlementService {
 		try {
 			Settlement saved = settlementRepository.saveAndFlush(settlement);
 			entityManager.refresh(saved);
+            activityEvents.publishEvent(new ActivityEvent("SETTLEMENT",groupId,requesterId,saved.getId(),"settlement:"+saved.getId()));
 			return toResponse(saved);
 		} catch (DataIntegrityViolationException exception) {
 			if (isRequestUniqueConstraintViolation(exception)) {

@@ -80,7 +80,7 @@ function notifyExpiredGroupSession(path, status) {
 }
 
 function isProtectedPath(path) {
-  return /^\/api\/(groups|invitations|dashboard)(\/|$)/.test(path)
+  return /^\/api\/(groups|invitations|dashboard|notifications)(\/|$)/.test(path)
     || ['/api/auth/email-verification', '/api/auth/verify-email'].includes(path)
 }
 

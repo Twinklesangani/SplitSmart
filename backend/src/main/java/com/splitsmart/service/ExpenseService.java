@@ -48,6 +48,7 @@ import com.splitsmart.repository.UserRepository;
 
 @Service
 public class ExpenseService {
+    @org.springframework.beans.factory.annotation.Autowired private org.springframework.context.ApplicationEventPublisher activityEvents = event -> {};
 
 	private static final String CURRENCY_CODE = "INR";
 	private static final String INVALID_USER_MESSAGE = "Invalid authenticated user.";
@@ -141,6 +142,7 @@ public class ExpenseService {
 		} catch (JsonProcessingException exception) {
 			throw new IllegalStateException("Could not store expense creation outcome.", exception);
 		}
+		activityEvents.publishEvent(new ActivityEvent("EXPENSE", groupId, requester.getId(), expense.getId(), "expense:"+expense.getId()));
 		return response;
 	}
 

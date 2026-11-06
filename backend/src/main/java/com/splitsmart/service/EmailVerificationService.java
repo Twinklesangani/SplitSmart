@@ -15,6 +15,7 @@ import org.springframework.web.server.ResponseStatusException;
 
 @Service
 public class EmailVerificationService {
+    @org.springframework.beans.factory.annotation.Autowired private org.springframework.context.ApplicationEventPublisher activityEvents = event -> {};
     private final UserRepository users;
     private final JdbcTemplate jdbc;
     private final PasswordResetDelivery delivery;
@@ -58,6 +59,7 @@ public class EmailVerificationService {
             if(jdbc.update("UPDATE email_verification_tokens SET consumed_at=? WHERE token_hash=? AND user_id=? AND consumed_at IS NULL AND expires_at>?",
                     now,SecureLinkTokens.hash(token),user.getId(),now)!=1) throw invalid();
             jdbc.update("UPDATE users SET email_verified_at=? WHERE id=?",now,user.getId());
+            activityEvents.publishEvent(new ActivityEvent("EMAIL_VERIFIED",null,user.getId(),null,"email-proof:"+user.getId()));
             jdbc.update("UPDATE email_verification_tokens SET consumed_at=? WHERE user_id=? AND consumed_at IS NULL",now,user.getId());
         });
     }

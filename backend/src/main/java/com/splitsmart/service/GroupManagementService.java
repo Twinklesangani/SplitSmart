@@ -12,6 +12,7 @@ import com.splitsmart.repository.GroupMemberRepository;
 
 @Service
 public class GroupManagementService {
+    @org.springframework.beans.factory.annotation.Autowired private org.springframework.context.ApplicationEventPublisher activityEvents = event -> {};
     private final ExpenseGroupRepository groups;
     private final GroupMemberRepository members;
     private final ExpenseService expenses;
@@ -47,6 +48,7 @@ public class GroupManagementService {
                 """, Long.class, groupId, targetId, targetId, groupId, targetId, groupId, targetId, targetId, targetId);
         if (history == null || history > 0) throw conflict("Members in financial history are retained. Archive the settled group instead.");
         jdbc.update("DELETE FROM group_members WHERE group_id = ? AND user_id = ?", groupId, targetId);
+        activityEvents.publishEvent(new ActivityEvent("MEMBER_REMOVED",groupId,requester,targetId,"membership:"+java.util.UUID.randomUUID()));
     }
 
     @Transactional(isolation = Isolation.READ_COMMITTED)

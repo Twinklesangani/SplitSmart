@@ -2,6 +2,7 @@ import { useEffect, useRef, useState } from 'react'
 import { NavLink, Outlet, useLocation, useNavigate } from 'react-router-dom'
 import Icon from '../components/Icon.jsx'
 import { useAuth } from '../context/useAuth.js'
+import NotificationBell from '../components/NotificationBell.jsx'
 
 const primaryLinks = [
   { to: '/dashboard', label: 'Overview', icon: 'home', end: true },
@@ -97,6 +98,7 @@ export default function AppShell() {
             <span className="topbar__context">{currentTitle(location.pathname)}{location.pathname.startsWith('/groups/') ? ' / Group' : ''}</span>
           </div>
           <span className="preview-badge"><span aria-hidden="true" /> Signed in</span>
+          <NotificationBell />
         </header>
         <div className="page-content"><Outlet /></div>
         <footer className="app-footer">SplitSmart <span aria-hidden="true">·</span> A calmer way to share the bill</footer>

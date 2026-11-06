@@ -15,6 +15,7 @@ import org.springframework.web.server.ResponseStatusException;
 
 @Service
 public class InviteLinkService {
+    @org.springframework.beans.factory.annotation.Autowired private org.springframework.context.ApplicationEventPublisher activityEvents = event -> {};
     private final ExpenseGroupRepository groups;
     private final GroupMemberRepository members;
     private final UserRepository users;
@@ -74,6 +75,7 @@ public class InviteLinkService {
         if (jdbc.update("UPDATE group_invite_links SET accepted_by=? WHERE token_hash=? AND accepted_by IS NULL AND revoked_at IS NULL AND expires_at>?",
                 userId, hash, Timestamp.from(Instant.now())) != 1) throw missing();
         members.saveAndFlush(new GroupMember(group, user));
+        activityEvents.publishEvent(new ActivityEvent("MEMBER_JOINED",groupId,userId,userId,"join-link:"+hash));
         return groupId;
     }
     private static ResponseStatusException missing() { return new ResponseStatusException(HttpStatus.NOT_FOUND, "Invitation unavailable."); }

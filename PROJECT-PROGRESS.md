@@ -1,5 +1,15 @@
 # SplitSmart project progress
 
+## Autonomous completion — phase 3 (local verification)
+
+- V10 adds recipient-owned persistent notifications with unique per-recipient event keys, read timestamps and recipient/unread indexes. V1–V9 are unchanged. Events are created synchronously inside the existing expense, settlement, invitation, mailbox-proof and membership transactions; retries are deduplicated and rollbacks leave no ghost updates.
+- Generic invitation notifications are created only for proven mailbox owners (or on first verification for pending invitations), avoiding disclosure through self-declared addresses. Expense/settlement/membership notifications are limited to current members, suppress actor noise, and recheck group membership on list/count/read. Removed users receive only a generic membership-change notice linking to My groups.
+- Recipient-only paginated list/count/read/unread APIs. Read requires an explicit Boolean. Controlled relative navigation targets, no tokens or user-supplied descriptions in notification payloads.
+- Retention: cap to latest 200 on activity/read, delete older than 90 days; bounded hourly metadata cleanup also covers inactive recipients. No financial rows are removed. Free hosting uptime governs scheduled work; read-side cleanup always enforces visible retention.
+- Accessible responsive bell/panel with real unread count after first open, read/unread controls, timestamps, resource links, keyboard Escape/focus return, outside-click dismissal, loading/empty/error/retry and pagination. Refetch-on-open; once used, visibility-aware 60-second/focus unread refresh. Unknown initial count is not presented as zero. No paid realtime infrastructure.
+- PASS: 36 backend unit/H2/controller scenarios (35 initial plus the added inactive-retention case), six real MySQL notification scenarios, 40 frontend tests, lint and build. Real MySQL V9→V10 checksum/data-preservation and schema checks passed. A schema test-only precision expectation accidentally changed during count updates was corrected to the established DECIMAL(19,2) and its rerun passed. One real isolated Edge flow verified membership and expense notifications, authorized deep navigation and unchanged balances. Disposable containers/volumes were removed; existing MySQL listener preserved; log credential check passed.
+- Existing invitation test fixtures now delete only their own disposable records after each scenario, preventing cross-context fixture leakage; no production cleanup/reset. Original checkout edits remain untouched.
+
 ## Autonomous completion — phase 2 (local verification)
 
 - V9 adds nullable mailbox-verification/revocation metadata plus hashed single-use private group links and email-verification tokens. Existing V1–V8 migration text/checksums and financial records remain unchanged. Original checkout's unrelated test edit remains untouched.
