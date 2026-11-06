@@ -69,6 +69,9 @@ class NotificationSecurityTest {
     }
     @Test void expensesAndRepaymentsCreateRecipientScopedAuthorizedNavigation()throws Exception {
         long id=expense();
+        var dashboard=mvc.perform(get("/api/dashboard").header("Authorization",auth(owner))).andExpect(status().isOk()).andReturn().getResponse();
+        Instant recorded=Instant.parse(json.readTree(dashboard.getContentAsString()).get("activity").get(0).get("recordedAt").asText());
+        assertTrue(java.time.Duration.between(recorded,Instant.now()).abs().getSeconds()<60);
         mvc.perform(get("/api/notifications").header("Authorization",auth(recipient))).andExpect(jsonPath("$.unreadCount").value(1)).andExpect(jsonPath("$.items[0].href").value("/groups/"+group.getId()+"/expenses/"+id));
         mvc.perform(get("/api/notifications").header("Authorization",auth(owner))).andExpect(jsonPath("$.items.length()").value(0));
         mvc.perform(get("/api/notifications").header("Authorization",auth(outsider))).andExpect(jsonPath("$.unreadCount").value(0));

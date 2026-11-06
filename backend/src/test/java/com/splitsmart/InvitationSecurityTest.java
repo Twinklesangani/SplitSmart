@@ -133,4 +133,20 @@ class InvitationSecurityTest {
             start.countDown(); assertNotEquals(first.get(10,TimeUnit.SECONDS),second.get(10,TimeUnit.SECONDS));
         }
     }
+    @Test void renewedExpiredEmailInvitationIsNotMisreportedAsDeclined()throws Exception {
+        var request=json.writeValueAsString(Map.of("email",recipient.getEmail()));
+        mvc.perform(post("/api/groups/{id}/invitations",group.getId()).header("Authorization",auth(owner)).contentType(MediaType.APPLICATION_JSON).content(request)).andExpect(status().isCreated());
+        jdbc.update("UPDATE group_invitations SET expires_at=? WHERE group_id=?",java.sql.Timestamp.from(Instant.now().minusSeconds(1)),group.getId());
+        mvc.perform(post("/api/groups/{id}/invitations",group.getId()).header("Authorization",auth(owner)).contentType(MediaType.APPLICATION_JSON).content(request)).andExpect(status().isCreated());
+        mvc.perform(get("/api/groups/{id}/invitations",group.getId()).header("Authorization",auth(owner)))
+                .andExpect(jsonPath("$[0].status").value("PENDING")).andExpect(jsonPath("$[1].status").value("EXPIRED"));
+    }
+    @Test void mailboxProofCannotBeReusedAfterTheStoredAddressChanges() {
+        jdbc.update("UPDATE users SET email_verified_at=CURRENT_TIMESTAMP WHERE id=?",recipient.getId());
+        var account=users.findById(recipient.getId()).orElseThrow();
+        assertTrue(account.isEmailVerified());
+        account.setEmail(UUID.randomUUID()+"@example.invalid");
+        users.saveAndFlush(account);
+        assertFalse(users.findById(recipient.getId()).orElseThrow().isEmailVerified());
+    }
 }

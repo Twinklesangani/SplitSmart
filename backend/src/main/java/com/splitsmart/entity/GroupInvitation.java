@@ -33,6 +33,7 @@ public class GroupInvitation {
 
     public void revoke() { resolve(false); revokedAt = Instant.now(); }
     public boolean isRevoked() { return revokedAt != null; }
+    public void expire() { activeSlot = null; }
 
     protected GroupInvitation() {}
 

@@ -1088,6 +1088,20 @@
   gap: 13px;
 }
 
+.skip-link { position: fixed; left: 16px; top: 12px; transform: translateY(-200%); z-index: 100; padding: 12px 18px; background: var(--color-ink); color: var(--color-canvas); border-radius: 8px; }
+.skip-link:focus { transform: translateY(0); }
+.topbar-trailing, .group-quick-actions, .dashboard-expense-action { display: flex; align-items: center; gap: 12px; flex-wrap: wrap; }
+.group-quick-actions { margin: 0 0 20px; }
+.dashboard-expense-action label, .dashboard-group-count { font-size: 13px; color: var(--color-muted); }
+.dashboard-expense-action select { min-height: 44px; max-width: 220px; border: 1px solid var(--color-line); border-radius: 8px; color: var(--color-ink); background: var(--color-surface); padding: 8px 12px; font: inherit; }
+.dashboard-group-position { padding-bottom: 14px; border-bottom: 1px solid var(--color-line); }
+.dashboard-group-position > p { font-size: 14px; margin: 4px 0 8px; color: var(--color-ink); }
+.dashboard-group-position > .text-link { font-size: 12px; }
+.onboarding-card { margin-bottom: 24px; }
+.onboarding-card ol { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 24px; padding-left: 22px; font-size: 14px; line-height: 1.7; color: var(--color-muted); }
+.onboarding-card strong { display: block; color: var(--color-ink); }
+@media(max-width: 760px) { .onboarding-card ol { grid-template-columns: 1fr; gap: 14px; } .dashboard-expense-action { width: 100%; } .dashboard-expense-action label { flex-basis: 100%; } .dashboard-expense-action select { min-width: 0; flex: 1; max-width: 100%; } }
+
 .invite-link-copy { display: grid; gap: 10px; margin: 16px 0; }
 .invite-link-copy input { width: 100%; min-width: 0; padding: 12px; font-size: 16px; background: var(--color-canvas); color: var(--color-ink); border: 1px solid var(--color-line); border-radius: 8px; }
 .invite-card form { display: grid; gap: 12px; margin: 18px 0; }

@@ -74,6 +74,7 @@ public class User {
 	}
 
 	public void setEmail(String email) {
+		if (!java.util.Objects.equals(this.email, email)) emailVerifiedAt = null;
 		this.email = email;
 	}
 

@@ -43,26 +43,43 @@ export default function AppShell() {
   const menuOpen = drawerState.open && drawerState.pathname === location.pathname
   const triggerRef = useRef(null)
   const closeRef = useRef(null)
+  const panelRef = useRef(null)
+  const mainRef = useRef(null)
+  const wasOpen = useRef(false)
 
   useEffect(() => {
     if (menuOpen) closeRef.current?.focus()
+    else if (wasOpen.current) {
+      if (window.innerWidth <= 760) triggerRef.current?.focus()
+      else mainRef.current?.focus()
+    }
+    wasOpen.current = menuOpen
   }, [menuOpen])
 
   useEffect(() => {
     if (!menuOpen) return undefined
+    const overflow = document.body.style.overflow
+    document.body.style.overflow = 'hidden'
     function handleKeyDown(event) {
       if (event.key === 'Escape') {
+        event.preventDefault()
         setDrawerState({ open: false, pathname: location.pathname })
-        triggerRef.current?.focus()
+      }
+      if (event.key === 'Tab') {
+        const focusable = [...panelRef.current.querySelectorAll('a[href],button:not([disabled])')].filter(item => item.getClientRects().length)
+        const first = focusable[0], last = focusable.at(-1)
+        if (event.shiftKey && document.activeElement === first) { event.preventDefault(); last?.focus() }
+        else if (!event.shiftKey && document.activeElement === last) { event.preventDefault(); first?.focus() }
       }
     }
+    function resize() { if (window.innerWidth > 760) setDrawerState({ open: false, pathname: location.pathname }) }
     window.addEventListener('keydown', handleKeyDown)
-    return () => window.removeEventListener('keydown', handleKeyDown)
+    window.addEventListener('resize', resize)
+    return () => { window.removeEventListener('keydown', handleKeyDown); window.removeEventListener('resize', resize); document.body.style.overflow = overflow }
   }, [location.pathname, menuOpen])
 
   function closeMenu() {
     setDrawerState({ open: false, pathname: location.pathname })
-    triggerRef.current?.focus()
   }
 
   function handleLogout() {
@@ -79,26 +96,26 @@ export default function AppShell() {
 
   return (
     <div className="app-shell">
-      <aside className="desktop-sidebar">
+      <a href="#main-content" className="skip-link" inert={menuOpen}>Skip to main content</a>
+      <aside className="desktop-sidebar" inert={menuOpen}>
         <NavLink className="brand" to="/dashboard" aria-label="SplitSmart home"><span className="brand-mark"><Icon name="wallet" size={21} strokeWidth={2} /></span><span>split<span>smart</span></span></NavLink>
         <Sidebar user={user} onLogout={handleLogout} />
         <p className="sidebar-version">A clearer way to share</p>
       </aside>
-      <div className={`mobile-drawer${menuOpen ? ' is-open' : ''}`} aria-hidden={!menuOpen}>
+      <div className={`mobile-drawer${menuOpen ? ' is-open' : ''}`} aria-hidden={!menuOpen} inert={!menuOpen}>
         <button className="mobile-drawer__backdrop" aria-label="Close navigation" tabIndex={menuOpen ? 0 : -1} onClick={closeMenu} />
-        <aside id="mobile-navigation" className="mobile-drawer__panel">
+        <aside id="mobile-navigation" className="mobile-drawer__panel" role="dialog" aria-modal={menuOpen ? 'true' : undefined} aria-label="Navigation" ref={panelRef}>
           <NavLink className="brand" to="/dashboard" aria-label="SplitSmart home" onClick={closeMenu}><span className="brand-mark"><Icon name="wallet" size={21} strokeWidth={2} /></span><span>split<span>smart</span></span></NavLink>
           <Sidebar user={user} onNavigate={closeMenu} closeRef={closeRef} onLogout={handleLogout} />
         </aside>
       </div>
-      <main className="main-shell">
+      <main className="main-shell" id="main-content" tabIndex={-1} inert={menuOpen} ref={mainRef}>
         <header className="topbar">
           <div className="topbar__leading">
             <button className="icon-button mobile-menu-button" type="button" aria-label="Open navigation" aria-expanded={menuOpen} aria-controls="mobile-navigation" ref={triggerRef} onClick={() => setDrawerState({ open: true, pathname: location.pathname })}><Icon name="menu" /></button>
             <span className="topbar__context">{currentTitle(location.pathname)}{location.pathname.startsWith('/groups/') ? ' / Group' : ''}</span>
           </div>
-          <span className="preview-badge"><span aria-hidden="true" /> Signed in</span>
-          <NotificationBell />
+          <div className="topbar-trailing"><span className="preview-badge"><span aria-hidden="true" /> Signed in</span><NotificationBell /></div>
         </header>
         <div className="page-content"><Outlet /></div>
         <footer className="app-footer">SplitSmart <span aria-hidden="true">·</span> A calmer way to share the bill</footer>

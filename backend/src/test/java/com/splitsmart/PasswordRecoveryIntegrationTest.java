@@ -264,4 +264,20 @@ class PasswordRecoveryIntegrationTest {
         assertFalse(new ResetPasswordRequest(token, REPLACEMENT, REPLACEMENT).toString().contains(token));
         drain();
     }
+    @Test
+    void passwordChangeNoticeRunsOnlyAfterCommitAndCannotUndoTheReset() throws Exception {
+        String token=issue();
+        var sawCommittedVersion=new java.util.concurrent.atomic.AtomicBoolean();
+        doAnswer(call->{
+            sawCommittedVersion.set(users.findById(userId).orElseThrow().getAuthTokenVersion()==1);
+            throw new IllegalStateException("Synthetic delivery failure");
+        }).when(delivery).sendPasswordChanged(email);
+        reset(token,REPLACEMENT,REPLACEMENT).andExpect(status().isNoContent());
+        drain();
+        assertTrue(sawCommittedVersion.get(),"Delivery must observe the committed token version.");
+        assertTrue(passwords.matches(REPLACEMENT,users.findById(userId).orElseThrow().getPasswordHash()));
+        reset(token,ORIGINAL,ORIGINAL).andExpect(status().isBadRequest());
+        drain();
+        verify(delivery,times(1)).sendPasswordChanged(email);
+    }
 }

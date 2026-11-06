@@ -121,13 +121,28 @@ test('responsive pages, keyboard navigation, drawer focus and accessible feedbac
     await assertResponsiveLayout(page, width)
 
     if (width === 375) {
+      await page.getByRole('button', { name: /^Notifications/ }).click()
+      await expect(page.getByRole('heading', { name: 'Notifications', exact: true })).toBeFocused()
+      const notificationPanel = await page.locator('#notification-panel').boundingBox()
+      expect(notificationPanel.x).toBeGreaterThanOrEqual(0)
+      expect(notificationPanel.x + notificationPanel.width).toBeLessThanOrEqual(width)
+      await page.screenshot({ path: testInfo.outputPath('mobile-notifications.png'), fullPage: true })
+      await page.keyboard.press('Escape')
       const menu = page.getByRole('button', { name: 'Open navigation' })
       await menu.click()
       const close = page.locator('.mobile-drawer').getByRole('navigation', { name: 'Main navigation' }).getByRole('button', { name: 'Close navigation' })
       await expect(close).toBeFocused()
+      await expect(page.locator('#main-content')).toHaveAttribute('inert', '')
+      const dialog = page.getByRole('dialog', { name: 'Navigation', exact: true })
+      await dialog.getByRole('button', { name: 'Sign out' }).focus()
+      await page.keyboard.press('Tab')
+      await expect(dialog.getByRole('link', { name: 'SplitSmart home' })).toBeFocused()
+      await page.keyboard.press('Shift+Tab')
+      await expect(dialog.getByRole('button', { name: 'Sign out' })).toBeFocused()
       await page.keyboard.press('Escape')
       await expect(menu).toHaveAttribute('aria-expanded', 'false')
       await expect(menu).toBeFocused()
+      await expect(page.locator('#main-content')).not.toHaveAttribute('inert', '')
     }
 
     await page.screenshot({

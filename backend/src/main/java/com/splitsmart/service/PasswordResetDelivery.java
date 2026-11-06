@@ -12,4 +12,5 @@ public interface PasswordResetDelivery {
     void sendReset(String recipient, String token, Instant expiresAt);
     default void sendVerification(String recipient, String token, Instant expiresAt) { throw new IllegalStateException("Email verification unavailable."); }
     default void sendInvitation(String recipient, String groupName) { throw new IllegalStateException("Email invitations unavailable."); }
+    default void sendPasswordChanged(String recipient) { throw new IllegalStateException("Password-change email unavailable."); }
 }

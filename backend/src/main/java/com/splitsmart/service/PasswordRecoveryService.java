@@ -110,6 +110,17 @@ public class PasswordRecoveryService {
             users.saveAndFlush(user);
             jdbc.update("UPDATE password_reset_tokens SET consumed_at = ? WHERE user_id = ? AND consumed_at IS NULL",
                     now, user.getId());
+            String recipient=user.getEmail();
+            org.springframework.transaction.support.TransactionSynchronizationManager.registerSynchronization(
+                    new org.springframework.transaction.support.TransactionSynchronization() {
+                        @Override public void afterCommit() {
+                            try { executor.execute(() -> {
+                                if(!delivery.isAvailable()) return;
+                                try { delivery.sendPasswordChanged(recipient); }
+                                catch(RuntimeException ignored) { org.slf4j.LoggerFactory.getLogger(PasswordRecoveryService.class).warn("Password-change email processing failed."); }
+                            }); } catch(java.util.concurrent.RejectedExecutionException ignored) { /* Password reset is committed; never undo it for delivery failure. */ }
+                        }
+                    });
         });
     }
 

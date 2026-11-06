@@ -64,7 +64,7 @@ public class InvitationService {
                 && existing.get().getExpiresAt().isAfter(now)) {
             throw new ResponseStatusException(HttpStatus.CONFLICT, "An active invitation already exists.");
         }
-        existing.ifPresent(expired -> expired.resolve(false));
+        existing.ifPresent(GroupInvitation::expire);
         invitations.flush();
         GroupInvitation invitation = new GroupInvitation(group, request.email(), now.plus(Duration.ofDays(7)));
         var saved=invitations.saveAndFlush(invitation);

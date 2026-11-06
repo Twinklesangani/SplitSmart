@@ -58,7 +58,7 @@ export function InviteForm({ groupId }) {
     }
   }
 
-  return <Card className="invite-card">
+  return <Card className="invite-card" id="invite-members">
     <h2>Invite a member</h2>
     <p>Recipients can register later. They join only after accepting in My groups.</p>
     <Button type="button" disabled={busy} onClick={createLink}>Create private invite link</Button>

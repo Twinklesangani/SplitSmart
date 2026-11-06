@@ -42,8 +42,8 @@ export default function GroupManagement({ group, members, user, reload }) {
       <ul className="management-member-list">{members.filter(member => String(member.userId) !== String(user.id)).map(member => <li key={member.userId}>
         <span>{member.name}</span><Button variant="secondary" aria-label={`Remove ${member.name}`} onClick={() => requestChange({ label: `Remove ${member.name}`, path: `/api/groups/${group.id}/members/${member.userId}`, method: 'DELETE' })}>Remove member</Button>
       </li>)}</ul>
-      <p>Delete safely by archiving. All balances must be settled. Financial history remains available.</p>
-      <Button variant="danger" onClick={() => requestChange({ label: 'Archive group', path: `/api/groups/${group.id}`, method: 'DELETE' })}>Delete group…</Button>
+      <p>Archive a settled group to keep its history available without adding new expenses.</p>
+      <Button variant="secondary" onClick={() => requestChange({ label: 'Archive group', path: `/api/groups/${group.id}`, method: 'DELETE' })}>Archive group…</Button>
     </>}
     {pending && <dialog ref={dialog} className="management-dialog" aria-labelledby="management-title" onCancel={event => { if (busy) event.preventDefault(); else setPending(null) }}>
       <h2 id="management-title">{pending.label}?</h2><p>Confirm this change to {group.name}. The server will check permissions and financial obligations.</p>

@@ -26,6 +26,9 @@ class RecoveryEmailTest {
             assertThrows(IllegalArgumentException.class, () -> new EmailPasswordResetDelivery(transport, origin));
         }
         assertThrows(IllegalArgumentException.class, () -> delivery.sendReset("recipient@example.invalid", "bad\nvalue", Instant.now()));
+        delivery.sendPasswordChanged("recipient@example.invalid");
+        assertTrue(captured.get().contains("password was changed"));
+        assertFalse(captured.get().contains("A".repeat(43)));
     }
 
     @Test

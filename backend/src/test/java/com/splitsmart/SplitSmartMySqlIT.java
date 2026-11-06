@@ -894,18 +894,30 @@ class SplitSmartMySqlIT {
         assertEquals("30.00", dashboard.get("totalExpenses").asText());
         assertEquals("20.00", dashboard.get("owed").asText());
         assertEquals("5.00", dashboard.get("receivable").asText());
+        assertEquals("-15.00", dashboard.get("netPosition").asText());
+        assertEquals(2,dashboard.get("groupBalances").size());
+        var positions=new java.util.HashSet<String>();
+        dashboard.get("groupBalances").forEach(position->positions.add(position.get("netBalance").asText()));
+        assertEquals(java.util.Set.of("5.00","-20.00"),positions);
         assertEquals(2, dashboard.get("groups").size());
         assertEquals(2, dashboard.get("activity").size());
+        Instant recorded=Instant.parse(dashboard.get("activity").get(0).get("recordedAt").asText());
+        assertTrue(java.time.Duration.between(recorded,Instant.now()).abs().getSeconds()<60,"Dashboard activity must represent the actual recent instant, regardless of JVM timezone.");
         assertEquals(201, send("POST", settlementsPath(first.groupId()), token(first.memberIds().get(1)), Map.of(
                 "fromUserId", first.memberIds().get(1), "toUserId", ownerId, "amount", "2.00", "requestId", UUID.randomUUID().toString())).statusCode());
         var after = objectMapper.readTree(send("GET", "/api/dashboard", owner, null).body());
         assertEquals("3.00", after.get("receivable").asText());
+        assertEquals("-17.00",after.get("netPosition").asText());
         assertEquals(3, after.get("activity").size());
         assertEquals(401, send("GET", "/api/dashboard", null, null).statusCode());
         Fixture outsider = createFixture("dashboard-private", 1);
         var privateDashboard = objectMapper.readTree(send("GET", "/api/dashboard", token(outsider.memberIds().get(0)), null).body());
         assertEquals("0.00", privateDashboard.get("totalExpenses").asText());
         assertEquals(0, privateDashboard.get("activity").size());
+        assertEquals("0.00",privateDashboard.get("netPosition").asText());
+        assertEquals(1,privateDashboard.get("groupBalances").size());
+        assertEquals(outsider.groupId(),privateDashboard.get("groupBalances").get(0).get("groupId").asLong());
+        assertEquals("0.00",privateDashboard.get("groupBalances").get(0).get("netBalance").asText());
     }
 
     @Test

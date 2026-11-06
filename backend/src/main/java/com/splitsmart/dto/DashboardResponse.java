@@ -2,12 +2,13 @@ package com.splitsmart.dto;
 
 import java.math.BigDecimal;
 import java.time.LocalDate;
-import java.time.LocalDateTime;
+import java.time.Instant;
 import java.util.List;
 import com.splitsmart.entity.ExpenseCategory;
 
 public record DashboardResponse(BigDecimal totalExpenses, BigDecimal owed, BigDecimal receivable,
-        List<GroupResponse> groups, List<Activity> activity) {
+        List<GroupResponse> groups, List<Activity> activity, BigDecimal netPosition, List<GroupPosition> groupBalances) {
+    public record GroupPosition(Long groupId,BigDecimal netBalance) {}
     public record Activity(String type, Long id, Long groupId, String groupName, String description,
-            BigDecimal amount, LocalDate expenseDate, ExpenseCategory category, LocalDateTime recordedAt) {}
+            BigDecimal amount, LocalDate expenseDate, ExpenseCategory category, Instant recordedAt) {}
 }

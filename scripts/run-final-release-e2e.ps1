@@ -1,4 +1,4 @@
-param([ValidateSet('smoke', 'auth', 'expenses', 'groups', 'history', 'responsive', 'invitations', 'product', 'all')][string]$Suite = 'smoke')
+param([ValidateSet('smoke', 'auth', 'expenses', 'groups', 'history', 'responsive', 'invitations', 'product', 'ux', 'all')][string]$Suite = 'smoke')
 $ErrorActionPreference = 'Stop'
 
 if ($Suite -eq 'all') {
@@ -335,6 +335,7 @@ try {
 	Push-Location $frontendRoot
 	try {
 		if ($Suite -eq 'product') { & node node_modules/@playwright/test/cli.js test product-features.spec.js }
+		elseif ($Suite -eq 'ux') { & node node_modules/@playwright/test/cli.js test product-features.spec.js responsive-ui.spec.js }
 		elseif ($Suite -eq 'invitations') { & node node_modules/@playwright/test/cli.js test invitations.spec.js }
 		elseif ($Suite -eq 'history') { & node node_modules/@playwright/test/cli.js test financial-workflow.spec.js history-pagination.spec.js monetary-precision.spec.js }
 		elseif ($Suite -eq 'auth') { & node node_modules/@playwright/test/cli.js test authentication.spec.js auth-resource-limits.spec.js smoke.spec.js }

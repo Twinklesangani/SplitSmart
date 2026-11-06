@@ -35,6 +35,11 @@ public final class EmailPasswordResetDelivery implements PasswordResetDelivery {
                 + ". Sign in or register with this email, verify mailbox ownership, then accept in My groups:\n"
                 + origin + "/groups\nAn invitation expires after seven days. Joining requires your acceptance.");
     }
+    @Override public void sendPasswordChanged(String recipient) {
+        emails.send(recipient,"Your SplitSmart password changed","Your SplitSmart password was changed and previous sessions were invalidated.\n"
+                + "If this was you, sign in with your new password. If this was not you, recover your account immediately:\n"
+                + origin+"/forgot-password\nNever share your password or recovery links.");
+    }
 
     @Override
     public void sendReset(String recipient, String token, Instant expiresAt) {

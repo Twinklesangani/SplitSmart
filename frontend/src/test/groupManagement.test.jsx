@@ -66,7 +66,7 @@ describe('authenticated group management', () => {
 
     await user.click(groupLink)
     expect(await screen.findByRole('heading', { name: 'Weekend cabin', level: 1 })).toBeInTheDocument()
-    expect(await screen.findByText('Group ID 42')).toBeInTheDocument()
+    expect(await screen.findByText('42', { selector: '.meta-line strong' })).toBeInTheDocument()
   })
 
   it('shows loading instead of a premature empty state', async () => {
@@ -91,10 +91,10 @@ describe('authenticated group management', () => {
       totalExpenses: '30.00', owed: '5.00', receivable: '10.00', activity: [] })])
 
     expect(await screen.findByRole('link', { name: /Weekend cabin/ })).toBeInTheDocument()
-    expect(screen.getByText('2', { selector: '.dashboard-ledger dd' })).toBeInTheDocument()
+    expect(screen.getByText('(2 active)')).toBeInTheDocument()
     expect(screen.getByRole('link', { name: /Book club/ })).toHaveAttribute('href', '/groups/43')
     expect(screen.getByText('₹30.00', { selector: '.dashboard-ledger dd' })).toBeInTheDocument()
-    expect(screen.getByText('₹5.00', { selector: '.dashboard-ledger dd' })).toBeInTheDocument()
+    expect(within(screen.getByText('You owe', { selector: '.dashboard-ledger dt' }).parentElement).getByText('₹5.00')).toBeInTheDocument()
     expect(screen.getByText('₹10.00', { selector: '.dashboard-ledger dd' })).toBeInTheDocument()
     expect(screen.queryByText('$1,240.00')).not.toBeInTheDocument()
   })

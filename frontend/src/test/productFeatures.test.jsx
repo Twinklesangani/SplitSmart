@@ -53,7 +53,7 @@ it('requires confirmation before archiving and refreshes after server approval',
   })
   render(<MemoryRouter><GroupManagement group={{ id: 4, name: 'Weekend', createdByUserId: 1 }} members={[]}
     user={{ id: 1 }} reload={reload} /></MemoryRouter>)
-  await user.click(screen.getByRole('button', { name: 'Delete group…' }))
+  await user.click(screen.getByRole('button', { name: 'Archive group…' }))
   expect(apiRequest).not.toHaveBeenCalled()
   const dialog = screen.getByRole('dialog')
   await user.click(within(dialog).getByRole('button', { name: 'Confirm' }))

@@ -16,6 +16,7 @@ const tabs = [
 
 export function GroupPageLayout({ group, activeTitle, eyebrow, description, children }) {
   const { groupId } = useParams()
+  const { user } = useAuth()
   const base = `/groups/${groupId}`
   return (
     <>
@@ -29,10 +30,15 @@ export function GroupPageLayout({ group, activeTitle, eyebrow, description, chil
         <PageHeader
           eyebrow={eyebrow ?? 'GROUP SPACE'}
           title={activeTitle ?? group.name}
-          description={description ?? `Group ID ${group.id}`}
+          description={description ?? 'Shared expenses, balances and repayments in one place.'}
         />
       </div>
       {group.archived && <p className="inline-notice" role="status">Archived group · Financial history is read-only.</p>}
+      <nav className="group-quick-actions" aria-label="Group actions">
+        {!group.archived && <Button to={`${base}/expenses/new`}>Add expense</Button>}
+        <Button variant="secondary" to={`${base}/balances`}>Balances & suggestions</Button>
+        {!group.archived && String(group.createdByUserId) === String(user.id) && <Link className="text-link" to={`${base}#invite-members`}>Invite people</Link>}
+      </nav>
       <nav className="group-tabs" aria-label="Group sections">
         {tabs.map((tab) => (
           <NavLink
@@ -98,17 +104,15 @@ function GroupOverviewContent({ data, user }) {
 
   return (
     <div className="group-overview-grid">
-      <GroupManagement group={group} members={members} user={user} reload={data.reload} />
-      {isCreator && !group.archived && <InviteForm groupId={group.id} />}
       <Card className="group-overview-welcome">
         <span className="welcome-icon"><Icon name="spark" size={21} /></span>
         <p className="eyebrow">GROUP SPACE</p>
         <h2>{group.name}</h2>
-        <p>Group ID {group.id}. Group membership and shared information are available to members only.</p>
+        <p>Share expenses with your group, review balances and record repayments when you settle up.</p>
       </Card>
       <Card className="group-meta-card">
         <div className="section-heading">
-          <div><h2>Group information</h2><p>Verified group details</p></div>
+          <div><h2>Group information</h2><p>Your shared space</p></div>
         </div>
         <div className="meta-line"><span>Group ID</span><strong>{group.id}</strong></div>
         <div className="meta-line"><span>Members</span><strong>{members.length}</strong></div>
@@ -125,6 +129,8 @@ function GroupOverviewContent({ data, user }) {
       <Card className="group-overview-activity">
         <EmptyState icon="activity" title="Ready to review group expenses?" description="Open this group's real expense list or add a new shared expense." action={<Link className="text-link" to={`/groups/${group.id}/expenses`}>View expenses <Icon name="arrowRight" size={16} /></Link>} />
       </Card>
+      {isCreator && !group.archived && <InviteForm groupId={group.id} />}
+      <GroupManagement group={group} members={members} user={user} reload={data.reload} />
     </div>
   )
 }

@@ -1,5 +1,5 @@
 import { useEffect, useRef, useState } from 'react'
-import { useNavigate } from 'react-router-dom'
+import { useNavigate, useSearchParams } from 'react-router-dom'
 import { Button, Card, EmptyState, FormField, GroupCard, PageHeader } from '../components/UI.jsx'
 import { useAuth } from '../context/useAuth.js'
 import { ApiError } from '../services/apiClient.js'
@@ -12,11 +12,12 @@ const GROUP_NAME_MAX_LENGTH = 120
 export default function GroupsPage() {
   const { user } = useAuth()
   const navigate = useNavigate()
+  const [search] = useSearchParams()
   const [data, setData] = useState({ scope: '', status: 'loading', groups: [], error: '' })
   const [loadAttempt, setLoadAttempt] = useState(0)
   useRefreshOnReturn(setLoadAttempt)
   const scope = `${user.id}:${loadAttempt}`
-  const [createOpen, setCreateOpen] = useState(false)
+  const [createOpen, setCreateOpen] = useState(() => search.get('create') === '1')
   const [groupName, setGroupName] = useState('')
   const [createError, setCreateError] = useState('')
   const [isCreating, setIsCreating] = useState(false)
