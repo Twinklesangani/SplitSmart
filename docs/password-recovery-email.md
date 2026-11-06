@@ -1,5 +1,16 @@
 # Password recovery email: configuration handoff
 
+Account-specific update, 7 November 2026: signed-in account shows Free plan, 300 shared
+marketing/transactional emails/day and no configured payment method. SplitSmart sender
+is Verified with a freemail/DMARC warning. Phone verification still blocks key creation
+and sending; transactional approval/domain-free eligibility and real delivery remain
+unproven. No email/key/configuration change. Both flags stay false. The owner must
+complete private phone/OTP verification and explicitly approve a reset message to a
+named inbox. A successful reset also queues a password-change notice, which needs its
+own sending approval. See [release runbook](production-release-readiness.md) for current
+gates and the prohibition on rollback to unversioned authentication. This update
+supersedes older statements below that no sender/account-specific check has occurred.
+
 M1B is prepared locally. Email delivery remains disabled. No provider account, API key, paid service, production migration, push or deployment was created by this work.
 
 ## Verified public terms, 6 November 2026
