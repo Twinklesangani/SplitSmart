@@ -40,6 +40,8 @@ $managedEnvironment = @(
 	'DB_PASSWORD',
 	'JWT_SECRET',
 	'APP_CORS_ALLOWED_ORIGINS',
+	'RECOVERY_EMAIL_ENABLED',
+	'RECOVERY_EMAIL_DELIVERY_VERIFIED',
 	'VITE_API_BASE_URL',
 	'SPLITSMART_E2E_API_URL',
 	'SPLITSMART_E2E_BASE_URL'
@@ -276,6 +278,8 @@ try {
 	$env:DB_PASSWORD = $applicationPassword
 	$env:JWT_SECRET = $jwtSecret
 	$env:APP_CORS_ALLOWED_ORIGINS = $frontendUrl
+	$env:RECOVERY_EMAIL_ENABLED = 'false'
+	$env:RECOVERY_EMAIL_DELIVERY_VERIFIED = 'false'
 	$env:VITE_API_BASE_URL = $apiUrl
 	$env:SPLITSMART_E2E_API_URL = $apiUrl
 	$env:SPLITSMART_E2E_BASE_URL = $frontendUrl
@@ -304,8 +308,8 @@ try {
 		throw 'The isolated database contained unexpected data before browser scenarios began.'
 	}
 	$flywayVersions = Invoke-TestDatabaseQuery "SELECT GROUP_CONCAT(version ORDER BY installed_rank SEPARATOR ',') FROM flyway_schema_history"
-	if ($flywayVersions -ne '1,2,3,4,5,6,7') {
-		throw 'The isolated database did not apply exactly Flyway V1-V7.'
+	if ($flywayVersions -ne '1,2,3,4,5,6,7,8,9') {
+		throw 'The isolated database did not apply exactly Flyway V1-V9.'
 	}
 	$flywayChecksums = Invoke-TestDatabaseQuery "SELECT GROUP_CONCAT(checksum ORDER BY installed_rank SEPARATOR ',') FROM flyway_schema_history WHERE version IN ('1','2','3','4')"
 	if ($flywayChecksums -ne '1632565820,-1885547116,-722028687,-1841320934') {

@@ -169,33 +169,14 @@ class GroupControllerTest {
 	}
 
 	@Test
-	void creatorAddsExistingUserWithNormalizedEmailAndMemberSeesGroup() throws Exception {
+	void creatorCannotEnrollWithoutRecipientAcceptance() throws Exception {
 		User creator = createUser("Member Creator");
 		User friend = createUser("Member Friend");
 		ExpenseGroup group = createGroup("Members", creator);
 		addMember(group, creator);
-
-		mockMvc.perform(post("/api/groups/{groupId}/members", group.getId())
-						.header("Authorization", bearerToken(creator))
-						.contentType(MediaType.APPLICATION_JSON_VALUE)
-						.content("""
-								{"email":"  MEMBER.FRIEND@GROUPS.EXAMPLE ","userId":999999}
-								"""))
-				.andExpect(status().isCreated())
-				.andExpect(content().contentTypeCompatibleWith(MediaType.APPLICATION_JSON_VALUE))
-				.andExpect(jsonPath("$.userId").value(friend.getId()))
-				.andExpect(jsonPath("$.name").value(friend.getName()))
-				.andExpect(jsonPath("$.email").value(friend.getEmail()))
-				.andExpect(jsonPath("$.passwordHash").doesNotExist());
-
-		assertEquals(1, groupMemberRepository.countByGroup_IdAndUser_Id(group.getId(), friend.getId()));
-		assertEquals(2, groupMemberRepository.countByGroup_IdAndUser_Id(group.getId(), creator.getId())
-				+ groupMemberRepository.countByGroup_IdAndUser_Id(group.getId(), friend.getId()));
-		mockMvc.perform(get("/api/groups").header("Authorization", bearerToken(friend)))
-				.andExpect(status().isOk())
-				.andExpect(jsonPath("$[0].id").value(group.getId()));
+		postMember(group.getId(), bearerToken(creator), friend.getEmail()).andExpect(status().isConflict());
+		assertEquals(0, groupMemberRepository.countByGroup_IdAndUser_Id(group.getId(), friend.getId()));
 	}
-
 	@Test
 	void memberListIncludesAllMembersInMembershipOrderWithoutSensitiveFields() throws Exception {
 		User creator = createUser("List Creator");
@@ -246,7 +227,7 @@ class GroupControllerTest {
 		String token = bearerToken(creator);
 
 		postMember(group.getId(), token, "missing@groups.example")
-				.andExpect(status().isNotFound());
+				.andExpect(status().isConflict());
 		postMember(group.getId(), token, "   ")
 				.andExpect(status().isBadRequest());
 		postMember(group.getId(), token, "not-an-email")

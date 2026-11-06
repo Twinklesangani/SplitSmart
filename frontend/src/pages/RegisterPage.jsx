@@ -1,5 +1,5 @@
 import { useRef, useState } from 'react'
-import { Link, useNavigate } from 'react-router-dom'
+import { Link, useLocation, useNavigate } from 'react-router-dom'
 import { Button, FormField } from '../components/UI.jsx'
 import { ApiError, apiRequest } from '../services/apiClient.js'
 
@@ -23,6 +23,7 @@ function validate(values) {
 
 export default function RegisterPage() {
   const navigate = useNavigate()
+  const location = useLocation()
   const nameRef = useRef(null)
   const emailRef = useRef(null)
   const passwordRef = useRef(null)
@@ -71,7 +72,7 @@ export default function RegisterPage() {
       }
       navigate('/login', {
         replace: true,
-        state: { registrationSuccess: 'Your account is ready. Sign in to continue.' },
+        state: { registrationSuccess: 'Your account is ready. Sign in to continue.', from: location.state?.from },
       })
     } catch (error) {
       setMessage(error instanceof ApiError

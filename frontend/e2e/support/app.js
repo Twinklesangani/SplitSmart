@@ -91,16 +91,19 @@ export async function createGroup(page, name) {
 
 export async function addMembers(page, groupId, accounts) {
   for (const account of accounts) {
-    await page.getByRole('button', { name: 'Add member', exact: true }).click()
-    const form = page.locator('.member-form')
-    await form.getByLabel('Account email address').fill(account.email)
-    await form.getByRole('button', { name: 'Add member', exact: true }).click()
-    await expect(page.getByRole('status')).toContainText(`${account.name} was added to the group.`)
-    await expect(page.locator('.member-list .member-card').filter({ hasText: account.email })).toContainText(account.name)
+    const created = await apiRequest(page, `/api/groups/${groupId}/invite-links`, { method: 'POST' })
+    expect(created.status).toBe(201)
+    const login = await page.request.post(`${API_URL}/api/auth/login`, { data: { email: account.email, password: account.password } })
+    expect(login.status()).toBe(200)
+    const session = await login.json()
+    const accepted = await page.request.post(`${API_URL}/api/invitations/link-accept`, {
+      headers: { Authorization: `Bearer ${session.accessToken}` }, data: { token: created.body.token },
+    })
+    expect(accepted.status()).toBe(200)
   }
-  await expect(page).toHaveURL(new RegExp(`/groups/${groupId}$`))
+  await page.goto(`/groups/${groupId}`)
+  await expect(page.locator('.member-list .member-card')).toHaveCount(accounts.length + 1)
 }
-
 export async function groupMembers(page, groupId) {
   const response = await apiRequest(page, `/api/groups/${groupId}/members`)
   expect(response.status).toBe(200)

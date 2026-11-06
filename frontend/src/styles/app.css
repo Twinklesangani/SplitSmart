@@ -1088,6 +1088,11 @@
   gap: 13px;
 }
 
+.invite-link-copy { display: grid; gap: 10px; margin: 16px 0; }
+.invite-link-copy input { width: 100%; min-width: 0; padding: 12px; font-size: 16px; background: var(--color-canvas); color: var(--color-ink); border: 1px solid var(--color-line); border-radius: 8px; }
+.invite-card form { display: grid; gap: 12px; margin: 18px 0; }
+.invite-card article, .invitation-inbox-card article { border-top: 1px solid var(--color-line); padding: 12px 0; }
+
 .form-field {
   display: grid;
   gap: 6px;

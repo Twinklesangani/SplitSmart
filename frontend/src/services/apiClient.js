@@ -31,6 +31,8 @@ function resolveApiUrl(path) {
 }
 
 function messageForHttpError(status, code, path) {
+  if (status === 503 && path === '/api/auth/email-verification') return 'Email verification is currently unavailable. Ask the group owner for a private invitation link.'
+  if (status === 403 && /^\/api\/invitations\/.+\/accept$/.test(path)) return 'Verify ownership of your email before accepting, or ask the owner for a private group link.'
   if (status === 503 && path === '/api/auth/forgot-password') return 'Email recovery is currently unavailable. Please try again later.'
   if (status === 429) return 'Too many requests. Please wait before trying again.'
   if (status === 413) return 'This request is too large. Reduce its size and try again.'
@@ -79,6 +81,7 @@ function notifyExpiredGroupSession(path, status) {
 
 function isProtectedPath(path) {
   return /^\/api\/(groups|invitations|dashboard)(\/|$)/.test(path)
+    || ['/api/auth/email-verification', '/api/auth/verify-email'].includes(path)
 }
 
 function isAbortError(error) {

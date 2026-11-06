@@ -184,7 +184,7 @@ describe('authenticated group management', () => {
     expect(screen.getByText('alex@example.com')).toBeInTheDocument()
     expect(screen.getByText('Riley Chen', { selector: '.member-card strong' })).toBeInTheDocument()
     expect(screen.getAllByText('Creator')).toHaveLength(2)
-    expect(screen.getByRole('button', { name: 'Add member' })).toBeInTheDocument()
+    expect(screen.getByRole('button', { name: 'Create invitation' })).toBeInTheDocument()
   })
 
   it('adds an existing member by email and refreshes the member list', async () => {
@@ -197,14 +197,14 @@ describe('authenticated group management', () => {
       membersResponse([creatorMember(), added]),
     ])
 
-    await user.click(await screen.findByRole('button', { name: 'Add member' }))
-    const form = screen.getByRole('form', { name: 'Add an existing member' })
-    await user.type(within(form).getByLabelText('Account email address'), '  ALEX@EXAMPLE.COM ')
-    await user.click(within(form).getByRole('button', { name: 'Add member' }))
+    await screen.findByRole('button', { name: 'Create invitation' })
+    const form = screen.getByLabelText('Invitation email address').closest('form')
+    await user.type(within(form).getByLabelText('Invitation email address'), '  ALEX@EXAMPLE.COM ')
+    await user.click(within(form).getByRole('button', { name: 'Create invitation' }))
 
-    expect(await screen.findByRole('status')).toHaveTextContent('Alex Morgan was added to the group.')
-    expect(await screen.findByText('alex@example.com')).toBeInTheDocument()
-    expect(fetch).toHaveBeenNthCalledWith(4, 'http://localhost:8081/api/groups/42/members', expect.objectContaining({
+    expect(await screen.findByRole('status')).toHaveTextContent('Invitation created for seven days.')
+    expect(screen.queryByText('alex@example.com', { selector: '.member-card span' })).not.toBeInTheDocument()
+    expect(fetch).toHaveBeenNthCalledWith(4, 'http://localhost:8081/api/groups/42/invitations', expect.objectContaining({
       method: 'POST',
       body: JSON.stringify({ email: 'alex@example.com' }),
     }))
@@ -218,12 +218,12 @@ describe('authenticated group management', () => {
       jsonResponse({ code: 'conflict', message: 'database constraint details' }, 409),
     ])
 
-    await user.click(await screen.findByRole('button', { name: 'Add member' }))
-    const form = screen.getByRole('form', { name: 'Add an existing member' })
-    await user.type(within(form).getByLabelText('Account email address'), member.email)
-    await user.click(within(form).getByRole('button', { name: 'Add member' }))
+    await screen.findByRole('button', { name: 'Create invitation' })
+    const form = screen.getByLabelText('Invitation email address').closest('form')
+    await user.type(within(form).getByLabelText('Invitation email address'), member.email)
+    await user.click(within(form).getByRole('button', { name: 'Create invitation' }))
 
-    expect(await screen.findByRole('alert')).toHaveTextContent('already a group member')
+    expect(await screen.findByRole('status')).toHaveTextContent('already a group member')
     expect(screen.queryByText('database constraint details')).not.toBeInTheDocument()
   })
 
@@ -235,12 +235,12 @@ describe('authenticated group management', () => {
       jsonResponse({ code: 'forbidden', message: 'internal authorization detail' }, 403),
     ])
 
-    await user.click(await screen.findByRole('button', { name: 'Add member' }))
-    const form = screen.getByRole('form', { name: 'Add an existing member' })
-    await user.type(within(form).getByLabelText('Account email address'), member.email)
-    await user.click(within(form).getByRole('button', { name: 'Add member' }))
+    await screen.findByRole('button', { name: 'Create invitation' })
+    const form = screen.getByLabelText('Invitation email address').closest('form')
+    await user.type(within(form).getByLabelText('Invitation email address'), member.email)
+    await user.click(within(form).getByRole('button', { name: 'Create invitation' }))
 
-    expect(await screen.findByRole('alert')).toHaveTextContent('You do not have permission')
+    expect(await screen.findByRole('status')).toHaveTextContent('You do not have permission')
     expect(screen.queryByText('internal authorization detail')).not.toBeInTheDocument()
   })
 
@@ -252,7 +252,7 @@ describe('authenticated group management', () => {
     ])
 
     expect(await screen.findByRole('heading', { name: 'Weekend cabin', level: 1 })).toBeInTheDocument()
-    expect(screen.queryByRole('button', { name: 'Add member' })).not.toBeInTheDocument()
+    expect(screen.queryByRole('button', { name: 'Create invitation' })).not.toBeInTheDocument()
   })
 
   it('shows a privacy-preserving not-found state for an inaccessible group', async () => {

@@ -26,7 +26,7 @@ class PasswordRecoveryMigrationIT {
                 sql.executeUpdate("INSERT INTO group_members(group_id,user_id) VALUES(1,1)");
                 sql.executeUpdate("INSERT INTO expenses(id,group_id,description,amount,currency_code,paid_by_user_id,created_by_user_id,expense_date,category) VALUES(1,1,'Existing expense',123.45,'INR',1,1,'2026-01-01','OTHER')");
                 sql.executeUpdate("INSERT INTO expense_splits(expense_id,user_id,amount) VALUES(1,1,123.45)");
-                var after = Flyway.configure().dataSource(mysql.getJdbcUrl(), mysql.getUsername(), mysql.getPassword()).load();
+                var after = Flyway.configure().dataSource(mysql.getJdbcUrl(), mysql.getUsername(), mysql.getPassword()).target("8").load();
                 after.migrate();
                 after.validate();
                 assertEquals(8, after.info().applied().length);

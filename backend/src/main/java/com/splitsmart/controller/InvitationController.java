@@ -34,6 +34,15 @@ public class InvitationController {
     public List<InvitationResponse> inbox(@AuthenticationPrincipal Jwt jwt) {
         return invitations.inbox(jwt.getSubject());
     }
+    @GetMapping("/groups/{groupId}/invitations")
+    public List<java.util.Map<String,Object>> sent(@PathVariable Long groupId,@AuthenticationPrincipal Jwt jwt) {
+        return invitations.sent(groupId,jwt.getSubject());
+    }
+    @org.springframework.web.bind.annotation.DeleteMapping("/groups/{groupId}/invitations/{id}")
+    @ResponseStatus(HttpStatus.NO_CONTENT)
+    public void revoke(@PathVariable Long groupId,@PathVariable Long id,@AuthenticationPrincipal Jwt jwt) {
+        invitations.revoke(groupId,id,jwt.getSubject());
+    }
 
     @PostMapping("/invitations/{id}/accept")
     @ResponseStatus(HttpStatus.NO_CONTENT)

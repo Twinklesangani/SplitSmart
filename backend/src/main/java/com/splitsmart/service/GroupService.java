@@ -71,22 +71,7 @@ public class GroupService {
 			throw new ResponseStatusException(HttpStatus.FORBIDDEN, "Only the group creator can add members.");
 		}
 
-		User target = userRepository.findByEmail(request.email())
-				.orElseThrow(() -> notFound("User not found."));
-		if (groupMemberRepository.existsByGroup_IdAndUser_Id(groupId, target.getId())) {
-			throw conflict("User is already a group member.");
-		}
-
-		try {
-			groupMemberRepository.saveAndFlush(new GroupMember(group, target));
-		} catch (DataIntegrityViolationException exception) {
-			if (isMemberUniqueConstraintViolation(exception)) {
-				throw conflict("User is already a group member.");
-			}
-			throw exception;
-		}
-
-		return toMemberResponse(target);
+		throw new ResponseStatusException(HttpStatus.CONFLICT, "Use a consent-based invitation to add members.");
 	}
 
 	@Transactional(readOnly = true)

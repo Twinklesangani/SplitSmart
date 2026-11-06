@@ -39,7 +39,7 @@ class GroupServiceTest {
 	}
 
 	@Test
-	void concurrentUniqueMembershipViolationReturnsConflict() {
+	void directEnrollmentReturnsConflict() {
 		User creator = new User("Creator", "creator@example.com", "{bcrypt}hash");
 		User target = new User("Target", "target@example.com", "{bcrypt}hash");
 		ExpenseGroup group = new ExpenseGroup("Test group", creator);
@@ -60,7 +60,7 @@ class GroupServiceTest {
 	}
 
 	@Test
-	void unrelatedIntegrityViolationIsNotReportedAsDuplicateMembership() {
+	void directEnrollmentNeverWritesMembership() {
 		User creator = new User("Creator", "creator@example.com", "{bcrypt}hash");
 		User target = new User("Target", "target@example.com", "{bcrypt}hash");
 		ExpenseGroup group = new ExpenseGroup("Test group", creator);
@@ -73,11 +73,11 @@ class GroupServiceTest {
 		when(userRepository.findByEmail("target@example.com")).thenReturn(Optional.of(target));
 		when(groupMemberRepository.saveAndFlush(any())).thenThrow(databaseFailure);
 
-		DataIntegrityViolationException exception = assertThrows(
-				DataIntegrityViolationException.class,
+		ResponseStatusException exception = assertThrows(ResponseStatusException.class,
 				() -> groupService.addMember(5L, "1", new AddGroupMemberRequest("target@example.com")));
 
-		assertSame(databaseFailure, exception);
+		assertEquals(HttpStatus.CONFLICT, exception.getStatusCode());
+        org.mockito.Mockito.verify(groupMemberRepository, org.mockito.Mockito.never()).saveAndFlush(any());
 	}
 
 	@Test

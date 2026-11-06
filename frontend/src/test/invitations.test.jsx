@@ -18,7 +18,7 @@ it('invites an email without adding membership or claiming email delivery', asyn
   expect(apiRequest).toHaveBeenCalledWith('/api/groups/42/invitations', {
     method: 'POST', body: { email: 'new@example.test' },
   })
-  expect(await screen.findByRole('status')).toHaveTextContent('No email was sent')
+  expect(await screen.findByRole('status')).toHaveTextContent('Email delivery is not confirmed')
 })
 
 it.each(['accept', 'decline'])('resolves an inbox invitation with %s and refreshes groups only on acceptance', async decision => {

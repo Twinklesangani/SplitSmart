@@ -27,6 +27,9 @@ public class InvitationService {
     private final ExpenseGroupRepository groups;
     private final GroupMemberRepository members;
     private final GroupInvitationRepository invitations;
+    @org.springframework.beans.factory.annotation.Autowired private PasswordResetDelivery delivery;
+    @org.springframework.beans.factory.annotation.Autowired
+    @org.springframework.beans.factory.annotation.Qualifier("passwordRecoveryExecutor") private java.util.concurrent.Executor mailWorker;
 
     public InvitationService(UserRepository users, ExpenseGroupRepository groups,
             GroupMemberRepository members, GroupInvitationRepository invitations) {
@@ -52,6 +55,9 @@ public class InvitationService {
             }
         });
         Instant now = Instant.now();
+        if(invitations.countByGroup_IdAndStatusAndExpiresAtAfter(groupId,"PENDING",now)>=50) {
+            throw new ResponseStatusException(HttpStatus.TOO_MANY_REQUESTS,"Too many pending invitations.");
+        }
         var existing = invitations.findByGroup_IdAndEmailAndActiveSlot(groupId, request.email(), "P");
         if (existing.isPresent() && "PENDING".equals(existing.get().getStatus())
                 && existing.get().getExpiresAt().isAfter(now)) {
@@ -60,12 +66,25 @@ public class InvitationService {
         existing.ifPresent(expired -> expired.resolve(false));
         invitations.flush();
         GroupInvitation invitation = new GroupInvitation(group, request.email(), now.plus(Duration.ofDays(7)));
-        return response(invitations.saveAndFlush(invitation));
+        var saved=invitations.saveAndFlush(invitation);
+        org.springframework.transaction.support.TransactionSynchronizationManager.registerSynchronization(
+                new org.springframework.transaction.support.TransactionSynchronization() {
+                    @Override public void afterCommit() {
+                        try { mailWorker.execute(() -> {
+                            if(!delivery.isAvailable()) return;
+                            try { delivery.sendInvitation(saved.getEmail(), group.getName()); }
+                            catch(RuntimeException ignored) { org.slf4j.LoggerFactory.getLogger(InvitationService.class).warn("Invitation email processing failed."); }
+                        }); } catch(java.util.concurrent.RejectedExecutionException ignored) { /* In-app invitation remains available. */ }
+                    }
+                });
+        return response(saved);
     }
 
     @Transactional(readOnly = true)
     public List<InvitationResponse> inbox(String subject) {
-        return invitations.findPending(user(subject).getEmail(), Instant.now()).stream()
+        var recipient=user(subject);
+        if(!recipient.isEmailVerified()) return List.of();
+        return invitations.findPending(recipient.getEmail(), Instant.now()).stream()
                 .map(InvitationService::response).toList();
     }
 
@@ -74,6 +93,9 @@ public class InvitationService {
         User recipient = user(subject);
         var invitation = invitations.findById(id).orElseThrow(InvitationService::notFound);
         if (!recipient.getEmail().equals(invitation.getEmail())) throw notFound();
+        if(accept && !recipient.isEmailVerified()) {
+            throw new ResponseStatusException(HttpStatus.FORBIDDEN,"Verify your email ownership before accepting email invitations. A private group link can be used without email verification.");
+        }
         Long groupId = invitation.getGroup().getId();
         groups.findByIdForUpdate(groupId).orElseThrow(InvitationService::notFound).requireActive();
         entityManager.refresh(invitation, jakarta.persistence.LockModeType.PESSIMISTIC_WRITE);
@@ -88,6 +110,26 @@ public class InvitationService {
             members.saveAndFlush(new GroupMember(invitation.getGroup(), recipient));
         }
         invitation.resolve(accept);
+    }
+
+    @Transactional
+    public List<java.util.Map<String,Object>> sent(Long groupId,String subject) {
+        var group=groups.findByIdForUpdate(groupId).orElseThrow(InvitationService::notFound);
+        if(!group.getCreatedBy().getId().toString().equals(subject)
+                || !members.existsByGroup_IdAndUser_Id(groupId,Long.parseLong(subject))) throw notFound();
+        return invitations.findByGroup_IdOrderByIdDesc(groupId,org.springframework.data.domain.PageRequest.of(0,50)).stream()
+                .map(i -> java.util.Map.<String,Object>of("id",i.getId(),"email",i.getEmail(),"expiresAt",i.getExpiresAt(),
+                        "status",i.isRevoked()?"REVOKED":"PENDING".equals(i.getStatus())&&!i.getExpiresAt().isAfter(Instant.now())?"EXPIRED":i.getStatus())).toList();
+    }
+    @Transactional
+    public void revoke(Long groupId,Long id,String subject) {
+        var group=groups.findByIdForUpdate(groupId).orElseThrow(InvitationService::notFound);
+        if(!group.getCreatedBy().getId().toString().equals(subject)
+                || !members.existsByGroup_IdAndUser_Id(groupId,Long.parseLong(subject))) throw notFound();
+        var invitation=invitations.findById(id).orElseThrow(InvitationService::notFound);
+        entityManager.refresh(invitation,jakarta.persistence.LockModeType.PESSIMISTIC_WRITE);
+        if(!invitation.getGroup().getId().equals(groupId)||!"PENDING".equals(invitation.getStatus())) throw notFound();
+        invitation.revoke();
     }
 
     private User user(String subject) {

@@ -32,6 +32,11 @@ public class User {
 	@Column(name = "auth_token_version", nullable = false)
 	private long authTokenVersion;
 
+	@Column(name = "email_verified_at")
+	private LocalDateTime emailVerifiedAt;
+
+	public boolean isEmailVerified() { return emailVerifiedAt != null; }
+
 	public long getAuthTokenVersion() {
 		return authTokenVersion;
 	}

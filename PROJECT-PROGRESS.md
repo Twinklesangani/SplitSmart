@@ -1,5 +1,16 @@
 # SplitSmart project progress
 
+## Autonomous completion — phase 2 (local verification)
+
+- V9 adds nullable mailbox-verification/revocation metadata plus hashed single-use private group links and email-verification tokens. Existing V1–V8 migration text/checksums and financial records remain unchanged. Original checkout's unrelated test edit remains untouched.
+- Private links: creator-only generation/list/revocation, 256-bit random bearer secret, hash-only storage, seven-day expiry, one recipient acceptance, 20 creations/group/day. Link possession deliberately authorizes any signed-in recipient; UI warns owners to share privately. No membership changes on GET or mere link opening.
+- Existing email invitations reused, with pending/accepted/declined/expired/revoked management, duplicate protection, owner-only revocation and active-group checks. Email-bound inbox and acceptance now require mailbox proof. Verification emails use separate 30-minute single-use hashed tokens, authenticated account binding and persistent 60-second/three-per-hour issue budgets. No owner-copyable verification secret exists.
+- Legacy direct enrollment now returns conflict after existing creator/member/active checks, preventing consent bypass. No existing memberships are removed. Updated related fixtures/tests and the shared isolated browser helper to use recipient-authorized link acceptance.
+- Invitation and mailbox-verification messages reuse the disabled-by-default HTTPS adapter; no real email sent. Signup/login preserve link continuation. Invitation/verification fragments are captured in memory and removed before React starts; never stored in browser storage or logged.
+- PASS: 30 backend unit/H2/controller tests; 6 MySQL invitation/schema tests plus 3 V8→V9/legacy invitation regressions; 35 + 26 frontend checks across six relevant files. All passed, with overlapping reruns excluded from unique totals. Lint and frontend build pass. One real isolated Edge invitation→registration→acceptance→expense/balance flow passed with disposable MySQL/users and email forced off. Script guard updated to exact V1–V9 while preserving baseline checksum checks; system execution policy unchanged (test-process override only).
+- V8-only password-reset migration test is explicitly pinned to V8 so future additive migrations do not invalidate its preservation assertions. V9 upgrade has a separate real MySQL checksum/data-preservation regression.
+- Brevo handoff update: user signed in; account shows 300 remaining daily credits and a phone-verification prerequisite before sending. Transactional onboarding waits for a successful log; sender approval and an authorized test inbox remain outstanding. Requested private phone/sender verification and an authorized inbox, never keys/codes in chat. Delivery flags remain false.
+
 ## Autonomous completion — phase 1 (6 November 2026)
 
 - Verified clean worktree on codex/password-recovery-backend at M1B 6fe4ae3afa5e0b832bcda1eb51977f26907b0638; original root edits remain untouched.

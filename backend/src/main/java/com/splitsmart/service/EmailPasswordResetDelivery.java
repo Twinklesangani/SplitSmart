@@ -24,6 +24,18 @@ public final class EmailPasswordResetDelivery implements PasswordResetDelivery {
     @Override public boolean isAvailable() { return emails.isAvailable(); }
     @Override public boolean isConfigured() { return true; }
 
+    @Override public void sendVerification(String recipient, String token, Instant expiresAt) {
+        if (token == null || !token.matches("[A-Za-z0-9_-]{43}")) throw new IllegalArgumentException("Invalid verification token.");
+        emails.send(recipient, "Verify your SplitSmart email", "Confirm ownership of your SplitSmart email:\n"
+                + origin + "/verify-email#token=" + token + "\nExpires at " + expiresAt
+                + ". Sign in to the account that requested this email, then confirm. Ignore this if you did not request it.");
+    }
+    @Override public void sendInvitation(String recipient, String groupName) {
+        emails.send(recipient, "SplitSmart group invitation", "You have been invited to " + groupName
+                + ". Sign in or register with this email, verify mailbox ownership, then accept in My groups:\n"
+                + origin + "/groups\nAn invitation expires after seven days. Joining requires your acceptance.");
+    }
+
     @Override
     public void sendReset(String recipient, String token, Instant expiresAt) {
         if (token == null || !token.matches("[A-Za-z0-9_-]{43}")) {

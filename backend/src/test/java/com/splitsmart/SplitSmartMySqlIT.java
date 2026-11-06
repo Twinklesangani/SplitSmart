@@ -178,7 +178,7 @@ class SplitSmartMySqlIT {
 	void flywayAndHibernateUseTheIsolatedMySqlSchema() throws Exception {
 		assertTrue(MYSQL.isRunning());
 		assertNotNull(MYSQL.getContainerId());
-        assertEquals(8, flyway.info().applied().length);
+        assertEquals(9, flyway.info().applied().length);
 		assertEquals(MigrationState.SUCCESS, flyway.info().applied()[0].getState());
 		assertEquals("1", flyway.info().applied()[0].getVersion().getVersion());
 		assertEquals(MigrationState.SUCCESS, flyway.info().applied()[1].getState());
@@ -200,7 +200,7 @@ class SplitSmartMySqlIT {
 			assertTrue(mysqlVersion.startsWith("8.4."));
 		}
 
-		assertEquals(16, jdbcTemplate.queryForObject(
+		assertEquals(19, jdbcTemplate.queryForObject(
 				"SELECT COUNT(*) FROM information_schema.table_constraints "
 						+ "WHERE constraint_schema = DATABASE() AND constraint_type = 'FOREIGN KEY'",
 				Integer.class));
@@ -811,6 +811,7 @@ class SplitSmartMySqlIT {
         assertEquals(201, send("POST", "/api/auth/register", null,
                 Map.of("name", "Invited later", "email", email, "password", newTestSecret())).statusCode());
         long userId = userRepository.findByEmail(email).orElseThrow().getId();
+        jdbcTemplate.update("UPDATE users SET email_verified_at=CURRENT_TIMESTAMP WHERE id=?", userId);
         String recipient = token(userId);
         String decision = "/api/invitations/" + id + "/accept";
         assertEquals(404, send("POST", decision, owner, null).statusCode());
@@ -832,6 +833,7 @@ class SplitSmartMySqlIT {
         long recipientId = recipientGroup.memberIds().get(0);
         String email = userRepository.findById(recipientId).orElseThrow().getEmail();
         String owner = token(group.memberIds().get(0));
+        jdbcTemplate.update("UPDATE users SET email_verified_at=CURRENT_TIMESTAMP WHERE id=?", recipientId);
         String recipient = token(recipientId);
         String path = "/api/groups/" + group.groupId() + "/invitations";
         long first = objectMapper.readTree(send("POST", path, owner, Map.of("email", email)).body()).get("id").asLong();
@@ -928,7 +930,8 @@ class SplitSmartMySqlIT {
         assertEquals(204, send("DELETE", base + "/members/" + freshId, owner, null).statusCode());
         assertEquals(404, send("GET", base + "/members", token(freshId), null).statusCode());
         String email = userRepository.findById(freshId).orElseThrow().getEmail();
-        assertEquals(201, send("POST", base + "/members", owner, Map.of("email", email)).statusCode());
+        var linkResponse = objectMapper.readTree(send("POST", base + "/invite-links", owner, null).body());
+        assertEquals(200, send("POST", "/api/invitations/link-accept", token(freshId), Map.of("token",linkResponse.get("token").asText())).statusCode());
         assertEquals(204, send("POST", base + "/leave", token(freshId), null).statusCode());
         assertEquals(201, send("POST", settlementsPath(group.groupId()), token(debtorId), Map.of(
                 "fromUserId", debtorId, "toUserId", ownerId, "amount", "10.00", "requestId", UUID.randomUUID().toString())).statusCode());

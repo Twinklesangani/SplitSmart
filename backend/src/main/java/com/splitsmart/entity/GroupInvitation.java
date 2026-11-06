@@ -28,6 +28,11 @@ public class GroupInvitation {
     private String status;
     @Column(length = 1)
     private String activeSlot;
+    @Column(name = "revoked_at")
+    private Instant revokedAt;
+
+    public void revoke() { resolve(false); revokedAt = Instant.now(); }
+    public boolean isRevoked() { return revokedAt != null; }
 
     protected GroupInvitation() {}
 
