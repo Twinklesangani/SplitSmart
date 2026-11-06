@@ -1,5 +1,12 @@
 # SplitSmart project progress
 
+## Autonomous completion — phase 1 (6 November 2026)
+
+- Verified clean worktree on codex/password-recovery-backend at M1B 6fe4ae3afa5e0b832bcda1eb51977f26907b0638; original root edits remain untouched.
+- Opened official Brevo homepage and signup in agent-accessible browser. Signup visibly states "Free to use – no credit card required" and requires email/password plus acceptance of terms; no signed-in account available.
+- BLOCKED: user must complete private login/signup/verification and explicitly authorize a test inbox. Asked asynchronously; no credentials requested in chat. Sender ownership, transactional activation, domain-free eligibility and actual message/link tracking remain unverified. No API call or email sent, settings remain disabled.
+- No code changes in this phase; prior M1B tests remain the last verified baseline. Browser left at signup for user handoff. Continue independent phases as expressly authorized; no deployment/migration/push/billing actions.
+
 ## Current status: M1B prepared; email disabled (6 November 2026)
 
 - Continued in the same isolated worktree and branch from verified M1A commit `19a0c04462e2911a92c67d5c40757ca94cfe588c`. Original checkout's MySQL test edit and M0 progress document remain untouched. No migrations, financial features, invitations or notifications were changed.
