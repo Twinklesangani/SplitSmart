@@ -1,0 +1,14 @@
+.recovery-card { max-width: 470px; }
+.recovery-card .auth-card__description, .recovery-note, .recovery-guidance { font-size: 14px; line-height: 1.65; }
+.recovery-card .form-field label, .recovery-card .form-help, .recovery-card .field-error, .recovery-card .auth-message { font-size: 13px; }
+.recovery-card .form-field input { min-height: 46px; font-size: 16px; width: 100%; }
+.recovery-card .field-error, .recovery-card .auth-message[role="alert"] { color: var(--color-red); }
+.recovery-card .button { font-size: 14px; min-height: 44px; justify-content: center; }
+.recovery-card .auth-switch { font-size: 13px; }
+.recovery-card .auth-switch a { display: inline-flex; align-items: center; min-height: 44px; }
+.recovery-note, .recovery-guidance { color: var(--color-muted); margin: 18px 0; }
+.recovery-action { margin-top: 12px; width: 100%; text-align: center; }
+.recovery-visibility { justify-self: start; padding: 6px 0; border: 0; background: none; color: var(--color-ink); text-decoration: underline; cursor: pointer; font: inherit; font-size: 13px; min-height: 40px; }
+.recovery-card :focus-visible { outline: 2px solid var(--color-ink); outline-offset: 4px; }
+.recovery-card h2:focus { outline: none; }
+@media (max-width: 420px) { .recovery-card { padding: 24px 18px; } }

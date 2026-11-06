@@ -66,6 +66,7 @@ class PasswordRecoveryIntegrationTest {
     void account() throws Exception {
         when(clock.instant()).thenReturn(Instant.now());
         when(delivery.isAvailable()).thenReturn(true);
+        when(delivery.isConfigured()).thenReturn(true);
         doAnswer(call -> { messages.add(call.getArgument(1)); return null; })
                 .when(delivery).sendReset(anyString(), anyString(), any());
         email = UUID.randomUUID() + "@example.invalid";
@@ -206,14 +207,27 @@ class PasswordRecoveryIntegrationTest {
         assertEquals(1, messages.size());
         assertFalse(known.contains(messages.peek()));
         when(delivery.isAvailable()).thenReturn(false);
-        assertEquals(known, forgot(email));
+        when(delivery.isConfigured()).thenReturn(false);
+        String disabledKnown = mvc.perform(fromSource(post("/api/auth/forgot-password")).contentType(MediaType.APPLICATION_JSON)
+                .content(json.writeValueAsString(Map.of("email", email))))
+                .andExpect(status().isServiceUnavailable()).andReturn().getResponse().getContentAsString();
+        String disabledUnknown = mvc.perform(fromSource(post("/api/auth/forgot-password")).contentType(MediaType.APPLICATION_JSON)
+                .content(json.writeValueAsString(Map.of("email", "unknown@example.invalid"))))
+                .andExpect(status().isServiceUnavailable()).andReturn().getResponse().getContentAsString();
+        assertEquals(disabledKnown, disabledUnknown);
         drain();
         assertEquals(1, messages.size());
         when(delivery.isAvailable()).thenReturn(true);
+        when(delivery.isConfigured()).thenReturn(true);
         advance();
         doThrow(new IllegalStateException("Synthetic provider failure")).when(delivery).sendReset(anyString(), anyString(), any());
         assertEquals(known, forgot(email));
         drain();
+        assertEquals(known, forgot(UUID.randomUUID() + "@example.invalid"));
+        drain();
+        // Private transport shutdown must not turn public responses into an account oracle.
+        when(delivery.isAvailable()).thenReturn(false);
+        assertEquals(known, forgot(email));
         assertEquals(known, forgot(UUID.randomUUID() + "@example.invalid"));
         drain();
     }

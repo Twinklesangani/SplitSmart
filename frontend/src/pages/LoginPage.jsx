@@ -83,6 +83,7 @@ export default function LoginPage() {
           {isSubmitting ? 'Signing in…' : 'Sign in'} <span aria-hidden="true">→</span>
         </Button>
       </form>
+      <p className="auth-switch"><Link to="/forgot-password">Forgot your password?</Link></p>
       <p className="auth-switch">New to SplitSmart? <Link to="/register">Create an account</Link></p>
     </section>
   )

@@ -31,6 +31,7 @@ function resolveApiUrl(path) {
 }
 
 function messageForHttpError(status, code, path) {
+  if (status === 503 && path === '/api/auth/forgot-password') return 'Email recovery is currently unavailable. Please try again later.'
   if (status === 429) return 'Too many requests. Please wait before trying again.'
   if (status === 413) return 'This request is too large. Reduce its size and try again.'
   if (status === 401) {

@@ -1,8 +1,33 @@
 # SplitSmart project progress
 
-## Current status: M1A backend (6 November 2026)
+## Current status: M1B prepared; email disabled (6 November 2026)
 
-This section supersedes baseline assumptions and proposed version numbers in the historical M0 notes below. M1B has not started. Do not deploy, migrate production, push or activate email without separate approval.
+- Continued in the same isolated worktree and branch from verified M1A commit `19a0c04462e2911a92c67d5c40757ca94cfe588c`. Original checkout's MySQL test edit and M0 progress document remain untouched. No migrations, financial features, invitations or notifications were changed.
+- Added Forgot Password, Check Your Email, Reset Password and Reset Success routes using existing React components/styles. Login links to recovery; reset also works while signed in. Includes accessible field errors/focus, pending/duplicate-submit protection, password visibility, UTF-8 length/confirmation validation, expired/used link handling, safe API errors and sign-in navigation.
+- Browser bootstrap captures a fragment token in memory and removes the URL fragment/query before React/authentication requests. Query-string tokens are rejected; no reset secrets enter browser storage, router state, displayed UI or application logs. Added no-referrer policy. Reset success clears the old local session; M1A server-side JWT revocation is unchanged.
+- Added provider-independent transactional transport and recovery message composition, with a Brevo HTTPS implementation. Fixed endpoint, finite connection/read timeouts, no redirects/retries, plain-text content and sanitized response/error handling. No new mail dependency or paid SDK. Any transport/non-201 failure disables sending until restart/review.
+- Delivery remains unavailable unless both server-side enablement and verified-delivery flags are explicitly true and complete private configuration is present. Disabled recovery now returns the same generic 503/no-store response for all valid email addresses; UI shows unavailable rather than implying mail was sent. Enabled 202 means request received, never confirmed delivery.
+- Public configuration availability is separate from private circuit-breaker health: a recipient's delivery failure must not change public responses into an account-existence signal. Configured requests retain conditional 202 responses even while the private breaker stops sending. Tests verify this separation.
+- Brevo public docs confirm Free = 300/day, no card/time limit. Sender verification and separate transactional activation are required. Temporary brevosend.com sender rewriting does not establish permanent domain-free eligibility for this account; tracking behavior also needs a received-message check. No account setup, credential collection, approval request, real email or provider activation was performed.
+- Configuration names (disabled defaults, no secrets) are in backend/.env.example. Full eligibility evidence, configuration contract and exact owner steps: [password recovery email handoff](docs/password-recovery-email.md).
+
+### M1B focused verification: all passed
+
+- Backend unit/H2/controller: **41 passed**, zero failures/errors/skips. `./mvnw.cmd -B -o -Dtest=PasswordRecoveryIntegrationTest,UserTokenVersionValidatorTest,RecoveryEmailTest,RecoveryEmailConfigTest,AuthControllerTest,SecurityConfigTest test`.
+- Disposable real MySQL recovery/JWT: **7 passed**, zero failures/errors/skips. `./mvnw.cmd -B -o -Pmysql-it -Dit.test=PasswordRecoveryMySqlIT test-compile failsafe:integration-test failsafe:verify`.
+- Frontend: **35 passed** across recovery and existing auth suites. `npm run test -- --pool=threads --maxWorkers=1 src/test/passwordRecovery.test.jsx src/test/authentication.test.jsx`.
+- Local Edge browser: **3 passed**, mobile 375px and desktop 1280px recovery flow, keyboard/focus/visibility, unavailable email and expired links. `npx --no-install playwright test --config=playwright.recovery.config.js`. Uses mocked localhost API responses, no real users/provider/database; this is not a deliverability test. Separate .browser.js naming keeps it out of the existing real-backend *.spec.js runner.
+- Inspected mobile reset and desktop request screenshots; corrected error text to the existing accessible red theme token and increased button/link touch targets. Artifacts remain ignored under frontend/test-results/recovery. Frontend lint and production build passed. Locked dependencies installed from local npm cache; no new dependency or lockfile changes.
+- Old/new JWT, reset replay/concurrency/rollback and signed-in reset tests remain passing. No schema files changed; V8 remains the latest migration. Reviewed focused diff and staged scope before local commit; local identity is available from `git log -1` on this branch.
+- Final public/private availability regression was rerun on both H2 and real MySQL: seven scenarios passed on each, with zero failures/errors/skips. Command: `./mvnw.cmd -B -o -Pmysql-it -Dtest=PasswordRecoveryIntegrationTest -Dit.test=PasswordRecoveryMySqlIT test failsafe:integration-test failsafe:verify`.
+
+### Account boundary and next action
+
+Stop here. Live delivery is BLOCKED on owner-controlled sender eligibility/activation and private configuration; UI/adapter implementation and local verification are complete. Owner should manually confirm a Brevo Free sender can send these messages without a purchased domain, card or billing; stop if any is required. Never paste an API key in chat or Git. Keep delivery off until account approval and a separate private actual-message/link-tracking verification are complete. See the handoff document for precise steps. No production migration/deploy, push, billing or credential changes occurred. Do not begin invitations/notifications automatically.
+
+## Previous milestone: M1A backend (6 November 2026)
+
+This section supersedes baseline assumptions and proposed version numbers in the historical M0 notes below. M1B's current status is above. Do not deploy, migrate production, push or activate email without separate approval.
 
 ### Baseline and preservation
 

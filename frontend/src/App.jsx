@@ -9,6 +9,7 @@ import { GroupBalancesPage, GroupSettlementsPage } from './pages/FinancePages.js
 import LoginPage from './pages/LoginPage.jsx'
 import RegisterPage from './pages/RegisterPage.jsx'
 import NotFoundPage from './pages/NotFoundPage.jsx'
+import { ForgotPasswordPage, CheckEmailPage, ResetPasswordPage, ResetSuccessPage } from './pages/PasswordRecoveryPages.jsx'
 import { ExpenseCreatePage, ExpenseDetailPage, ExpenseEditPage, GroupExpensesPage } from './pages/ExpensePages.jsx'
 
 function App() {
@@ -33,6 +34,12 @@ function App() {
           <Route path="/login" element={<LoginPage />} />
           <Route path="/register" element={<RegisterPage />} />
         </Route>
+      </Route>
+      <Route element={<AuthLayout />}>
+        <Route path="/forgot-password" element={<ForgotPasswordPage />} />
+        <Route path="/check-email" element={<CheckEmailPage />} />
+        <Route path="/reset-password" element={<ResetPasswordPage />} />
+        <Route path="/reset-success" element={<ResetSuccessPage />} />
       </Route>
       <Route path="*" element={<NotFoundPage />} />
     </Routes>

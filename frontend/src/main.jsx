@@ -4,6 +4,9 @@ import { BrowserRouter } from 'react-router-dom'
 import { AuthProvider } from './context/AuthContext.jsx'
 import './index.css'
 import App from './App.jsx'
+import { prepareRecoveryLink } from './services/recoveryLink.js'
+
+prepareRecoveryLink()
 
 createRoot(document.getElementById('root')).render(
   <StrictMode>

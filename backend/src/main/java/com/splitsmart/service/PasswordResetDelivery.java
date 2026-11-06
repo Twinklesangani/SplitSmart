@@ -6,6 +6,8 @@ import java.time.Instant;
  * Future adapters must use a configured trusted HTTPS origin, never request Host headers,
  * disable link tracking, and impose finite transport timeouts. */
 public interface PasswordResetDelivery {
+    /** Public configuration state must not change as a result of an individual account's delivery. */
+    default boolean isConfigured() { return isAvailable(); }
     boolean isAvailable();
     void sendReset(String recipient, String token, Instant expiresAt);
 }
