@@ -227,3 +227,9 @@ target backup must be rehearsed before relying on it; Free provider snapshots
 alone are not proof of a restorable independent backup.
 
 Target verification update (8 November 2026): target schema/roles, 26 synthetic tests and independent encrypted synthetic backup/local restore PASS. See [verification and privilege matrix](postgresql-target-verification.md). No production data migration or deployment approval inferred.
+
+## Local real-data rehearsal update — 8 November 2026
+
+PASS on the existing encrypted local PostgreSQL 16.11 instance, ONE new isolated database and ONE data-import attempt. See [local rehearsal evidence and handoff](local-postgresql-real-data-rehearsal.md). Twenty-three focused validator tests and one V1–V11 Flyway test PASS; nine source-table counts/every-column hashes, financial ledgers, constraints and sequence floors reconciled, including committed visibility through a new session. The controller refuses a consumed attempt; retain this copy and all older backups/databases.
+
+Local prevalidation and per-role error-log privacy are verified for this schema/snapshot. They do not prove cloud ICU equivalence or general primary-error redaction. Cloud remains untouched and the managed privacy gate remains BLOCKED. Render will need its actual shared outbound CIDRs reviewed and separately approved, not a desktop /32 or allow-all. Final migration still requires explicit all-writer freeze, a new full consistent encrypted snapshot/restore, approved target upload/import, deployment and go-live. No last-delta/CDC implementation exists; never revert to V7/stale MySQL after token-version rollout or new financial writes.
