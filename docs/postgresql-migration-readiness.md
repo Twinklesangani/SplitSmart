@@ -225,3 +225,5 @@ and token-version synchronization is NOT implemented or approved. A failure mean
 maintenance and forward recovery, not an automatic DB_URL switch. Restoring a
 target backup must be rehearsed before relying on it; Free provider snapshots
 alone are not proof of a restorable independent backup.
+
+Target verification update (8 November 2026): target schema/roles, 26 synthetic tests and independent encrypted synthetic backup/local restore PASS. See [verification and privilege matrix](postgresql-target-verification.md). No production data migration or deployment approval inferred.
