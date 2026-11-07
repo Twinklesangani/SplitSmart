@@ -11,9 +11,14 @@ import org.springframework.scheduling.annotation.Scheduled;
 @EnableScheduling
 public class NotificationMaintenance {
     private final JdbcTemplate jdbc;
-    public NotificationMaintenance(JdbcTemplate jdbc) { this.jdbc=jdbc; }
+    private final MaintenanceGate maintenance;
+    public NotificationMaintenance(JdbcTemplate jdbc, MaintenanceGate maintenance) {
+        this.jdbc=jdbc;
+        this.maintenance=maintenance;
+    }
     @Scheduled(fixedDelay=3600000,initialDelay=600000)
     public void cleanup() {
+        if(maintenance.isEnabled()) return;
         // Bounded work on free hosting; notification metadata only, never financial rows.
         var ids=jdbc.queryForList("SELECT id FROM notifications WHERE created_at<? ORDER BY id LIMIT 1000",Long.class,
                 LocalDateTime.now(ZoneOffset.UTC).minusDays(90));
