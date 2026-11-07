@@ -4,6 +4,13 @@ Local compatibility phase, 7 November 2026. No production access, cloud creation
 deployment, push, merge or billing change. Original MySQL recovery data, encrypted
 backup and GPG keyring are retained. Release still requires separate approval.
 
+Stage 2 update: one separately approved Aiven PostgreSQL Free service is now
+RUNNING in Singapore, PostgreSQL 16.15, verified TLS and metadata checks PASS.
+No cloud application schema/data/roles or Flyway migrations yet. See
+[target preflight](aiven-postgres-target-preflight.md) for exact permissions,
+20-connection limit and the unverified zero-cost provider restore limitation.
+This does not authorize a production import, deployment or cutover.
+
 ## Implemented compatibility
 
 Existing JPA entities use IDENTITY keys, exact BigDecimal amounts, DECIMAL(19,2),
