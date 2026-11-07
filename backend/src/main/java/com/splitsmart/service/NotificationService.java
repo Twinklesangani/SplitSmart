@@ -61,7 +61,9 @@ public class NotificationService {
         long user=Long.parseLong(subject);
         if(limit<1||limit>50||before!=null&&before<1) throw new ResponseStatusException(HttpStatus.BAD_REQUEST,"Invalid notification page.");
         retain(user);
-        var items=jdbc.query("SELECT id,type,title,created_at,read_at,group_id,resource_id FROM notifications WHERE "+AUTHORIZED+" AND (? IS NULL OR id<?) ORDER BY id DESC LIMIT ?",(row,index)->{
+        // Avoid an untyped null parameter in PostgreSQL; both branches bind values.
+        Object[] pageArguments=before==null ? new Object[]{user,limit+1} : new Object[]{user,before,limit+1};
+        var items=jdbc.query("SELECT id,type,title,created_at,read_at,group_id,resource_id FROM notifications WHERE "+AUTHORIZED+(before==null?"":" AND id<?")+" ORDER BY id DESC LIMIT ?",(row,index)->{
             Long group=row.getObject("group_id",Long.class);
             Long resource=row.getObject("resource_id",Long.class);
             String type=row.getString("type");
@@ -69,7 +71,7 @@ public class NotificationService {
             if(group!=null&&"EXPENSE".equals(type)) href+="/expenses/"+resource;
             if(group!=null&&"SETTLEMENT".equals(type)) href+="/settlements";
             return new Item(row.getLong("id"),type,row.getString("title"),row.getObject("created_at",LocalDateTime.class),row.getObject("read_at")!=null,href);
-        },user,before,before,limit+1);
+        },pageArguments);
         boolean more=items.size()>limit;
         var visible=items.stream().limit(limit).toList();
         return new Page(visible,count(user),more?visible.getLast().id():null);

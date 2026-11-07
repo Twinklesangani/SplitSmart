@@ -41,6 +41,7 @@ public class Expense {
 	@Column(nullable = false, precision = 19, scale = 2)
 	private BigDecimal amount;
 
+	@org.hibernate.annotations.JdbcTypeCode(org.hibernate.type.SqlTypes.CHAR)
 	@Column(name = "currency_code", nullable = false, length = 3, columnDefinition = "CHAR(3)")
 	private String currencyCode;
 

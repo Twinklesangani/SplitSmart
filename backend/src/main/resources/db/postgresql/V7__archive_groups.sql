@@ -1,0 +1,2 @@
+ALTER TABLE expense_groups ADD COLUMN archived BOOLEAN NOT NULL DEFAULT FALSE;
+

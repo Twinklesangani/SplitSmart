@@ -22,7 +22,8 @@ public class ExpenseCreationOperation {
     private String operationKey;
     @Column(nullable = false, length = 64)
     private String fingerprint;
-    @Column(name = "response_json", nullable = false, columnDefinition = "LONGTEXT")
+    @org.hibernate.annotations.JdbcTypeCode(org.hibernate.type.SqlTypes.LONGVARCHAR)
+    @Column(name = "response_json", nullable = false)
     private String responseJson;
 
     protected ExpenseCreationOperation() {}

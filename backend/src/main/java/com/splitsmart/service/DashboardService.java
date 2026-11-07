@@ -12,6 +12,8 @@ import com.splitsmart.repository.SettlementRepository;
 
 @Service
 public class DashboardService {
+    @org.springframework.beans.factory.annotation.Value("${app.database.vendor:mysql}")
+    private String databaseVendor;
     private final GroupService groups;
     private final ExpenseService expenses;
     private final ExpenseRepository expenseRepository;
@@ -68,12 +70,15 @@ public class DashboardService {
     }
     private java.util.Map<Long,java.time.Instant> recordedInstants(boolean repayments,Long groupId,java.util.List<Long> ids) {
         if(ids.isEmpty()) return java.util.Map.of();
-        // TIMESTAMP epochs come directly from MySQL; do not guess a JVM/driver timezone for LocalDateTime.
+        // PostgreSQL stores these legacy LocalDateTime values explicitly as UTC.
+        // MySQL TIMESTAMP epochs remain server-derived, preserving existing behavior.
         // Only the existing ten candidate IDs per type are read, using the group/id indexes.
         String table=repayments?"settlements":"expenses";
         String placeholders=String.join(",",java.util.Collections.nCopies(ids.size(),"?"));
         var arguments=new java.util.ArrayList<Object>();arguments.add(groupId);arguments.addAll(ids);
-        var rows=jdbc.query("SELECT id,UNIX_TIMESTAMP(created_at) AS epoch FROM "+table+" WHERE group_id=? AND id IN ("+placeholders+")",
+        String epochSql="postgresql".equals(databaseVendor)
+                ? "EXTRACT(EPOCH FROM created_at AT TIME ZONE 'UTC')" : "UNIX_TIMESTAMP(created_at)";
+        var rows=jdbc.query("SELECT id,"+epochSql+" AS epoch FROM "+table+" WHERE group_id=? AND id IN ("+placeholders+")",
                 (row,index)->{
                     BigDecimal epoch=row.getBigDecimal("epoch");
                     return java.util.Map.entry(row.getLong("id"),java.time.Instant.ofEpochSecond(epoch.longValue(),epoch.remainder(BigDecimal.ONE).movePointRight(9).longValueExact()));

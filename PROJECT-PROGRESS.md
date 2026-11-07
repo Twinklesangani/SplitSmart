@@ -281,3 +281,7 @@ Sources:
 ## First step after M0 approval / handoff
 
 Start M1 with the additive reset/token-version migration and atomic backend reset tests, preserving the existing encoder, service architecture and user data. Implement local fake-mail verification before any provider configuration. Resolve zero-cost sender eligibility before claiming production recovery is ready. Stop here for M0 review; do not begin M1 automatically.
+
+
+PostgreSQL compatibility commit — 7 November 2026
+Completed separate PostgreSQL V1-V10 migrations plus PostgreSQL-only V11 UUID comparison compatibility, opt-in runtime/verified-TLS profiles, portable JDBC mappings and dashboard/notification SQL. Original MySQL V1-V10 checksums unchanged. Local data copy/count/hash/financial/identity checks PASS; 26 PostgreSQL plus 14 focused regression/configuration tests PASS. See docs/postgresql-migration-readiness.md. No production access, upload, cloud provisioning, migration or deployment during compatibility work. Earlier uncommitted preservation/restore notes and unrelated edits deliberately excluded from this focused commit.
