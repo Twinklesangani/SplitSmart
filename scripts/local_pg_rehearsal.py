@@ -151,15 +151,15 @@ def source_payload(receipt):
         src.close()
 
 
-def metadata(pg, payload):
+def metadata(pg, payload, source_names=None):
     columns, collations = {}, {}
     for table in payload:
         rows = pg.query("SELECT column_name,data_type,is_nullable,character_maximum_length,numeric_precision,numeric_scale,collation_name FROM information_schema.columns WHERE table_schema='public' AND table_name=$1 ORDER BY ordinal_position",[table])
         target = {row[0] for row in rows}
         # Empty source tables still require exact source-field metadata supplied by
         # the caller; never infer the mapping from the first record.
-        names = SOURCE_NAMES[table]
-        l.require(set(names) | ADDITIONS.get(table,set()) == target, 'TARGET_FIELD_MAPPING')
+        names = (source_names if source_names is not None else SOURCE_NAMES)[table]
+        l.require(len(names)==len(set(names)) and set(names)==target-ADDITIONS.get(table,set()), 'TARGET_FIELD_MAPPING')
         columns[table] = {name:Column(kind,nullable=='YES',int(length) if length else None,
                         int(precision) if precision else None,int(scale) if scale else None)
                         for name,kind,nullable,length,precision,scale,_ in rows if name in names}

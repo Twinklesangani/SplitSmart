@@ -25,4 +25,11 @@ def connect(params,database=None,user=None,password=None,ca=None):
     pg.conn=pg.lib.PQconnectdbParams((s*len(keys))(*keys),(s*len(vals))(*vals),0)
     local.require(pg.conn and pg.lib.PQstatus(pg.conn)==0,'PRIVATE_PG_CONNECTION_FAILED')
     if ca:local.require(pg.lib.PQsslInUse(pg.conn)==1,'TLS_REQUIRED')
+    # libpq otherwise prints NOTICE payloads directly to stderr, bypassing our
+    # SQLSTATE-only exception handling. Keep a strong reference to the callback.
+    notice=C.CFUNCTYPE(None,C.c_void_p,C.c_char_p)
+    pg.notice_sink=notice(lambda _argument,_message: None)
+    pg.lib.PQsetNoticeProcessor.argtypes=[p,notice,p]
+    pg.lib.PQsetNoticeProcessor.restype=p
+    pg.lib.PQsetNoticeProcessor(pg.conn,pg.notice_sink,None)
     return pg
