@@ -1,7 +1,7 @@
 import raw from './scenarios.json'
 function freeze(value) { Object.values(value).forEach(item => { if (item && typeof item === 'object') freeze(item) }); return Object.freeze(value) }
 export const fixtures = freeze(raw)
-export function initialDemo() { return { persona: null, registered: false, group: false, invited: false, revoked: false, expired: false, accepted: [], equal: false, unequal: false, settled: false, read: [], message: '' } }
+export function initialDemo() { return { persona: null, registered: false, group: false, invited: false, revoked: false, expired: false, accepted: [], equal: false, unequal: false, settled: false, read: {}, message: '' } }
 const fail = state => ({ ...state, message: 'This action is unavailable for the selected fictional profile or step.' })
 export function transition(state, action) {
   if (!action || Object.keys(action).some(key => key !== 'type') || typeof action.type !== 'string') return fail(state)
@@ -22,11 +22,23 @@ export function transition(state, action) {
   if (type === 'expire' && owner && state.invited && !state.accepted.length && !state.expired) return { ...state, expired: true, message: 'Fictional invitation expired. Acceptance is blocked.' }
   if (type === 'accept' && !owner && state.invited && !state.revoked && !state.expired && !state.accepted.includes(state.persona)) return { ...state, accepted: [...state.accepted, state.persona], message: 'Fictional invitation accepted by its selected recipient.' }
   const membersReady = state.accepted.length === 3
-  if (type === 'equal' && owner && membersReady && !state.equal) return { ...state, equal: true, message: 'Equal expense added: four shares of â‚¹300.00.' }
-  if (type === 'unequal' && owner && state.equal && !state.unequal) return { ...state, unequal: true, message: 'Unequal expense added. Every share reconciles to â‚¹800.00.' }
-  if (type === 'settle' && state.persona === 'lena' && state.unequal && !state.settled) return { ...state, settled: true, message: 'Fictional â‚¹600.00 repayment recorded once. Original expenses remain.' }
-  if (type === 'read' && state.group) return { ...state, read: [...new Set([...state.read, state.persona])], message: 'This tabâ€™s fictional notifications are marked read.' }
+  if (type === 'equal' && owner && membersReady && !state.equal) return { ...state, equal: true, message: 'Equal expense added: four shares of ₹300.00.' }
+  if (type === 'unequal' && owner && state.equal && !state.unequal) return { ...state, unequal: true, message: 'Unequal expense added. Every share reconciles to ₹800.00.' }
+  if (type === 'settle' && state.persona === 'lena' && state.unequal && !state.settled) return { ...state, settled: true, message: 'Fictional ₹600.00 repayment recorded once. Original expenses remain.' }
+  if (type === 'read' && state.group) return { ...state, read: { ...state.read, [state.persona]: notifications(state, state.persona).map(n => n.id) }, message: 'This tab’s fictional notifications are marked read.' }
   return fail(state)
 }
 export function snapshot(state) { return fixtures.snapshots[state.settled ? 'settled' : state.unequal ? 'unequal' : state.equal ? 'equal' : 'empty'] }
 export function invitationState(state, key) { return state.accepted.includes(key) ? 'Accepted' : state.revoked ? 'Revoked' : state.expired ? 'Expired' : state.invited ? 'Pending' : 'Not invited' }
+
+export function notifications(state, persona) {
+  const items = []
+  const owner = persona === 'mira'
+  const member = state.group && (owner || state.accepted.includes(persona))
+  if (state.invited && !owner) items.push({id:'invitation',text:'You received a fictional group invitation.'})
+  if (owner) for (const key of state.accepted) items.push({id:'join-'+key,text:fixtures.users.find(u=>u.key===key).name+' accepted their fictional invitation.'})
+  if (member && state.equal) items.push({id:'equal',text:'An equal group expense was added.'})
+  if (member && state.unequal) items.push({id:'unequal',text:'An unequal group expense was added.'})
+  if (member && state.settled) items.push({id:'settlement',text:'A fictional repayment was recorded.'})
+  return items
+}

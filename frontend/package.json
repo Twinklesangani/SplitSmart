@@ -9,7 +9,10 @@
     "lint": "oxlint",
     "test": "vitest run",
     "test:e2e": "playwright test",
-    "preview": "vite preview"
+    "preview": "vite preview",
+    "build:demo": "node demo/build.mjs",
+    "serve:demo": "node demo/server.mjs",
+    "test:demo:server": "node --test demo/server.test.mjs"
   },
   "dependencies": {
     "react": "^19.3.1",

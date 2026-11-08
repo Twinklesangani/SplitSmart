@@ -1,0 +1,10 @@
+**
+!Dockerfile.demo
+!package.json
+!package-lock.json
+!demo.html
+!vite.demo.config.js
+!demo/
+!demo/**
+!src/
+!src/**
