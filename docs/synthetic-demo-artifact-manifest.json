@@ -1,0 +1,9 @@
+{
+  "kind": "splitsmart-offline-synthetic-v1",
+  "files": {
+    "demo.html": "9135a3b9817c777d92dd3c02a3232d8f658d5eae89511a9281da350f42198290",
+    "index.html": "9135a3b9817c777d92dd3c02a3232d8f658d5eae89511a9281da350f42198290",
+    "assets/demo-CmJJdEbL.css": "1025b28e0ea2339955c30d6475fd2c0e8a83b0aea7f6a36b36fd809ed3181fa9",
+    "assets/demo-D-AIaz5U.js": "6d8c659f70d84c3437e2b9a84382b49b5d154528b477f78307968943e36340e5"
+  }
+}

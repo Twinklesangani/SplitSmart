@@ -1,12 +1,16 @@
-# Synthetic-only portfolio release — plan only
+# Synthetic-only portfolio — local implementation verified, release plan only
 
 8 November2026. Owner selected privacy Option C. No deployment, push, service creation or real-data upload is authorized. Existing production remains authoritative and unchanged.
+
+## Latest implementation status
+
+Local-only implementation is complete and verified at a24fca1ef046e390aca6665382c7f02de87b6387. Dedicated offline React/static-server entry, no real inputs/APIs/databases/credentials, tab-memory-only reset.3 Java contracts,11 React/model,4 HTTP tests and4 browser cases locally/actual OCI PASS; source and actual container artifact hashes match. See SYNTHETIC-PORTFOLIO-APPROVAL.md and docs/synthetic-demo-verification.md. No publication authorized; prior planning below is superseded where it describes the demo as unimplemented.
 
 ## Feasibility
 
 Actual production Dockerfile now builds and runs rootlessly with synthetic PostgreSQL, verified TLS/V11/health/nonroot and email disabled. Existing React/product tests and local data-integrity evidence remain valid. This is enough to plan a separate demonstration, not enough to publish the current full app safely as fake-only.
 
-The current app accepts registration and free-text financial inputs. Fake seed data or a disclaimer does not prevent real names/emails/financial details being submitted and reaching provider logs. Maintenance mode blocks all APIs, so it is not an interactive read-only demo switch. A safe synthetic portfolio needs an explicitly reviewed demo mode or static fixture frontend that does not collect/send visitor records. No such mode was implemented or claimed PASS here.
+The current app accepts registration and free-text financial inputs. Fake seed data or a disclaimer does not prevent real names/emails/financial details being submitted and reaching provider logs. Maintenance mode blocks all APIs, so it is not an interactive read-only demo switch. A safe synthetic portfolio needs an explicitly reviewed demo mode or static fixture frontend that does not collect/send visitor records. The separate offline entry is now implemented and verified; production app behavior is unchanged.
 
 ## Preferred proposed design
 
@@ -20,7 +24,7 @@ Reverify actual Free quotas before any proposal is executed. Render documents750
 
 ## Approvals in order
 
-1. Owner may approve local-only demo design/implementation and its fake-data boundaries; this does not approve cloud writes/deployment.
+1. Local-only demo design/implementation was approved and completed. No further permission for that same work is needed; this does not approve cloud writes/deployment.
 2. After local verification, review exact SHA, resource/quota/network plan, TLS/restricted roles and unique demo URL. Obtain separate explicit push/integration, synthetic schema/seed and deployment approvals as applicable.
 3. Only after actual deployed smoke/security results should owner approve making that demo accessible/promoted. Keep email disabled and verify no real visitor data is collected. Existing production and backups remain.
 
