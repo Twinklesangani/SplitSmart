@@ -45,14 +45,16 @@ owner-verified MySQL retirement date is21 December2026. Existing backups are sta
 relative to ongoing writes; more preservation requires separate approval.
 Consequence: plan a decision before retirement or accept possible app downtime.
 
-**Recommendation: B, with C as the immediate operating state.**
-The present strict no-sensitive-log requirement and missing container verification
-make release inappropriate today. One bounded provider inquiry is reasonable,
-but is not a promise of a free solution. If B cannot be met, explicitly choosing
-A is a policy change the owner may consider; the engineer cannot choose it or
-label the risk eliminated. Do not postpone indefinitely without a preservation
-and availability decision. Avoid an extra real-data rehearsal copy; a final
-approved frozen import would still need every check below.
+**Recommendation: C now (defer a new real-data cloud copy), with B retained as the required protection gate.**
+
+This is an engineering recommendation for the current hold, not acceptance of privacy risk or downtime on the owner's behalf. No reviewed Free provider demonstrates the required primary-message protection. Aiven Free documentation-based support is not entitlement to Basic technical tickets; no new inquiry was submitted. Neon Free/TLS and Supabase Free/logging documentation do not establish the guarantee, so switching providers is not a verified fix. Full practical/availability comparison and sources: docs/final-infrastructure-privacy-assessment.md. Existing MySQL is already cloud-hosted; C avoids another copy rather than moving production local. Plan preservation/availability before the owner-verified21 December2026 retirement; existing snapshots become stale.
+
+## Immediate owner decisions (separate from production approval)
+
+1. Container capability: approve a dedicated locked, non-sudo Ubuntu-only verification account, non-overlapping subordinate UID/GID mappings and official rootless Podman/mapping-helper packages, or provide an existing suitable environment. This is narrower than a privileged container or Docker repair, but broader than package-only preparation; privileged mapping helpers need explicit security scope under the no-escalation boundary. No changes made. Do not approve Windows resets/security weakening.
+2. Privacy/availability: continue C while requiring verifiable B evidence, or explicitly request a policy change to A after reviewing residual exposure. No option choice authorizes real upload, freeze, deployment, spending or loss of availability.
+
+Rootless preflight: no existing engine/nonroot login/subuid/subgid/helpers; harmless namespace probe PASS, resources adequate at inspection. No faithful OCI build/start occurred; kernel support alone is not PASS. Existing Linux-native startup is verified separately.
 
 ## Safe before release approval
 
