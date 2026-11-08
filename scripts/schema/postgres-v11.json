@@ -1,0 +1,26 @@
+{
+  "format": 1,
+  "schema": "PostgreSQL V1-V11",
+  "migration_sha256": {
+    "V10__notification_center.sql": "811540c7b1784179c148c0e08da70aaa4cffc257d7b7078a4b453c5e28f41247",
+    "V11__settlement_identifier_collation.sql": "03c44fe027bde1f4594709f41200e2cb4b7f74eefd9e6f9ee1644169e37586db",
+    "V1__create_users_and_groups.sql": "c0e2d0720b46efe6b5077b84585a32c344e7052304d5fcd5054f5d97a86d1391",
+    "V2__create_expenses_and_splits.sql": "f12f56fec9c25911afc59054403360abc087149fd38c7ee6d9b27ff77749cc91",
+    "V3__create_settlements.sql": "ece935c7b5fca4c94d6c92a1c2b1dafefef0b8ad3ed1f127f798254271d2e898",
+    "V4__expense_creation_operations.sql": "97aeb4cdc6f6daac6d98a591a90b19362c2dc333fab08ea0be5ff280ca092bf5",
+    "V5__group_invitations.sql": "b4fe18c2b35b309375d98f13255f591ee74c8accbe3cffd027ead967c0e17e57",
+    "V6__expense_date_and_category.sql": "f52b01113cc4ceda6f4d9b5d98db375ac5a6b97f62144e4c5742bc54ececb925",
+    "V7__archive_groups.sql": "db277a19998245afa2d241ee63ab0d7858f50a71e308ff14d60c09c5ba898a6d",
+    "V8__password_recovery.sql": "c02c2ca4b8a77bc7703526d467c7e8c28a3c0d69600853d82cc7cdc1c0cc9132",
+    "V9__invitation_consent_and_email_proof.sql": "dca94749f6c233b281e63da687ee8f1a78a0690834aaa9c0e29fe1fa5187ef91"
+  },
+  "fingerprints": {
+    "columns": "239653106acd12aefe083a54e9f470f811873ff97fe7cc93271f1f61bdbca56b",
+    "constraints": "765f45d9b00fff817a682851aeff0885c9920a11ad9395c7d033854181884a44",
+    "indexes": "cd0cc28d767e16616c5b368d80e34f58ff15336f156904878075ebc9c38d85c4",
+    "relations": "d806f16ef0d37ad66df78e71d2451b4b9bbea67e8927230549ecea77920f6b44",
+    "sequences": "75d27dbb021bdd1b065cedeba3ebd3300ecbedef2caaf7b8a5ab46b971a00307",
+    "triggers": "4f53cda18c2baa0c0354bb5f9a3ecbe5ed12ab4d8e11ba873c2f11161202b945",
+    "collations": "3cb49e6f87b4a080c41a510f261b5d17d3c340ab556a92624f53a998f2bffe7a"
+  }
+}

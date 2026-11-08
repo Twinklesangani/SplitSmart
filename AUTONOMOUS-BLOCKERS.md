@@ -15,3 +15,8 @@
 - Source/history/checksum/transaction/no-replay protections verified with fake local records; native NOTICE sink PASS.
 
 No production operation, privacy acceptance or chargeable action was inferred.
+
+## Latest resumed-gate blockers
+- Linux container execution remains BLOCKED: Ubuntu Docker integration unavailable; bwrap alone and no installed Linux Java cannot validate the backend image/TLS/health. No new tools/configuration installed.
+- Aiven management API/CLI now401. Restore authentication privately using the exact existing avn executable; do not send credentials or tokens in chat. SQL TLS/schema/least-privilege metadata independently passes, but this is not a current Free-plan/service management check.
+- B review is now PASS for existing safe code/synthetic scope, while real-cloud execution stays disabled. A policy choice and separately reviewed authorized real adapter are still needed.

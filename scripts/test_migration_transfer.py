@@ -28,6 +28,7 @@ class Fake:
         failures=[self.failure] if isinstance(self.failure,str) else (self.failure or [])
         if any(f in sql for f in failures):raise RuntimeError('SYNTHETIC_PRIVATE_RECORD')
         if sql.startswith('SELECT current_database()'):return [('ss_pg_transfer_synthetic_fixture','fixture','25432')]
+        if sql.startswith('SELECT rolsuper'):return [('false',)*5]
         if sql=='SELECT host(inet_server_addr())':return [('127.0.0.1',)]
         if sql.startswith('SELECT pg_try'):return [('t',)]
         if sql.startswith('SELECT version,checksum,success'):return m.checksums(SCHEMA)
@@ -62,7 +63,7 @@ class TransferTests(unittest.TestCase):
         with self.assertRaisesRegex(m.TransferError,'TARGET_FLYWAY_DRIFT'):
             m.metadata_preflight(Drift(),self.target,SCHEMA)
 
-    def run_transfer(self,failure=None,reconnect_failure=False):
+    def run_transfer(self,failure=None,reconnect_failure=False,originals=None):
         db=Fake(failure)
         connections=0
         def factory():
@@ -72,11 +73,12 @@ class TransferTests(unittest.TestCase):
             return db
         with tempfile.TemporaryDirectory() as directory:
             path=Path(directory)/'attempt.json'
-            with patch('local_pg_rehearsal.metadata',return_value=({}, {}, [], [])), \
+            with patch('schema_contract.verify'), \
+                 patch('local_pg_rehearsal.metadata',return_value=({}, {}, [], [])), \
                  patch('migration_validation.validate',side_effect=lambda p,*a:p), \
                  patch('local_pg_rehearsal.icu_check'), \
                  patch('local_pg_rehearsal.balances',return_value={}):
-                try: result=m.transfer(factory,self.target,SCHEMA,synthetic_originals(),{},path,'SYNTHETIC')
+                try: result=m.transfer(factory,self.target,SCHEMA,originals if originals is not None else synthetic_originals(),{},path,'SYNTHETIC')
                 except m.TransferError as error: result=str(error)
             status=json.loads(path.read_text())['status']
             with self.assertRaises(FileExistsError):m.Ledger(path)
@@ -120,6 +122,38 @@ class TransferTests(unittest.TestCase):
                     ['id','auth_token_version','password_reset_requested_at','email_verified_at']]
         with self.assertRaisesRegex(local.l.Stop,'TARGET_FIELD_MAPPING'):
             local.metadata(Catalog(),{'users':[]},{'users':['id','auth_token_version']})
+
+    def test_privileged_role_is_refused_before_schema_access(self):
+        class Privileged(Fake):
+            def query(self,sql,params=None):
+                if sql.startswith('SELECT rolsuper'):return [('true','false','false','false','false')]
+                return super().query(sql,params)
+        with self.assertRaisesRegex(m.TransferError,'TARGET_ROLE_EXCESS_PRIVILEGES'):
+            m.metadata_preflight(Privileged(),self.target,SCHEMA)
+
+    def test_missing_canonical_type_cannot_drop_a_column_from_hash(self):
+        data=synthetic_originals();data['users']=(['id'],[],[])
+        db,_,status=self.run_transfer(originals=data)
+        self.assertEqual('PREFLIGHT_FAILED',status)
+        self.assertFalse(any(sql.startswith('BEGIN') for sql in db.calls))
+
+    def test_extra_row_value_is_rejected_before_transaction(self):
+        data=synthetic_originals();data['users']=(['id'],['bigint'],[('1','SYNTHETIC_PRIVATE_RECORD')])
+        db,_,status=self.run_transfer(originals=data)
+        self.assertEqual('PREFLIGHT_FAILED',status)
+        self.assertFalse(any(sql.startswith('BEGIN') for sql in db.calls))
+
+    def test_acknowledged_commit_with_ledger_error_is_not_called_rollback(self):
+        original=m.Ledger.record
+        failed=[False]
+        def record(ledger,status,**metadata):
+            if status=='COMMITTED_UNVERIFIED' and not failed[0]:
+                failed[0]=True
+                raise OSError('SYNTHETIC_DISK_FAILURE')
+            return original(ledger,status,**metadata)
+        with patch.object(m.Ledger,'record',record):db,_,status=self.run_transfer()
+        self.assertEqual('COMMITTED_UNVERIFIED',status)
+        self.assertNotIn('ROLLBACK',db.calls)
 
 
 if __name__=='__main__':unittest.main()

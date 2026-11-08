@@ -8,6 +8,22 @@ from postgres_compatibility import unprotect,maven
 from migration_transfer import Target,transfer,checksums
 
 
+def synthetic_records():
+    when='2026-11-08 00:00:00.000000'
+    records={
+      'users':[dict(id=str(i),name='Synthetic '+str(i),email='synthetic'+str(i)+'@example.invalid',password_hash='synthetic-no-login',created_at=when) for i in (1,2)],
+      'expense_groups':[dict(id='1',name='Synthetic group',created_by='1',created_at=when,archived='0')],
+      'group_members':[dict(id=str(i),group_id='1',user_id=str(i)) for i in (1,2)],
+      'expenses':[dict(id='1',group_id='1',description='Synthetic expense',amount='50.00',currency_code='INR',paid_by_user_id='1',created_by_user_id='1',created_at=when,expense_date='2026-11-08',category='OTHER')],
+      'expense_splits':[dict(id=str(i),expense_id='1',user_id=str(i),amount='25.00') for i in (1,2)],
+      'settlements':[dict(id='1',group_id='1',from_user_id='2',to_user_id='1',amount='10.00',recorded_by_user_id='1',request_id='11111111-1111-4111-8111-111111111111',note=None,created_at=when)],
+      'expense_creation_operations':[dict(id='1',group_id='1',user_id='1',operation_key='22222222-2222-4222-8222-222222222222',fingerprint='a'*64,response_json='{"synthetic":true}')],
+      'group_invitations':[dict(id='1',group_id='1',email='synthetic3@example.invalid',expires_at='2026-11-09 00:00:00+00:00',status='PENDING',active_slot='A')],
+      'legacy_mysql_flyway_history':[dict(installed_rank=str(i+1),version=str(i+1),description='Synthetic migration',type='SQL',script='V'+str(i+1)+'__synthetic.sql',checksum=str(c),installed_by='fixture',installed_on=when,execution_time='0',success='1') for i,c in enumerate(local.l.CHECKSUMS)]
+    }
+    return records
+
+
 def main():
     root=local.l.BASE/'AutonomousSyntheticTransfer'
     local.l.require(not root.exists(),'SYNTHETIC_RUN_ALREADY_EXISTS')
@@ -39,18 +55,7 @@ def main():
     pg=connect()
     schema=local.WORK/'backend/src/main/resources/db/postgresql'
     local.l.require(pg.query('SELECT version,checksum,success FROM flyway_schema_history ORDER BY installed_rank')==checksums(schema),'CHECKSUM_ALGORITHM')
-    when='2026-11-08 00:00:00.000000'
-    records={
-      'users':[dict(id=str(i),name='Synthetic '+str(i),email='synthetic'+str(i)+'@example.invalid',password_hash='synthetic-no-login',created_at=when) for i in (1,2)],
-      'expense_groups':[dict(id='1',name='Synthetic group',created_by='1',created_at=when,archived='0')],
-      'group_members':[dict(id=str(i),group_id='1',user_id=str(i)) for i in (1,2)],
-      'expenses':[dict(id='1',group_id='1',description='Synthetic expense',amount='50.00',currency_code='INR',paid_by_user_id='1',created_by_user_id='1',created_at=when,expense_date='2026-11-08',category='OTHER')],
-      'expense_splits':[dict(id=str(i),expense_id='1',user_id=str(i),amount='25.00') for i in (1,2)],
-      'settlements':[dict(id='1',group_id='1',from_user_id='2',to_user_id='1',amount='10.00',recorded_by_user_id='1',request_id='11111111-1111-4111-8111-111111111111',note=None,created_at=when)],
-      'expense_creation_operations':[dict(id='1',group_id='1',user_id='1',operation_key='22222222-2222-4222-8222-222222222222',fingerprint='a'*64,response_json='{"synthetic":true}')],
-      'group_invitations':[dict(id='1',group_id='1',email='synthetic3@example.invalid',expires_at='2026-11-09 00:00:00+00:00',status='PENDING',active_slot='A')],
-      'legacy_mysql_flyway_history':[dict(installed_rank=str(i+1),version=str(i+1),description='Synthetic migration',type='SQL',script='V'+str(i+1)+'__synthetic.sql',checksum=str(c),installed_by='fixture',installed_on=when,execution_time='0',success='1') for i,c in enumerate(local.l.CHECKSUMS)]
-    }
+    records=synthetic_records()
     originals={}
     for table,rows in records.items():
         source='flyway_schema_history' if table=='legacy_mysql_flyway_history' else table

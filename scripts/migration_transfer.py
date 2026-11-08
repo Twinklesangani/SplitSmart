@@ -49,6 +49,7 @@ class Target:
 def guard(connection,target):
     row=connection.query('SELECT current_database(),current_user,inet_server_port()::text')[0]
     require(row==(target.database,target.user,str(target.port)),'TARGET_IDENTITY')
+    require(connection.query('SELECT rolsuper::text,rolcreatedb::text,rolcreaterole::text,rolreplication::text,rolbypassrls::text FROM pg_roles WHERE rolname=current_user')==[('false',)*5],'TARGET_ROLE_EXCESS_PRIVILEGES')
     if target.cloud:
         require(target.database=='splitsmart','CLOUD_APPLICATION_DATABASE')
         require(connection.query('SELECT ssl::text FROM pg_stat_ssl WHERE pid=pg_backend_pid()')==[('true',)],'TARGET_TLS')
@@ -62,7 +63,7 @@ def guard(connection,target):
 def metadata_preflight(connection,target,migration_dir):
     """No record parameter; safe against accidental real-value cloud probes."""
     guard(connection,target)
-    require(connection.query('SELECT version,checksum,success FROM flyway_schema_history ORDER BY installed_rank')==checksums(migration_dir),'TARGET_FLYWAY_DRIFT')
+    require(connection.query('SELECT version,checksum,success FROM public.flyway_schema_history ORDER BY installed_rank')==checksums(migration_dir),'TARGET_FLYWAY_DRIFT')
     tables={r[0] for r in connection.query("SELECT tablename FROM pg_tables WHERE schemaname='public'")}
     from local_pg_rehearsal import ORDER
     expected=(set(ORDER)-{'flyway_schema_history'})|{'flyway_schema_history','password_reset_tokens','group_invite_links','email_verification_tokens','notifications'}
@@ -70,6 +71,8 @@ def metadata_preflight(connection,target,migration_dir):
     for table in sorted(expected-{'flyway_schema_history'}):
         require(connection.query('SELECT COUNT(*) FROM public.'+identifier(table))==[('0',)],'TARGET_NOT_EMPTY')
     require(connection.query("SELECT COUNT(*) FROM pg_constraint c JOIN pg_namespace n ON n.oid=c.connamespace WHERE n.nspname='public' AND NOT c.convalidated")==[('0',)],'INVALID_CONSTRAINT')
+    from schema_contract import verify
+    verify(connection,migration_dir)
     return {'status':'PASS','schema':'V1-V11','business_tables_empty':True}
 
 
@@ -100,8 +103,8 @@ def transfer(factory,target,migration_dir,originals,floors,ledger_path,classific
         connection=factory()
         metadata_preflight(connection,target,migration_dir)
         names={t:originals[t][0] for t in originals}
-        for fields,_,rows in originals.values():
-            require(len(fields)==len(set(fields)) and all(len(row)==len(fields) for row in rows),'SOURCE_ROW_SHAPE')
+        for fields,kinds,rows in originals.values():
+            require(len(fields)==len(set(fields))==len(kinds) and all(len(row)==len(fields) for row in rows),'SOURCE_ROW_SHAPE')
         payload={t:[dict(zip(cols,row)) for row in rows] for t,(cols,_,rows) in originals.items()}
         require(set(payload)=={'users','expense_groups','group_members','expenses','expense_splits','settlements','expense_creation_operations','group_invitations','legacy_mysql_flyway_history'},'SOURCE_TABLE_SET')
         from local_database_support import CHECKSUMS
@@ -118,7 +121,7 @@ def transfer(factory,target,migration_dir,originals,floors,ledger_path,classific
         # Recheck under locks; no TOCTOU import into newly populated tables.
         metadata_preflight(connection,target,migration_dir)
         guard(connection,target)
-        connection.query('CREATE TABLE legacy_mysql_flyway_history (LIKE flyway_schema_history INCLUDING ALL)')
+        connection.query('CREATE TABLE public.legacy_mysql_flyway_history (LIKE public.flyway_schema_history INCLUDING ALL)')
         cols,unique,foreign,icu=metadata(connection,payload,names)
         clean=validate(payload,cols,unique,foreign,floors,True)
         icu_check(connection,clean,icu,cols)
@@ -138,7 +141,7 @@ def transfer(factory,target,migration_dir,originals,floors,ledger_path,classific
         require(connection.query('SELECT COUNT(*) FROM users WHERE auth_token_version<>0 OR email_verified_at IS NOT NULL OR password_reset_requested_at IS NOT NULL')==[('0',)],'LEGACY_AUTH_DEFAULTS')
         for table,floor in floors.items():
             require(isinstance(floor,int) and 0<floor<2**63,'SEQUENCE_RANGE')
-            sequence=connection.query("SELECT pg_get_serial_sequence($1,'id')",[table])[0][0]
+            sequence=connection.query("SELECT pg_get_serial_sequence($1,'id')",['public.'+table])[0][0]
             require(sequence and re.fullmatch(r'public\.[a-z_]+',sequence),'SEQUENCE_IDENTITY')
             # RESTART is transactional, unlike setval; rolled-back imports do not
             # leave changed identity floors. Only validated numeric DDL is joined.
@@ -146,7 +149,7 @@ def transfer(factory,target,migration_dir,originals,floors,ledger_path,classific
             require(connection.query('SELECT last_value,is_called FROM '+sequence)==[(str(floor),'f')],'SEQUENCE_FLOOR')
         ledger.record('COMMIT_PENDING');state='COMMIT_PENDING'
         connection.query('COMMIT')
-        ledger.record('COMMITTED_UNVERIFIED');state='COMMITTED_UNVERIFIED'
+        state='COMMITTED_UNVERIFIED';ledger.record(state)
         connection.close();connection=None
         connection=factory();guard(connection,target)
         for table,(fields,kinds,rows) in originals.items():

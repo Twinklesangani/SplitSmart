@@ -1,76 +1,101 @@
-# Coordinated production-run approval request — PREPARED, NOT AUTHORIZED
+# SplitSmart — owner release decision
 
-This is the exact proposed scope for a later owner decision. It is not executable
-today: privacy is unresolved, real execution is disabled and the Linux container
-has not been verified. Do not send/execute provider mutations based on this file.
-No payment, billing, paid fallback or service creation is included.
+**Nothing in this document is approved or executed. Production is NO-GO.**
+The local data-integrity method is verified; real cloud import, Linux-container
+startup and the final frozen snapshot are not. Email remains disabled.
 
-Verified code candidate: `b7fb3560af897865e09206350df84e6aaa603cfc` on
-`codex/password-recovery-backend`. Any code change requires affected verification
-and a newly identified exact SHA. A documentation-only descendant may be included
-only after its diff is reviewed as such; never silently substitute another build.
+## Privacy in plain English
 
-## First: owner privacy policy decision
+A database can include an input value in its own error message, such as a failed
+number conversion. Our application can hide its copy while the database still
+stores another copy in provider logs. Parameters, validation and TERSE reduce
+exposure but do not guarantee removal of every primary-error value. The observed
+failure used fake text; no real-data leak was demonstrated. Password hashes,
+user details and expense notes would be sensitive if an unforeseen error logged
+them. Log access is permission-controlled, not necessarily public. Aiven documents
+four-day service-log retention; that is not proof of deletion from every internal
+copy. The likelihood is not quantified; successful data tests cannot measure it.
 
-Choose either strict protection (keep upload BLOCKED until supported verifiable
-mitigation exists) or explicit informed acceptance of the residual risk described
-in docs/cloud-privacy-decision.md. Acceptance must specifically acknowledge:
+## Choose a policy — the owner decides
 
-- Unexpected database/application errors may persist user/financial values or
-  password hashes in provider/operator logs. Four-day service visibility does
-  not prove all-provider-copy deletion or universal redaction.
-- Shared regional Render egress permits network reachability by other tenants;
-  authentication/CA+hostname TLS/restricted roles still protect access.
-- ICU versions differ despite synthetic agreement. Free limits/cold starts,
-  downtime and forward-only recovery after target writes remain constraints.
+**A — Accept residual risk for a later controlled migration.**
+Advantage: permits a path to continued service on the existing ₹0 target.
+Limit: unforeseen database or application errors could expose sensitive values
+to authorized log readers; exact ICU differences and Free availability remain.
+Consequence: explicit acceptance plus separate import/release approval is needed.
+This does NOT satisfy a strict guarantee of zero sensitive values in provider logs.
 
-The agent cannot make this choice. A privacy choice alone does NOT authorize a
-real upload or any item below. Recommend avoiding a duplicate real-data cloud
-rehearsal; use one approved final frozen snapshot when all gates pass.
+**B — Require stronger provider-side protection.**
+Advantage: preserves the strict privacy requirement if the provider can establish
+an effective supported control. Ask about primary-error redaction or narrowly
+scoped loader controls, log-reader access and retention/deletion without disabling
+security auditing. Limit: no suitable supported ₹0 guarantee is currently verified;
+Free support response/availability is not promised. No upgrade or new service.
+Consequence: import stays blocked until the control is documented and tested.
 
-## Conditional coordinated scope to approve only after prerequisites pass
+**C — Continue postponing real-data cloud migration.**
+Advantage: no new cloud copy or import-time exposure now; existing MySQL/recovery
+material remains. Limit: postponement does not remove the logging risk, and the
+owner-verified MySQL retirement date is21 December2026. Existing backups are stale
+relative to ongoing writes; more preservation requires separate approval.
+Consequence: plan a decision before retirement or accept possible app downtime.
 
-A. Private Git push/integration or tracked-branch selection for the reviewed exact
-candidate. Keep repository private and host autoDeploy OFF. No public release.
+**Recommendation: B, with C as the immediate operating state.**
+The present strict no-sensitive-log requirement and missing Linux verification
+make release inappropriate today. One bounded provider inquiry is reasonable,
+but is not a promise of a free solution. If B cannot be met, explicitly choosing
+A is a policy change the owner may consider; the engineer cannot choose it or
+label the risk eliminated. Do not postpone indefinitely without a preservation
+and availability decision. Avoid an extra real-data rehearsal copy; a final
+approved frozen import would still need every check below.
 
-B. Target-only allowlist union: reverified administrative /32 plus current actual
-Render ranges (last verified74.220.52.0/24 and74.220.60.0/24). Recheck before use;
-preserve independent Aiven HTTPS recovery. No allow-all, billing or new service.
+## Safe before release approval
 
-C. One scheduled maintenance window: gated PostgreSQL deployment with both email
-flags false, verified TLS, separate runtime role and unchanged JWT signing secret.
-Drain/stop old source app instances and ALL other writers before any final
-snapshot. A healthy replacement is not proof that old writes have stopped.
+Local code review, fake-data tests, artifact preparation and record-free metadata
+checks may continue. Completed this gate: strengthened schema contract matches
+local reference and the pinned cloud SQL target;15 adapter +3 schema +2 reporting
+unit tests PASS; one changed-code synthetic transfer PASS. Prior42 Java21,
+20 frontend and4 browser scenarios remain valid and were not repeated.
 
-D. ONE new consistent encrypted MySQL export plus ONE new isolated restore under
-the verified freeze, with current object inventory/history/financial checks. No
-plaintext SQL/logs, original overwrite or automatic failed-export retry.
+Linux execution is BLOCKED: Docker times out; Ubuntu's Docker integration is
+unavailable and no existing Linux Java was found. Bubblewrap ran a harmless
+process but did NOT verify the backend/container/TLS. No resets/installations.
+Aiven management API and exact CLI also return401; existing pinned TLS SQL access
+still works. Privately restore CLI login and verify user info before fresh plan/
+service checks. Never send passwords, API tokens or connection strings in chat.
 
-E. ONE approval-bound transactional real-data import into the exact empty target
-application DB, after the adapter is reviewed and synthetic-tested. Verify every
-source column/hash/relationship/amount/sequence and legacy history before commit;
-verify again through a new connection. Preserve all constraints. Unknown commit
-status means stop/reconcile, not replay/truncate/reset.
+## Explicit authorization required for the coordinated run
 
-F. One encrypted logical PostgreSQL recovery backup including V11 schema, data,
-both histories and sequence state. Keep it local/private/GPG protected; no paid
-provider fork, external upload, GPG rotation or recovery deletion.
+1. **Policy:** choose A, B or C. Choosing A must acknowledge potential sensitive
+   provider/application logs, shared Render egress, remaining ICU/Free risks.
+   Choosing B does not authorize sending support messages until separately asked.
+2. **Code/network:** approve the exact reviewed SHA/private push or integration,
+   Render tracked-branch selection and additive PostgreSQL allowlist. Last known
+   shared ranges74.220.52.0/24 and74.220.60.0/24 MUST be reverified; preserve trusted
+   administrative access and independent recovery. No allow-all or billing.
+3. **TLS/credentials:** configure existing restricted PostgreSQL roles and verified
+   provider CA; keep JWT_SECRET unchanged. Never put backend secrets in Pages/Git.
+   Restore management authentication privately; no database credential resets.
+4. **Window:** approve the gated backend deployment, complete MySQL writer freeze
+   and draining of old instances. Then approve ONE fresh encrypted consistent
+   MySQL export and ONE new isolated restore with current object/history checks.
+5. **Import:** only after a reviewed approval-bound real adapter and Linux image
+   test pass, authorize ONE data-only import into the exact empty V11 application
+   DB. Preserve IDs/hashes/timestamps/amounts, archive MySQL history separately,
+   check all hashes/balances/constraints/sequences before and after commit. No
+   retries/reset on ambiguity. Approve an encrypted target recovery backup.
+6. **Release:** separately approve coordinated Render/Cloudflare deployment,
+   synthetic smoke fixtures and actual verification. Both backend email flags
+   and VITE_EMAIL_ACTIONS_ENABLED stay false; copy-link invitations remain usable.
+7. **Final GO:** after actual results are reviewed, explicitly authorize opening
+   target writes. Before that, maintain the gate. After any target auth/financial
+   writes, never revert to stale MySQL/V7; gate traffic and use forward recovery.
 
-G. Approved Render/Cloudflare artifacts/configuration under the existing Free
-services, with CA verification, exact API/CORS and email-disabled flags. No
-credential reset, provider activation or paid migration. No secret in Pages/Git.
+The detailed sequence remains docs/cloud-final-migration-window.md. No approval
+for one item silently grants the others. If a prerequisite fails, stop that
+operation. ₹0 only; preserve old MySQL, encrypted backups and keys. No paid fallback.
 
-H. Approved disposable smoke fixtures and owner voluntary login only. Do not
-impersonate users, request their credentials/tokens or alter real financial data.
-
-## Separate final GO checkpoint
-
-After actual results A–H are reviewed, obtain explicit permission to disable the
-maintenance gate/open target writes. This file does not pre-authorize GO. Treat
-the first ungated target/background mutation as the authority-change boundary.
-After it, no stale-source/V7 rollback: gate traffic, preserve evidence and use
-compatible forward recovery with monotonic token-version/data reconciliation.
-
-If any prerequisite fails, keep the window stopped/gated and request a concrete
-new decision. Never spend money or weaken privacy/security controls to proceed.
-Keep old MySQL, encrypted backups and keys until separately approved retirement.
+Sources: PostgreSQL16 runtime-config-logging; Aiven list-monitoring and permissions:
+- https://www.postgresql.org/docs/16/runtime-config-logging.html
+- https://aiven.io/docs/platform/howto/list-monitoring
+- https://aiven.io/docs/platform/concepts/permissions

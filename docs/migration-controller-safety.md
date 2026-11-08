@@ -85,3 +85,30 @@ explicit import/backup/window/deployment approvals, fresh Free/network/TLS
 preflight and container startup verification. This prototype's source fixtures
 are not a final production snapshot or permission to upload recovered records.
 Do not delete safety gates to repurpose the local runner.
+
+## Resumed release-gate review
+
+The V11 contract now derives from a NEW EMPTY synthetic database, not the live
+target. Migration SHA-256 plus metadata fingerprints cover columns/precision/
+defaults, all PK/FK/unique/CHECK definitions, index validity/null semantics, RLS,
+sequence configuration, noninternal triggers and collation definition. ICU library
+versions/owners/current sequence values are deliberately excluded and remain
+separate controls. Manual DDL drift cannot pass on Flyway history alone.
+
+The contract matches the existing pinned TLS cloud SQL target without uploading
+records. Management API and exact CLI now return401; this is a separate BLOCKED
+service/plan preflight, not schema failure. No API guard was removed. Latest
+metadata receipt records BLOCKED and preserves prior success; independent SQL
+contract proof is stored separately.
+
+Role guards now reject superuser/CREATEDB/CREATEROLE/replication/BYPASSRLS. Field,
+row and canonical-type widths must match before BEGIN, so hashes cannot silently
+omit a column. Search path and public history/archive/sequence references are
+pinned. Acknowledged COMMIT is classified before writing the local ledger, so a
+ledger failure cannot be mistaken for a database rollback.
+
+Affected verification:15 adapter tests +3 schema-contract +2 status tests PASS;
+one fresh empty reference/Flyway test PASS; one changed-code nine-table synthetic
+transfer PASS. Previous42 backend/20 frontend/4 browser scenarios are unchanged
+and were not rerun. Linux-container execution remains BLOCKED; no backend Linux
+PASS follows from a harmless namespace capability check.
