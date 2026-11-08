@@ -21,21 +21,19 @@ Read this file, AUTONOMOUS-PROGRESS.md, AUTONOMOUS-BLOCKERS.md and actual git st
 - New synthetic-only resources: LOCALAPPDATA/SplitSmart/SchemaContractReference (empty, retained), ReleaseGateSyntheticTransfer (fake data, retained). Earlier real recovery databases/backups remain untouched. Do not rerun builders/import blindly; receipts refuse it.
 - C/D: one owner decision package now compares A accept/B stronger controls/C postpone. Recommendation B with C current hold; no owner choice made. See AUTONOMOUS-RELEASE-APPROVAL.md.
 
-### Required manual boundary
+### Current continuation — 8 November 2026 (supersedes historical auth blockers)
 
-Restore Aiven CLI authentication privately using:
+Aiven authentication COMPLETE: owner privately restored CLI credentials; authentication and both RUNNING/free-1-1gb services verified in the preceding turn. Do not repeat login. Fresh `python scripts/cloud_loader_preflight.py --metadata-only` PASS this continuation: named Free service/endpoint guard, TLS verify-full, restricted role and V11 physical schema contract; no source records or writes. The current receipt supersedes BLOCKED401; older results remain historical.
 
-`& 'C:\Users\TWINKLE SANGANI\.local\share\splitsmart-tools\aiven-cli-4.18.0\Scripts\avn.exe' user login`
+Bounded Docker check timed out after 8 seconds. WSL list succeeded: Ubuntu Stopped before inspection, docker-desktop Running. Normal Ubuntu invocation succeeded (x86_64); no Java in PATH or /usr/lib/jvm, no podman/nerdctl or /var/run/docker.sock. No backend/container startup executed. No install/reset/restart/config/volume change. Existing Linux capability is insufficient; do not repeat diagnostics without a new runtime capability.
 
-Then verify `user info` privately; do not paste output/passwords/tokens. No database password reset or new user is requested. Resume only fresh read-only metadata after authentication. A usable existing Linux container environment is separately needed; no reset/prune/WSL reconfiguration is authorized here.
+Owner policy is B: require stronger verified protection before cloud real-data upload. Aiven official controls do not establish primary-error redaction; no new failure probe or settings experiment was justified. Free has no support services or integrations; a provider clarification may be requested but is not promised. See docs/cloud-privacy-decision.md. No switch to another Free provider is a verified fix.
 
-### Next operation
-
-All currently safe A–D work is complete or genuinely blocked. Owner privacy decision, management reauthentication and Linux capability come next. No repeated broad tests/rehearsals, production import, live config change, support submission, push/merge/deploy or GO is authorized. Real-cloud execution is still hard-disabled.
+Next boundary: separately approve a specific safe Linux Java21/container environment preparation if desired, and optionally a narrowly scoped provider inquiry. Neither authorizes installation, production configuration, sensitive uploads or risk acceptance. Production remains NO-GO; email remains disabled.
 
 ## Completed and blocked
 
-M0/M1/M4/M5/M6/M8/M9/M10 PASS within safe scope. M2 synthetic engine/preflight PASS but real adapter BLOCKED by privacy/approval; M3 owner privacy decision BLOCKED; M7 local artifacts PASS but container/live release BLOCKED. Assessment is NO-GO for production, not a claim of production readiness.
+M0/M1/M4/M5/M6/M8/M9/M10 PASS within safe scope. M2 synthetic engine/preflight PASS but real adapter BLOCKED by privacy/approval; M3 selected stronger-protection policy unmet/BLOCKED; M7 local artifacts PASS but container/live release BLOCKED. Assessment is NO-GO for production, not a claim of production readiness.
 
 ## Actual verification commands/results
 

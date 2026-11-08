@@ -18,7 +18,9 @@ them. Log access is permission-controlled, not necessarily public. Aiven documen
 four-day service-log retention; that is not proof of deletion from every internal
 copy. The likelihood is not quantified; successful data tests cannot measure it.
 
-## Choose a policy — the owner decides
+## Current policy — stronger verified protection required
+
+The latest owner instruction selects B. A is an unapproved policy change, not an active release path. C describes the current operational hold.
 
 **A — Accept residual risk for a later controlled migration.**
 Advantage: permits a path to continued service on the existing ₹0 target.
@@ -62,13 +64,11 @@ unit tests PASS; one changed-code synthetic transfer PASS. Prior42 Java21,
 Linux execution is BLOCKED: Docker times out; Ubuntu's Docker integration is
 unavailable and no existing Linux Java was found. Bubblewrap ran a harmless
 process but did NOT verify the backend/container/TLS. No resets/installations.
-Aiven management API and exact CLI also return401; existing pinned TLS SQL access
-still works. Privately restore CLI login and verify user info before fresh plan/
-service checks. Never send passwords, API tokens or connection strings in chat.
+Aiven authentication is COMPLETE; both services were verified RUNNING/Free and the refreshed record-free TLS/schema preflight PASS. No further login is needed. Never send credentials in chat.
 
 ## Explicit authorization required for the coordinated run
 
-1. **Policy:** choose A, B or C. Choosing A must acknowledge potential sensitive
+1. **Policy:** satisfy the selected B protection gate before upload. A later change to A would require explicit acknowledgement of potential sensitive
    provider/application logs, shared Render egress, remaining ICU/Free risks.
    Choosing B does not authorize sending support messages until separately asked.
 2. **Code/network:** approve the exact reviewed SHA/private push or integration,
@@ -77,7 +77,7 @@ service checks. Never send passwords, API tokens or connection strings in chat.
    administrative access and independent recovery. No allow-all or billing.
 3. **TLS/credentials:** configure existing restricted PostgreSQL roles and verified
    provider CA; keep JWT_SECRET unchanged. Never put backend secrets in Pages/Git.
-   Restore management authentication privately; no database credential resets.
+   Management authentication is restored; no database credential resets.
 4. **Window:** approve the gated backend deployment, complete MySQL writer freeze
    and draining of old instances. Then approve ONE fresh encrypted consistent
    MySQL export and ONE new isolated restore with current object/history checks.

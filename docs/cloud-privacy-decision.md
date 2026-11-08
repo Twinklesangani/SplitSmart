@@ -128,3 +128,24 @@ hold while Linux-container execution and management reauthentication are blocked
 A remains an explicit owner policy change; it cannot meet a zero-sensitive-log
 guarantee. No choice or support submission has been authorized. Additional schema
 checks improve integrity/prevalidation but do not redact provider primary errors.
+
+## Current owner policy and final investigation — 8 November 2026
+
+Owner requires B: stronger verified protection before any real-data cloud upload. Earlier choices are historical options, not inferred acceptance. Integrity PASS does not satisfy this privacy gate.
+
+Official PostgreSQL16 logging documentation confirms TERSE omits DETAIL/HINT/QUERY/CONTEXT, not the primary message. Aiven advanced parameters expose verbosity, duration logging and service_log; the latter describes storage for API/Console availability, not guaranteed removal from all internal copies. Four-day service retention and log-reader restrictions reduce exposure but do not redact payloads. No new control justifies repeating the synthetic 22P02 experiment. No supported enforceable redaction was established; BLOCKED, not a proof that no provider could ever offer one.
+
+Aiven Free documentation explicitly excludes support services and integrations. A clarification through an available official contact may be requested after approval, with no promise of Free support or paid fallback. Ask specifically about primary-message redaction before persistence, provider copies, scoped controls, and preservation of security auditing; never send real examples/records.
+
+Neon documents a $0 tier and TLS verify-full, but reviewed plan/security pages do not establish primary-error redaction. Switching would add provisioning/networking/migration work without proving this requirement. Existing encrypted local PostgreSQL remains suitable for rehearsals, not an approved public production host. No new service or provider change was made. Preserve MySQL and backups; retirement deadline remains owner-verified21 December2026. If protection cannot be established, plan availability/preservation before retirement rather than silently accepting risk.
+
+Linux/container execution is independently blocked by absent Linux Java and unavailable Docker. Metadata-only cloud TLS/schema preflight now PASS after restored authentication; no records uploaded. Next approval may cover one provider inquiry and a specific isolated Linux runtime preparation, not production migration.
+
+Reviewed sources:
+- https://www.postgresql.org/docs/16/runtime-config-logging.html
+- https://www.postgresql.org/docs/16/logfile-maintenance.html
+- https://aiven.io/docs/products/postgresql/reference/advanced-params
+- https://aiven.io/docs/platform/howto/list-monitoring
+- https://aiven.io/docs/products/postgresql/concepts/pg-free-tier
+- https://neon.com/docs/security/security-overview
+- https://neon.com/docs/introduction/plans
