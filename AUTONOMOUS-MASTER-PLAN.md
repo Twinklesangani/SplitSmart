@@ -146,7 +146,7 @@ Only local/synthetic work is authorized. No real cloud import, production freeze
 - Authorized actions: Bounded availability checks and safe existing-environment inspection only.
 - Tests / acceptance: Actual backend execution is required, not native Windows or /bin/true.
 - Evidence / actual result: Docker timed out; existing Ubuntu launched normally for inventory. Its Docker bridge reports WSL integration unavailable, no Linux Java found. Bubblewrap harmless namespace process works but backend was NOT executed there. No reset/install/configuration/container/volume change performed.
-- Commit: pending gate completion commit.
+- Commit: 4373ac57926caa178d11f77132b97cfcbfca6d75.
 - Blockers: Docker/WSL container integration unavailable; no authorized existing remote Linux build host.
 - Next task: Restore a usable existing runtime safely before claiming Linux PASS.
 
@@ -158,7 +158,7 @@ Only local/synthetic work is authorized. No real cloud import, production freeze
 - Authorized actions: Local code, new synthetic-only DBs and read-only metadata.
 - Tests / acceptance: Detect manual DDL drift, missing hash types, wrong/privileged targets and commit ambiguity before unsafe replay.
 - Evidence / actual result:15 adapter +3 schema +2 status tests PASS; one new empty V11 reference/Flyway test PASS; changed-code synthetic nine-table transfer PASS. Pinned TLS SQL schema/role check PASS. Management API/CLI401 remains separately BLOCKED; prior receipt preserved and latest status corrected.
-- Commit: pending gate completion commit.
+- Commit: 4373ac57926caa178d11f77132b97cfcbfca6d75.
 - Blockers: Real-cloud execution remains disabled; no privacy/import approval.
 - Next task: Preserve hard gates; review a real execution adapter only after policy/scope approval.
 
@@ -170,7 +170,7 @@ Only local/synthetic work is authorized. No real cloud import, production freeze
 - Authorized actions: Documentation and recommendation, never owner risk acceptance.
 - Tests / acceptance: Distinguish proven local integrity from untested real-cloud privacy; no zero-risk claim.
 - Evidence / actual result: Owner document updated with advantages/limits/consequences. Recommend B, using C as immediate state; no supported free guarantee promised. A is an explicit policy change and does not meet zero-logged-value policy.
-- Commit: pending gate completion commit.
+- Commit: 4373ac57926caa178d11f77132b97cfcbfca6d75.
 - Blockers: Owner policy choice still absent.
 - Next task: Owner reviews options; no support message or upload authorized.
 
@@ -182,6 +182,6 @@ Only local/synthetic work is authorized. No real cloud import, production freeze
 - Authorized actions: Prepare documents, no production operation.
 - Tests / acceptance: Separate safe work from network/TLS/window/backup/import/deployment/final GO.
 - Evidence / actual result: AUTONOMOUS-RELEASE-APPROVAL.md now contains one package covering all requested topics; full window runbook retained. Existing passing backend/UI/browser suites not rerun.
-- Commit: pending gate completion commit.
+- Commit: 4373ac57926caa178d11f77132b97cfcbfca6d75.
 - Blockers: A, management reauthentication, owner policy and actual release approvals.
 - Next task: No real import until every gate and explicit authorization is present.

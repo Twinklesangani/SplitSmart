@@ -1,6 +1,8 @@
 # SplitSmart — owner release decision
 
 **Nothing in this document is approved or executed. Production is NO-GO.**
+Reviewed code candidate: `4373ac57926caa178d11f77132b97cfcbfca6d75`. A later documentation-only descendant does not authorize substituting other code.
+
 The local data-integrity method is verified; real cloud import, Linux-container
 startup and the final frozen snapshot are not. Email remains disabled.
 

@@ -6,10 +6,32 @@ Read this file, AUTONOMOUS-PROGRESS.md, AUTONOMOUS-BLOCKERS.md and actual git st
 
 - Active worktree: C:/Twinklesangani portfolio/SplitSmart/audit-output/m1a
 - Branch: codex/password-recovery-backend
-- Verified code/tooling: b7fb3560af897865e09206350df84e6aaa603cfc
+- Verified latest adapter/tooling: 4373ac57926caa178d11f77132b97cfcbfca6d75; earlier b7fb356 evidence retained
 - Starting baseline: 408278cc9f378c0a1a4357160d46fc8ee54025bf; earlier cee75ef/9af155e retained.
 - Final tracker/report commit is a documentation-only descendant; use git log -2 and git rev-parse HEAD for its authoritative SHA.
 - ROOT workspace is on codex/java-warning-remediation, not the release branch. Never reset/copy over it.
+
+## Latest release-gate continuation — read before older evidence
+
+- A Linux: BLOCKED. Docker read timed out after6 seconds. Existing Ubuntu normally launched for inventory; Docker bridge reports unavailable WSL integration; no Linux Java found. bwrap ran /bin/true only, not backend. No packages, resets, config edits or container/volume modifications. WSL manages the launched distro lifecycle; no termination was issued.
+- B adapter review: PASS in safe scope.15 adapter +3 schema-contract +2 status-reporting tests PASS; one fresh empty V11 reference/Flyway test and one changed-code synthetic nine-table transfer PASS. Broad Java/UI/browser suites were unchanged and not rerun.
+- Schema contract: scripts/schema/postgres-v11.json derives from the NEW EMPTY local reference, not live cloud. It checks migration SHA and physical metadata, including constraints/indexes/RLS/triggers/columns/sequences/collation definition. Version differences remain a separate ICU/privacy concern.
+- Direct protected SQL access with CA/hostname verification and endpoint pinning matches the schema/least-privilege contract. No records uploaded. Management API AND exact CLI user info returnHTTP401; current Free/service inventory cannot be freshly verified. No API guard was removed.
+- Latest CloudReadiness/loader-metadata-preflight.json correctly says BLOCKED401; prior success saved separately. Independent SQL proof: loader-pinned-sql-schema-check.json. Do not turn the SQL PASS into a management-plan or release PASS.
+- New synthetic-only resources: LOCALAPPDATA/SplitSmart/SchemaContractReference (empty, retained), ReleaseGateSyntheticTransfer (fake data, retained). Earlier real recovery databases/backups remain untouched. Do not rerun builders/import blindly; receipts refuse it.
+- C/D: one owner decision package now compares A accept/B stronger controls/C postpone. Recommendation B with C current hold; no owner choice made. See AUTONOMOUS-RELEASE-APPROVAL.md.
+
+### Required manual boundary
+
+Restore Aiven CLI authentication privately using:
+
+`& 'C:\Users\TWINKLE SANGANI\.local\share\splitsmart-tools\aiven-cli-4.18.0\Scripts\avn.exe' user login`
+
+Then verify `user info` privately; do not paste output/passwords/tokens. No database password reset or new user is requested. Resume only fresh read-only metadata after authentication. A usable existing Linux container environment is separately needed; no reset/prune/WSL reconfiguration is authorized here.
+
+### Next operation
+
+All currently safe A–D work is complete or genuinely blocked. Owner privacy decision, management reauthentication and Linux capability come next. No repeated broad tests/rehearsals, production import, live config change, support submission, push/merge/deploy or GO is authorized. Real-cloud execution is still hard-disabled.
 
 ## Completed and blocked
 

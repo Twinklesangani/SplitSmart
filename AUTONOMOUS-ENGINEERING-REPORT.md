@@ -1,5 +1,7 @@
 # SPLITSMART AUTONOMOUS ENGINEERING REPORT
 
+Latest resumed A–D gate evidence: code `4373ac57926caa178d11f77132b97cfcbfca6d75`. Linux remains BLOCKED; adapter review/synthetic scope PASS; C/D owner package complete.20 affected Python tests, one empty-reference Flyway test and one changed-code synthetic transfer PASS. Physical schema contract matches pinned cloud SQL metadata; management API/CLI401 is a new separate blocker. No real data uploaded. See the latest handoff and owner decision package; historical evidence below remains valid.
+
 8 November 2026. **Final assessment: NO-GO for production.** Safe local and
 synthetic engineering work completed; privacy, execution and container gates
 remain. Nothing was deployed, pushed, merged, uploaded as real cloud data or

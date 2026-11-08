@@ -119,3 +119,12 @@ Sources:
 - https://aiven.io/docs/platform/concepts/permissions
 - https://aiven.io/docs/products/postgresql/reference/advanced-params
 - https://render.com/docs/free
+
+## Latest owner package
+
+AUTONOMOUS-RELEASE-APPROVAL.md is now the concise A/B/C decision document. Current
+recommendation is B (require verified stronger protection), using C as the present
+hold while Linux-container execution and management reauthentication are blocked.
+A remains an explicit owner policy change; it cannot meet a zero-sensitive-log
+guarantee. No choice or support submission has been authorized. Additional schema
+checks improve integrity/prevalidation but do not redact provider primary errors.
