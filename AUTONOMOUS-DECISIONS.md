@@ -18,3 +18,12 @@
 - Schema contract excludes owners/current sequence values/ICU library versions, but checks actual collation definition, RLS, user triggers, unique/FK/CHECK/index/column/sequence structure. This is a compatibility check, not privacy redaction.
 - Management401 is not schema drift. Keep its original API guard, use independently pinned read-only SQL diagnostics only, and report management state as unverified.
 - Recommend privacy B with C as current state under the existing strict policy. Do not choose on behalf of the owner; A cannot be described as zero-exposure compliance.
+
+## Latest owner scope and results — 8 November2026
+
+- Owner approved rootless Ubuntu packages, dedicated locked identity and subordinate mappings; setup/build/actual synthetic runtime now PASS. Earlier no-install/container-blocked notes describe prior scope and are superseded, not permission to reinstall.
+- Owner explicitly selects Option C/no real production financial-data upload to PostgreSQL cloud; stronger provider error protection remains desired. No risk acceptance or logging experiment.
+- Registry-qualified official base names fix the reproduced Podman build failure; no other application-source behavior changed.
+- Execute public Linux verifier from its owned file, never shell-containing Python source in WSL command arguments; private payload uses stdin and ephemeral Podman secret references. Stop only owned fixtures and remove only their temporary secrets.
+- Retain image/stopped synthetic fixtures and exact receipts; do not replay successful attempt. OCI PASS is separate from unexecuted Render deployment, cgroup differences and production approvals.
+- A synthetic portfolio must prevent real visitor data collection/writes; fake seeds/disclaimers alone are insufficient. Plan only, no demo implementation/deployment approved yet.

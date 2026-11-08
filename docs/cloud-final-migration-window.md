@@ -179,3 +179,7 @@ Sources:
 ## Updated gate evidence — 8 November2026
 
 Actual Linux-native Temurin21.0.13+9 release-JAR startup against guarded synthetic PostgreSQL PASS: verify-full/identity and rejected bad CA, Flyway V11 current, readiness/liveness and maintenance. This does not validate Docker image, nonroot UID, /app entrypoint or live Render. Container remains mandatory and BLOCKED. Provider inquiry draft saved; no free support submission confirmed, privacy gate unmet. No change to required freeze/fresh snapshot/real import/release approvals or no-V7-rollback rule.
+
+## Rootless OCI gate update — latest8 November2026
+
+Actual qualified production Dockerfile build and four synthetic OCI runtime scenarios PASS in rootless Podman; nonroot/TLS/hostname/CA/Flyway/health/maintenance/email checks verified. Actual Render/cgroup/deployment remains untested/unapproved. Latest owner selects Option C/no-real-data cloud upload, so this final-window plan is still NOT executable. No required snapshot/freeze/loader/reconciliation/backup/approval gate is removed. Synthetic portfolio planning is a separate scope, never approval to replace production or import records.

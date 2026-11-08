@@ -1,11 +1,11 @@
 # SplitSmart — owner release decision
 
 **Production release operations in this document are not approved or executed. Production is NO-GO.**
-The owner approved isolated Linux JDK21 preparation, synthetic verification and one no-cost provider inquiry; these do not authorize production operations.
+The owner approved isolated Linux JDK21/rootless identity and package preparation, OCI building, synthetic verification and one no-cost provider inquiry; these do not authorize production operations.
 Earlier reviewed adapter candidate: `4373ac57926caa178d11f77132b97cfcbfca6d75`. Linux verification tooling and evidence were added in `c80b07abe2efcff78aa9072df01c1bd82402d31e`, which is not a documentation-only descendant. A future release must review and approve its exact final candidate SHA.
 
-The local data-integrity method is verified; real cloud import, Linux-container
-startup and the final frozen snapshot are not. Email remains disabled.
+The local data-integrity method is verified; real cloud import, actual Render deployment
+and the final frozen snapshot are not. Email remains disabled.
 
 ## Privacy in plain English
 
@@ -19,9 +19,9 @@ them. Log access is permission-controlled, not necessarily public. Aiven documen
 four-day service-log retention; that is not proof of deletion from every internal
 copy. The likelihood is not quantified; successful data tests cannot measure it.
 
-## Current policy — stronger verified protection required
+## Current owner policy — Option C, no new real-data cloud upload
 
-The latest owner instruction selects B. A is an unapproved policy change, not an active release path. C describes the current operational hold.
+The latest owner instruction explicitly selects C. Stronger provider-side protection remains desired; A is an unapproved policy change. Real-data upload remains prohibited even though local OCI verification now passes.
 
 **A — Accept residual risk for a later controlled migration.**
 Advantage: permits a path to continued service on the existing ₹0 target.
@@ -49,12 +49,11 @@ Consequence: plan a decision before retirement or accept possible app downtime.
 
 This is an engineering recommendation for the current hold, not acceptance of privacy risk or downtime on the owner's behalf. No reviewed Free provider demonstrates the required primary-message protection. Aiven Free documentation-based support is not entitlement to Basic technical tickets; no new inquiry was submitted. Neon Free/TLS and Supabase Free/logging documentation do not establish the guarantee, so switching providers is not a verified fix. Full practical/availability comparison and sources: docs/final-infrastructure-privacy-assessment.md. Existing MySQL is already cloud-hosted; C avoids another copy rather than moving production local. Plan preservation/availability before the owner-verified21 December2026 retirement; existing snapshots become stale.
 
-## Immediate owner decisions (separate from production approval)
+## Immediate owner decision (separate from production approval)
 
-1. Container capability: approve a dedicated locked, non-sudo Ubuntu-only verification account, non-overlapping subordinate UID/GID mappings and official rootless Podman/mapping-helper packages, or provide an existing suitable environment. This is narrower than a privileged container or Docker repair, but broader than package-only preparation; privileged mapping helpers need explicit security scope under the no-escalation boundary. No changes made. Do not approve Windows resets/security weakening.
-2. Privacy/availability: continue C while requiring verifiable B evidence, or explicitly request a policy change to A after reviewing residual exposure. No option choice authorizes real upload, freeze, deployment, spending or loss of availability.
+Rootless preparation was explicitly approved and is COMPLETE; do not request it again. Actual production Dockerfile builds and executes in rootless Podman as10001:10001 with synthetic TLS/Flyway/health/auth/email checks PASS. Actual Render deployment is not verified or authorized.
 
-Rootless preflight: no existing engine/nonroot login/subuid/subgid/helpers; harmless namespace probe PASS, resources adequate at inspection. No faithful OCI build/start occurred; kernel support alone is not PASS. Existing Linux-native startup is verified separately.
+Choose whether to authorize local-only implementation of a clearly labeled synthetic portfolio with enforced no-real-input/write safeguards, or retain the current hold. See docs/synthetic-portfolio-release-plan.md. The current app's open registration/free text is not safely fake-only by default. A later demo release needs exact SHA/resource/quota/network review and separate deployment approval. Demo approval never authorizes production-record upload or replacing existing production.
 
 ## Safe before release approval
 
@@ -64,14 +63,14 @@ local reference and the pinned cloud SQL target;15 adapter +3 schema +2 reportin
 unit tests PASS; one changed-code synthetic transfer PASS. Prior42 Java21,
 20 frontend and4 browser scenarios remain valid and were not repeated.
 
-Linux-native execution now PASS on isolated Ubuntu Temurin21.0.13+9: verified synthetic PostgreSQL TLS, rejected invalid CA, current V11 Flyway, readiness/liveness and maintenance gate. Container execution remains BLOCKED by Docker timeout; production UID/image/layout are unverified. No destructive repair authorized. Six focused Linux Java unit tests and four new destination safety tests PASS.
+Linux-native PASS retained. Rootless OCI setup, actual production image build and four synthetic app-container scenarios now PASS. Small Dockerfile fix qualifies both official base registry names. Ten new guard/transport tests PASS; exact evidence, limits, cleanup and image ID: docs/rootless-container-verification.md. Render kernel/cgroup/deployment behavior remains unverified; no production GO follows from local execution.
 
 The approved support inquiry was NOT submitted: official form requires Basic tier, no confirmed Free entitlement. Draft: docs/aiven-primary-error-inquiry.md. No support reference or privacy guarantee exists.
 Aiven authentication is COMPLETE; both services were verified RUNNING/Free and the refreshed record-free TLS/schema preflight PASS. No further login is needed. Never send credentials in chat.
 
 ## Explicit authorization required for the coordinated run
 
-1. **Policy:** satisfy the selected B protection gate before upload. A later change to A would require explicit acknowledgement of potential sensitive
+1. **Policy:** C currently prohibits real-data upload. A future policy/scope change must establish the desired stronger protection, or explicitly acknowledge residual risk under A, including potential sensitive
    provider/application logs, shared Render egress, remaining ICU/Free risks.
    The separately approved synthetic-only inquiry remains authorized through a confirmed no-cost official channel; no paid tier is authorized.
 2. **Code/network:** approve the exact reviewed SHA/private push or integration,
