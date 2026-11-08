@@ -49,12 +49,9 @@ Consequence: plan a decision before retirement or accept possible app downtime.
 
 This is an engineering recommendation for the current hold, not acceptance of privacy risk or downtime on the owner's behalf. No reviewed Free provider demonstrates the required primary-message protection. Aiven Free documentation-based support is not entitlement to Basic technical tickets; no new inquiry was submitted. Neon Free/TLS and Supabase Free/logging documentation do not establish the guarantee, so switching providers is not a verified fix. Full practical/availability comparison and sources: docs/final-infrastructure-privacy-assessment.md. Existing MySQL is already cloud-hosted; C avoids another copy rather than moving production local. Plan preservation/availability before the owner-verified21 December2026 retirement; existing snapshots become stale.
 
-## Immediate owner decision — isolated demo publication only
+## Isolated demo publication — completed under separate approval
 
-Approved local-only synthetic demo implementation is COMPLETE; do not ask for that approval again. It is a clearly labeled offline guided simulation with no real inputs, API/database/credentials/email, using memory-only fictional state. Technical local gates PASS, including actual rootless demo image/browser walkthrough and Java financial fixture contracts.
-
-Review SYNTHETIC-PORTFOLIO-APPROVAL.md for exact code candidate/artifact/isolated hosting settings. Next approval must name the separate demo project/preview URL, exact SHA, required private push/integration and deployment; actual hosting headers, Free quota and routine request-log privacy still need verification before promotion. No action taken on Render/Cloudflare/GitHub. This never authorizes replacing production or importing real records. Existing financial-data migration/release approvals below remain separate and blocked by Option C.
-
+The owner approved and the agent completed one Cloudflare Pages Free Direct Upload of `frontend/dist-demo` from SHA `d58b0c7925266ef7fe7804dd7cc89c07fc66adb4` to new project `splitsmart-offline-demo`, URL https://splitsmart-offline-demo.pages.dev. Result and live checks are recorded in `docs/synthetic-demo-verification.md`; live response-header enforcement remains independently unconfirmed. This does not authorize redeployment, replacing production, or importing real records. Production MySQL/PostgreSQL migration approval below remains separate and blocked by Option C.
 ## Safe before release approval
 
 Local code review, fake-data tests, artifact preparation and record-free metadata

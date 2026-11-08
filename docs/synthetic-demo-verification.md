@@ -29,3 +29,13 @@ Registration/login/invitations/payments are explicitly simulated, not real opera
 ## Final artifact/review gate
 
 Code candidate a24fca1ef046e390aca6665382c7f02de87b6387; tested image sha256:454abbc3a94320676a7260b78dfbb50de3015f67dfd91c6d5f614f988ddc762f. Final public-directory guard rebuilt to the exact same runtime image ID; no redundant browser replay was needed. Public local manifest equals the manifest copied in memory from the executed stopped container. Source-only extra public marker was excluded and its owned temporary file/directory removed. Known-secret scan across committed demo scope PASS; final documentation scan follows before local commit. No secrets/real records or generated test screenshots are committed.
+
+## Approved Cloudflare Pages deployment — 9 November 2026
+
+One public deployment was explicitly approved for Cloudflare Pages Free Direct Upload, new project `splitsmart-offline-demo`, expected URL https://splitsmart-offline-demo.pages.dev, source SHA `d58b0c7925266ef7fe7804dd7cc89c07fc66adb4`, artifact `frontend/dist-demo`, manifest SHA-256 `f750c131049103dd5fdbe45def7374689763a87dbccb4ee627a3a231a4050125`. Cloudflare confirmed successful deployment at that exact URL. The upload tree showed all six files: `_headers`, `demo-manifest.json`, `demo.html`, `index.html`, and CSS/JS under `assets/`.
+
+Live root rendered the expected title and fictional/offline/privacy notices. Direct `/demo.html` navigation resolved to `/demo` and rendered successfully. Simulated persona selection and fictional group creation worked; no real account or remote data was used. DOM checks found same-origin JS/CSS references, no forms or user-input controls, and no external links. The browser opened HTTPS without a certificate warning. Earlier desktop/mobile automated checks were already PASS and were not repeated.
+
+`_headers` containing CSP (`connect-src 'none'`, `form-action 'none'`, `frame-ancestors 'none'`) and Referrer-Policy, nosniff, and no-store was included in the deployment. Available browser inspection did not expose live response-header values, and shell DNS/network access was unavailable; actual provider enforcement is **not independently confirmed**. No contradictory behavior was observed. Independent response-header verification remains advisable; if CSP or other headers are missing/incorrect, disable only this demo project and obtain approval before republishing. This does not affect existing production projects/services.
+
+No GitHub push/merge, production Pages change, Render/Aiven change, database operation, real-data upload, billing action, custom domain, analytics, binding, function, or email activation occurred. Production remains NO-GO/Option C; email remains disabled.
