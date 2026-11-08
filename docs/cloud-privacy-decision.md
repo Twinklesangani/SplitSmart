@@ -149,3 +149,7 @@ Reviewed sources:
 - https://aiven.io/docs/products/postgresql/concepts/pg-free-tier
 - https://neon.com/docs/security/security-overview
 - https://neon.com/docs/introduction/plans
+
+## Linux recovered; privacy gate unchanged
+
+8 November2026: actual Linux-native Java21/Spring Boot synthetic-only TLS/startup/health checks PASS. Container remains unverified. This strengthens runtime evidence, not primary-error redaction. The one approved inquiry could not be submitted through the authenticated form without selecting a Basic support tier; no Free entitlement established, no payment/trial use. Draft and exact blocker: aiven-primary-error-inquiry.md. No ticket/reference, no real data sent, no new error probe. B remains the selected policy; no risk acceptance was inferred.

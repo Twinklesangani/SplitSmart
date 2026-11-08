@@ -175,3 +175,7 @@ Sources:
 - https://render.com/docs/maintenance-mode
 - https://render.com/docs/deploys
 - https://render.com/docs/free
+
+## Updated gate evidence — 8 November2026
+
+Actual Linux-native Temurin21.0.13+9 release-JAR startup against guarded synthetic PostgreSQL PASS: verify-full/identity and rejected bad CA, Flyway V11 current, readiness/liveness and maintenance. This does not validate Docker image, nonroot UID, /app entrypoint or live Render. Container remains mandatory and BLOCKED. Provider inquiry draft saved; no free support submission confirmed, privacy gate unmet. No change to required freeze/fresh snapshot/real import/release approvals or no-V7-rollback rule.

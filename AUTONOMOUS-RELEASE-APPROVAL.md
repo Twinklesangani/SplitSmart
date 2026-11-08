@@ -61,9 +61,9 @@ local reference and the pinned cloud SQL target;15 adapter +3 schema +2 reportin
 unit tests PASS; one changed-code synthetic transfer PASS. Prior42 Java21,
 20 frontend and4 browser scenarios remain valid and were not repeated.
 
-Linux execution is BLOCKED: Docker times out; Ubuntu's Docker integration is
-unavailable and no existing Linux Java was found. Bubblewrap ran a harmless
-process but did NOT verify the backend/container/TLS. No resets/installations.
+Linux-native execution now PASS on isolated Ubuntu Temurin21.0.13+9: verified synthetic PostgreSQL TLS, rejected invalid CA, current V11 Flyway, readiness/liveness and maintenance gate. Container execution remains BLOCKED by Docker timeout; production UID/image/layout are unverified. No destructive repair authorized. Six focused Linux Java unit tests and four new destination safety tests PASS.
+
+The approved support inquiry was NOT submitted: official form requires Basic tier, no confirmed Free entitlement. Draft: docs/aiven-primary-error-inquiry.md. No support reference or privacy guarantee exists.
 Aiven authentication is COMPLETE; both services were verified RUNNING/Free and the refreshed record-free TLS/schema preflight PASS. No further login is needed. Never send credentials in chat.
 
 ## Explicit authorization required for the coordinated run

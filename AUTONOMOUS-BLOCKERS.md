@@ -20,3 +20,7 @@ No production operation, privacy acceptance or chargeable action was inferred.
 - Linux container execution remains BLOCKED: Ubuntu Docker integration unavailable; bwrap alone and no installed Linux Java cannot validate the backend image/TLS/health. No new tools/configuration installed.
 - RESOLVED: Aiven authentication restored privately. Both services RUNNING/Free verified; refreshed guarded metadata-only preflight PASS. No more login required.
 - B review is now PASS for existing safe code/synthetic scope, while real-cloud execution stays disabled. A policy choice and separately reviewed authorized real adapter are still needed.
+
+## Latest superseding status — Linux native recovered
+
+Linux Java21/native Spring Boot/TLS/health PASS. Only container execution remains blocked by Docker API timeout. Stronger primary-error privacy protection remains unresolved; official support form offers Basic only, no confirmed Free submission route, draft retained and NOT submitted. Four new destination safety tests PASS. Do not repeat Aiven login or real-data rehearsals. See latest handoff for exact evidence and remaining approval gates.

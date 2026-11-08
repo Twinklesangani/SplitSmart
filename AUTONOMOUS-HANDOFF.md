@@ -2,6 +2,10 @@
 
 Read this file, AUTONOMOUS-PROGRESS.md, AUTONOMOUS-BLOCKERS.md and actual git status before doing anything.
 
+## Current authoritative status
+
+Linux JDK21 and Linux-native synthetic Spring Boot/TLS/Flyway/health PASS;6 focused Linux Java tests +4 destination-guard tests PASS. Container BLOCKED (single8s Docker timeout). Provider inquiry NOT SUBMITTED: Basic-only tier, no verified Free entitlement; draft retained. Policy B protection unresolved, production NO-GO. Authentication COMPLETE, no login needed. Read the final Linux recovery section for evidence; older BLOCKED/401 entries are historical. Latest local SHA is `git rev-parse HEAD` after the focused continuation commit.
+
 ## Location and commits
 
 - Active worktree: C:/Twinklesangani portfolio/SplitSmart/audit-output/m1a
@@ -69,3 +73,19 @@ If no owner policy decision/new capability exists: read the final report and app
 ## Prohibited without new approval
 
 No privacy acceptance, real cloud upload, production write-freeze/export/write/migration, live allowlist/hosting change, push/merge/publication, deployment/GO, credential reset, billing or recovery deletion. Email remains disabled. No V7/stale-source rollback after target auth/financial writes. Final migration must use a NEW consistent snapshot after ALL writers stop; this rehearsal copy is stale.
+
+## Linux recovery and privacy inquiry — latest 8 November 2026
+
+Owner explicitly approved an isolated official Linux JDK21 installation, synthetic Linux-native verification and one no-cost provider inquiry. Temurin21.0.13+9 installed under `/root/.local/share/splitsmart/java21` inside existing Ubuntu x86_64; official GitHub archive SHA256 verified. `java -version` and `javac -version` PASS. Adoptium API403 was bypassed only by using its official distribution repository, never by weakening TLS. No Windows Java/PATH, Ubuntu system packages, Docker/WSL configuration or existing database data changed.
+
+LINUX-NATIVE PASS: actual release JAR started with `postgresql,postgres-prod` against the existing nonce-guarded cloud SYNTHETIC test DB and separate restricted roles. JDBC CA+hostname verify-full identity PASS; missing/invalid CA rejected; Flyway validated current V11/no pending migrations; readiness (includes DB), liveness and full maintenance gate PASS. Email disabled. Owned JVM stopped and actual listener absence verified. No real records or cloud real-data import. Successful logs stayed in bounded RAM; diagnostic failures are DPAPI encrypted only. Synthetic harness initially failed its socket check; fixed dynamic port selection and listener verification rather than treating TIME_WAIT as a live process. This is not a production application failure.
+
+Runtime receipt: Ubuntu `/root/.local/share/splitsmart/native-verification/result.json`. Public JAR SHA256 `a2011578a7784b1fa7833720271a0dace75f0052e9551c3aea12dc054758abb5`. Final endpoint hardening matches the executed destination exactly;4 new synthetic destination-guard unit tests PASS. The runner refuses replay after its successful receipt. Do not delete existing fixtures or rerun imports. Existing recovery databases/backups/GPG keyring untouched.
+
+CONTAINER BLOCKED: one Docker version call timed out after8s; no more Docker troubleshooting, restart/reset/prune/reinstall/config edits. Linux-native root-user startup does not verify image build, UID10001, /app layout or Render deployment.
+
+Provider inquiry BLOCKED/NOT SUBMITTED: authenticated official Support Center opened; Create ticket offers only required Basic tier, which official terms associate with paid subscriptions. Free excludes support services. No tier selected or billing/trial used; no reference issued. Approved nonsensitive draft is docs/aiven-primary-error-inquiry.md. A no-cost official channel or provider clarification is needed; no support entitlement invented. Logging protection remains UNRESOLVED and owner policy B remains binding. No repeated fake leak probe or configuration experiment.
+
+Aiven authentication remains COMPLETE; do not reauthenticate. Prior metadata-only preflight PASS and all existing Java/UI/browser/adapter evidence retained. Production NO-GO: verified privacy control, actual container execution, reviewed approval-bound real adapter and explicit coordinated release approvals remain required. No privacy acceptance, production write/freeze/upload/deploy/push/merge. ₹0; email disabled.
+
+Focused Linux unit verification COMPLETE: existing Maven3.9.9 launcher with Linux Temurin21.0.13+9, new private Linux source copy, sanitized environment/no DB credentials, PostgresProfileTest1 + MaintenanceGateTest5 =6 PASS,0 failures/errors/skips; BUILD SUCCESS. Initial offline resolution failed due repository-origin cache metadata; normal official Maven Central resolution succeeded, no application fix needed. Prior broad suites were not repeated. Four new destination-guard tests PASS. The only new production release blocker resolved here is Linux-native execution; container and policy B remain unmet.
