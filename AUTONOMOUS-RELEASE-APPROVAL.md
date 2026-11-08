@@ -51,7 +51,7 @@ This is an engineering recommendation for the current hold, not acceptance of pr
 
 ## Isolated demo publication — completed under separate approval
 
-The owner approved and the agent completed one Cloudflare Pages Free Direct Upload of `frontend/dist-demo` from SHA `d58b0c7925266ef7fe7804dd7cc89c07fc66adb4` to new project `splitsmart-offline-demo`, URL https://splitsmart-offline-demo.pages.dev. Result and live checks are recorded in `docs/synthetic-demo-verification.md`; live response-header enforcement remains independently unconfirmed. This does not authorize redeployment, replacing production, or importing real records. Production MySQL/PostgreSQL migration approval below remains separate and blocked by Option C.
+The owner approved and the agent completed one Cloudflare Pages Free Direct Upload of `frontend/dist-demo` from SHA `d58b0c7925266ef7fe7804dd7cc89c07fc66adb4` to new project `splitsmart-offline-demo`, URL https://splitsmart-offline-demo.pages.dev. A live HTTPS HEAD confirmed deployed CSP, Referrer-Policy, nosniff and no-store. Cloudflare also returns `Access-Control-Allow-Origin: *` and standard `Report-To`/`NEL` headers for this public static site. Result and remaining privacy notes are recorded in `docs/synthetic-demo-verification.md`. This does not authorize redeployment, replacing production, or importing real records. Production MySQL/PostgreSQL migration approval below remains separate and blocked by Option C.
 ## Safe before release approval
 
 Local code review, fake-data tests, artifact preparation and record-free metadata
