@@ -1,7 +1,8 @@
 # SplitSmart — owner release decision
 
-**Nothing in this document is approved or executed. Production is NO-GO.**
-Reviewed code candidate: `4373ac57926caa178d11f77132b97cfcbfca6d75`. A later documentation-only descendant does not authorize substituting other code.
+**Production release operations in this document are not approved or executed. Production is NO-GO.**
+The owner approved isolated Linux JDK21 preparation, synthetic verification and one no-cost provider inquiry; these do not authorize production operations.
+Earlier reviewed adapter candidate: `4373ac57926caa178d11f77132b97cfcbfca6d75`. Linux verification tooling and evidence were added in `c80b07abe2efcff78aa9072df01c1bd82402d31e`, which is not a documentation-only descendant. A future release must review and approve its exact final candidate SHA.
 
 The local data-integrity method is verified; real cloud import, Linux-container
 startup and the final frozen snapshot are not. Email remains disabled.
@@ -45,7 +46,7 @@ relative to ongoing writes; more preservation requires separate approval.
 Consequence: plan a decision before retirement or accept possible app downtime.
 
 **Recommendation: B, with C as the immediate operating state.**
-The present strict no-sensitive-log requirement and missing Linux verification
+The present strict no-sensitive-log requirement and missing container verification
 make release inappropriate today. One bounded provider inquiry is reasonable,
 but is not a promise of a free solution. If B cannot be met, explicitly choosing
 A is a policy change the owner may consider; the engineer cannot choose it or
@@ -70,7 +71,7 @@ Aiven authentication is COMPLETE; both services were verified RUNNING/Free and t
 
 1. **Policy:** satisfy the selected B protection gate before upload. A later change to A would require explicit acknowledgement of potential sensitive
    provider/application logs, shared Render egress, remaining ICU/Free risks.
-   Choosing B does not authorize sending support messages until separately asked.
+   The separately approved synthetic-only inquiry remains authorized through a confirmed no-cost official channel; no paid tier is authorized.
 2. **Code/network:** approve the exact reviewed SHA/private push or integration,
    Render tracked-branch selection and additive PostgreSQL allowlist. Last known
    shared ranges74.220.52.0/24 and74.220.60.0/24 MUST be reverified; preserve trusted

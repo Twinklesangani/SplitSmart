@@ -17,9 +17,9 @@
 No production operation, privacy acceptance or chargeable action was inferred.
 
 ## Latest resumed-gate blockers
-- Linux container execution remains BLOCKED: Ubuntu Docker integration unavailable; bwrap alone and no installed Linux Java cannot validate the backend image/TLS/health. No new tools/configuration installed.
+- Historical pre-recovery blocker: Ubuntu Docker integration was unavailable and Java was absent. Superseded by the final Linux-native PASS below; container execution alone remains unverified.
 - RESOLVED: Aiven authentication restored privately. Both services RUNNING/Free verified; refreshed guarded metadata-only preflight PASS. No more login required.
-- B review is now PASS for existing safe code/synthetic scope, while real-cloud execution stays disabled. A policy choice and separately reviewed authorized real adapter are still needed.
+- B review is now PASS for existing safe code/synthetic scope, while real-cloud execution stays disabled. Selected policy B remains unmet; a separately reviewed authorized real adapter is still needed.
 
 ## Latest superseding status — Linux native recovered
 

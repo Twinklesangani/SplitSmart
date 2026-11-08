@@ -1,8 +1,8 @@
-# Cloud privacy decision — owner review pending
+# Cloud privacy decision — policy B; protection unresolved
 
 8 November 2026. **NO-GO for real-data import today.** Investigation is complete;
-acceptance of residual risk, final-loader review and scoped release approvals are
-still required. No production record was uploaded, no cloud setting changed.
+verified protection under selected policy B, final-loader review and scoped release approvals are
+still required. Residual-risk acceptance is not the selected policy. No production record was uploaded, no cloud setting changed.
 
 ## What is established
 
@@ -153,3 +153,9 @@ Reviewed sources:
 ## Linux recovered; privacy gate unchanged
 
 8 November2026: actual Linux-native Java21/Spring Boot synthetic-only TLS/startup/health checks PASS. Container remains unverified. This strengthens runtime evidence, not primary-error redaction. The one approved inquiry could not be submitted through the authenticated form without selecting a Basic support tier; no Free entitlement established, no payment/trial use. Draft and exact blocker: aiven-primary-error-inquiry.md. No ticket/reference, no real data sent, no new error probe. B remains the selected policy; no risk acceptance was inferred.
+
+## Resumed evidence audit — 8 November 2026
+
+Recovered existing completed commit c80b07a rather than reinstalling Java or replaying synthetic verification. Current java/javac 21.0.13 and retained runtime receipt were read; six retained Linux unit-test results show zero failures/errors/skips, and no Java process remained. No database access or Docker troubleshooting was repeated.
+
+Official Free-plan and support terms were rechecked: Free explicitly excludes support services; Basic is included in paid plans. The support page also contains broader ticket-access wording, which does not establish Free entitlement for the required Basic-only form. The prior submission blocker therefore remains; no ticket or additional message was sent. Stronger supported primary-error protection is still UNRESOLVED, not inferred from runtime success. The existing inquiry authorization persists for a confirmed no-cost official channel; no further routine approval is required for that same scope.
