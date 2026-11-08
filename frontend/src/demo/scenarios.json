@@ -1,0 +1,175 @@
+{
+  "version": "synthetic-v1",
+  "users": [
+    {
+      "id": 1,
+      "key": "mira",
+      "name": "Mira Example",
+      "email": "mira@example.invalid"
+    },
+    {
+      "id": 2,
+      "key": "theo",
+      "name": "Theo Sample",
+      "email": "theo@example.invalid"
+    },
+    {
+      "id": 3,
+      "key": "lena",
+      "name": "Lena Fixture",
+      "email": "lena@example.invalid"
+    },
+    {
+      "id": 4,
+      "key": "arun",
+      "name": "Arun Demo",
+      "email": "arun@example.invalid"
+    }
+  ],
+  "group": "Example Bay weekend",
+  "expenses": [
+    {
+      "id": 1,
+      "title": "Lunch at the fictional harbour",
+      "payer": 1,
+      "amount": "1200.00",
+      "split": [
+        "300.00",
+        "300.00",
+        "300.00",
+        "300.00"
+      ],
+      "kind": "Equal"
+    },
+    {
+      "id": 2,
+      "title": "Imaginary museum tickets",
+      "payer": 2,
+      "amount": "800.00",
+      "split": [
+        "100.00",
+        "200.00",
+        "300.00",
+        "200.00"
+      ],
+      "kind": "Unequal"
+    }
+  ],
+  "snapshots": {
+    "empty": {
+      "total": "0.00",
+      "net": [
+        "0.00",
+        "0.00",
+        "0.00",
+        "0.00"
+      ],
+      "transfers": []
+    },
+    "equal": {
+      "total": "1200.00",
+      "net": [
+        "900.00",
+        "-300.00",
+        "-300.00",
+        "-300.00"
+      ],
+      "transfers": [
+        [
+          2,
+          1,
+          "300.00"
+        ],
+        [
+          3,
+          1,
+          "300.00"
+        ],
+        [
+          4,
+          1,
+          "300.00"
+        ]
+      ]
+    },
+    "unequal": {
+      "total": "2000.00",
+      "net": [
+        "800.00",
+        "300.00",
+        "-600.00",
+        "-500.00"
+      ],
+      "transfers": [
+        [
+          3,
+          1,
+          "600.00"
+        ],
+        [
+          4,
+          2,
+          "300.00"
+        ],
+        [
+          4,
+          1,
+          "200.00"
+        ]
+      ]
+    },
+    "settled": {
+      "total": "2000.00",
+      "net": [
+        "200.00",
+        "300.00",
+        "0.00",
+        "-500.00"
+      ],
+      "transfers": [
+        [
+          4,
+          2,
+          "300.00"
+        ],
+        [
+          4,
+          1,
+          "200.00"
+        ]
+      ]
+    },
+    "circle": {
+      "total": "200.00",
+      "net": [
+        "0.00",
+        "0.00",
+        "0.00",
+        "0.00"
+      ],
+      "transfers": []
+    }
+  },
+  "circle": [
+    [
+      1,
+      2,
+      "50.00"
+    ],
+    [
+      2,
+      3,
+      "50.00"
+    ],
+    [
+      3,
+      4,
+      "50.00"
+    ],
+    [
+      4,
+      1,
+      "50.00"
+    ]
+  ]
+}
