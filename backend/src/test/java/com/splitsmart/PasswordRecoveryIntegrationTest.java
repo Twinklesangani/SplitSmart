@@ -11,6 +11,7 @@ import java.util.concurrent.LinkedBlockingQueue;
 import java.util.concurrent.TimeUnit;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.splitsmart.dto.ResetPasswordRequest;
+import com.splitsmart.config.PasswordRecoveryProperties;
 import com.splitsmart.repository.UserRepository;
 import com.splitsmart.service.PasswordRecoveryService;
 import com.splitsmart.service.PasswordResetDelivery;
@@ -28,6 +29,7 @@ import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.security.oauth2.jose.jws.MacAlgorithm;
 import org.springframework.security.oauth2.jwt.*;
 import org.springframework.test.context.ActiveProfiles;
+import org.springframework.test.context.TestPropertySource;
 import org.springframework.test.context.bean.override.mockito.MockitoBean;
 import org.springframework.test.context.bean.override.mockito.MockitoSpyBean;
 import org.springframework.test.web.servlet.MockMvc;
@@ -42,6 +44,7 @@ import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.
 @SpringBootTest
 @AutoConfigureMockMvc(print = MockMvcPrint.NONE)
 @ActiveProfiles("test")
+@TestPropertySource(properties = "app.recovery.token-lifetime-minutes=15")
 class PasswordRecoveryIntegrationTest {
     private static final String ORIGINAL = "OriginalPassword123!";
     private static final String REPLACEMENT = "ReplacementPassword123!";
@@ -52,11 +55,13 @@ class PasswordRecoveryIntegrationTest {
     @Autowired UserRepository users;
     @Autowired JwtEncoder jwt;
     @Autowired PasswordRecoveryService recovery;
+    @Autowired PasswordRecoveryProperties recoveryProperties;
     @Autowired @Qualifier("passwordRecoveryExecutor") ThreadPoolTaskExecutor executor;
     @MockitoBean PasswordResetDelivery delivery;
     @MockitoBean Clock clock;
     @MockitoSpyBean PasswordEncoder passwords;
     private final LinkedBlockingQueue<String> messages = new LinkedBlockingQueue<>();
+    private final LinkedBlockingQueue<Instant> messageExpiries = new LinkedBlockingQueue<>();
     private String email;
     private long userId;
     private String accessToken;
@@ -67,7 +72,7 @@ class PasswordRecoveryIntegrationTest {
         when(clock.instant()).thenReturn(Instant.now());
         when(delivery.isAvailable()).thenReturn(true);
         when(delivery.isConfigured()).thenReturn(true);
-        doAnswer(call -> { messages.add(call.getArgument(1)); return null; })
+        doAnswer(call -> { messages.add(call.getArgument(1)); messageExpiries.add(call.getArgument(2)); return null; })
                 .when(delivery).sendReset(anyString(), anyString(), any());
         email = UUID.randomUUID() + "@example.invalid";
         source = "10.1.0." + SOURCES.incrementAndGet();
@@ -150,6 +155,19 @@ class PasswordRecoveryIntegrationTest {
         mvc.perform(get("/api/groups").header("Authorization", "Bearer " + fresh)).andExpect(status().isOk());
         mvc.perform(get("/api/auth/me").header("Authorization", "Bearer " + fresh)).andExpect(status().isOk());
         reset(token, ORIGINAL, ORIGINAL).andExpect(status().isBadRequest());
+    }
+
+    @Test
+    void configuredLifetimeIsPersistedAndMatchesTheDeliveredLink() throws Exception {
+        issue();
+        Map<String, Object> times = jdbc.queryForMap(
+                "SELECT created_at, expires_at FROM password_reset_tokens WHERE user_id = ?", userId);
+        LocalDateTime created = ((java.sql.Timestamp) times.get("created_at")).toLocalDateTime();
+        LocalDateTime stored = ((java.sql.Timestamp) times.get("expires_at")).toLocalDateTime();
+        LocalDateTime expected = created.plusMinutes(recoveryProperties.tokenLifetimeMinutes());
+        assertEquals(15, recoveryProperties.tokenLifetimeMinutes());
+        assertEquals(expected, stored);
+        assertEquals(stored.toInstant(java.time.ZoneOffset.UTC), messageExpiries.poll(2, TimeUnit.SECONDS));
     }
 
     @Test

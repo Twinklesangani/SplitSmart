@@ -9,7 +9,8 @@ import org.springframework.context.annotation.Configuration;
 import org.springframework.scheduling.concurrent.ThreadPoolTaskExecutor;
 
 @Configuration
-@org.springframework.boot.context.properties.EnableConfigurationProperties(RecoveryEmailProperties.class)
+@org.springframework.boot.context.properties.EnableConfigurationProperties({
+        RecoveryEmailProperties.class, PasswordRecoveryProperties.class})
 public class PasswordRecoveryConfig {
     @Bean
     Clock passwordRecoveryClock() { return Clock.systemUTC(); }

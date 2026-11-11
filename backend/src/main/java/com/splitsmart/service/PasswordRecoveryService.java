@@ -10,6 +10,7 @@ import java.time.ZoneOffset;
 import java.util.Base64;
 import java.util.HexFormat;
 import java.util.concurrent.Executor;
+import com.splitsmart.config.PasswordRecoveryProperties;
 import com.splitsmart.dto.ResetPasswordRequest;
 import com.splitsmart.repository.UserRepository;
 import org.springframework.beans.factory.annotation.Qualifier;
@@ -31,10 +32,12 @@ public class PasswordRecoveryService {
     private final PasswordResetDelivery delivery;
     private final Executor executor;
     private final Clock clock;
+    private final PasswordRecoveryProperties recoveryProperties;
 
     public PasswordRecoveryService(UserRepository users, PasswordEncoder encoder, JdbcTemplate jdbc,
             PlatformTransactionManager manager, PasswordResetDelivery delivery,
-            @Qualifier("passwordRecoveryExecutor") Executor executor, Clock clock) {
+            @Qualifier("passwordRecoveryExecutor") Executor executor, Clock clock,
+            PasswordRecoveryProperties recoveryProperties) {
         this.users = users;
         this.encoder = encoder;
         this.jdbc = jdbc;
@@ -42,6 +45,7 @@ public class PasswordRecoveryService {
         this.delivery = delivery;
         this.executor = executor;
         this.clock = clock;
+        this.recoveryProperties = recoveryProperties;
     }
 
     public void requestReset(String email) {
@@ -65,7 +69,7 @@ public class PasswordRecoveryService {
         byte[] bytes = new byte[32];
         RANDOM.nextBytes(bytes);
         String token = Base64.getUrlEncoder().withoutPadding().encodeToString(bytes);
-        String recipient = transactions.execute(status -> {
+        IssuedReset issued = transactions.execute(status -> {
             var candidate = users.findByEmail(email);
             if (candidate.isEmpty()) return null;
             var user = users.findByIdForUpdate(candidate.get().getId()).orElseThrow();
@@ -78,15 +82,18 @@ public class PasswordRecoveryService {
             var recent = jdbc.queryForList("SELECT token_hash FROM password_reset_tokens WHERE user_id = ? AND created_at > ? FOR UPDATE",
                     String.class, user.getId(), now.minusHours(1));
             if (recent.size() >= 3) return null;
+            LocalDateTime expiresAt = now.plusMinutes(recoveryProperties.tokenLifetimeMinutes());
             jdbc.update("INSERT INTO password_reset_tokens(token_hash,user_id,created_at,expires_at) VALUES (?,?,?,?)",
-                    hash(token), user.getId(), now, now.plusMinutes(30));
+                    hash(token), user.getId(), now, expiresAt);
             jdbc.update("UPDATE users SET password_reset_requested_at = ? WHERE id = ?", now, user.getId());
             // Send only to the stored account address, including database-equivalent email aliases.
-            return user.getEmail();
+            return new IssuedReset(user.getEmail(), expiresAt.toInstant(ZoneOffset.UTC));
         });
         // Commit before delivery: a delivered link must already be usable.
-        if (recipient != null) delivery.sendReset(recipient, token, clock.instant().plusSeconds(1800));
+        if (issued != null) delivery.sendReset(issued.recipient(), token, issued.expiresAt());
     }
+
+    private record IssuedReset(String recipient, java.time.Instant expiresAt) {}
 
     public void reset(ResetPasswordRequest request) {
         if (request.token() == null || !request.token().matches("[A-Za-z0-9_-]{43}")) throw invalidToken();
@@ -124,7 +131,12 @@ public class PasswordRecoveryService {
         });
     }
 
-    private LocalDateTime now() { return LocalDateTime.ofInstant(clock.instant(), ZoneOffset.UTC); }
+    private LocalDateTime now() {
+        // Match MySQL DATETIME(6)/PostgreSQL TIMESTAMP(6) precision so the emailed
+        // expiry and the persisted deadline identify the same instant.
+        return LocalDateTime.ofInstant(clock.instant(), ZoneOffset.UTC)
+                .truncatedTo(java.time.temporal.ChronoUnit.MICROS);
+    }
 
     private static String hash(String token) {
         try {

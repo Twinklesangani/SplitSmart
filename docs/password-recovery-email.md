@@ -47,6 +47,7 @@ Current boundary: no account-specific eligibility, sender ownership/approval, de
 - BREVO_API_KEY: server-only API key, never SMTP key. No default key.
 - RECOVERY_EMAIL_SENDER: verified sender email. No default sender.
 - RECOVERY_FRONTEND_ORIGIN: exact trusted HTTPS origin, for example https://splitsmart-92b.pages.dev; no path, userinfo, query or fragment. No request Host header is used.
+- APP_RECOVERY_TOKEN_LIFETIME_MINUTES: optional server setting from 15 to 30 minutes; defaults to 30. The database expiry and the expiry stated in the email use the same instant. No schema migration is required for this setting.
 
 Both flags must be true before the adapter is available; missing/invalid configuration fails closed. The transport uses a fixed HTTPS endpoint, three-second connection and five-second read timeouts, no redirects, no automatic retry, and discards provider bodies. Any non-201 response or transport failure privately stops sending until process restart/review. Public availability reflects configuration only: recipient-dependent failures cannot change public status and reveal account existence. A configured request still returns a conditional 202 after such a failure; API acceptance is never presented as delivered email. Disable the configuration explicitly during operational recovery.
 

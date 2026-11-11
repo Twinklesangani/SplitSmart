@@ -5,6 +5,14 @@ import static org.junit.jupiter.api.Assertions.*;
 
 class RecoveryEmailConfigTest {
     @Test
+    void resetLifetimeIsBoundedToTheSafeConfiguredWindow() {
+        assertEquals(30, new PasswordRecoveryProperties(30).tokenLifetimeMinutes());
+        assertEquals(15, new PasswordRecoveryProperties(15).tokenLifetimeMinutes());
+        assertThrows(IllegalArgumentException.class, () -> new PasswordRecoveryProperties(14));
+        assertThrows(IllegalArgumentException.class, () -> new PasswordRecoveryProperties(31));
+    }
+
+    @Test
     void disabledDeliveryHasNoUsableEmailChannelOrTokenShortcut() {
         var delivery = new PasswordRecoveryConfig().passwordResetDelivery(
                 new RecoveryEmailProperties(false, false, "", "", ""));
