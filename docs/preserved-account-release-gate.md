@@ -80,3 +80,12 @@ Use a disposable synthetic account only after release/write reopening is approve
 Official current [Aiven PostgreSQL Free](https://aiven.io/docs/products/postgresql/concepts/pg-free-tier) supports no-card persistent relational storage (1 GB disk, 20 connections, no SLA), but does not establish the required primary-error payload protection. [Neon plans](https://neon.com/docs/introduction/plans) show a $0 tier, 1 GB/project and 100 CU-hours/project; plan availability does not demonstrate guaranteed sensitive-primary-error redaction. No real records were sent to either provider.
 
 [Render Free documentation](https://render.com/docs/free) confirms local SQLite/files are lost on restart/spindown/redeploy, Free services cannot attach persistent disks, and Free Render PostgreSQL expires after 30 days. Therefore neither local Render SQLite nor expiring Render PostgreSQL is an acceptable long-term preservation substitute. Local encrypted recovery remains a safety copy, not a verified public hosting replacement. No sustainable end-to-end ₹0 architecture meeting the unchanged privacy policy and continued-account-access requirement is verified. Keep Option C, preserve MySQL/data and escalate before its December 21 deletion deadline; do not disguise archival as preserved live access.
+
+
+## M7 complete — approved independent Drive copy verified
+
+13 November 2026: owner explicitly approved the exact private destination and ciphertext upload/download scope. ONE successful ciphertext upload and ONE verification download completed. An initial malformed Windows path was rejected as File unreadable before upload; the folder remained empty, and the corrected selection produced the sole uploaded object. No ambiguous upload was retried.
+
+Original, downloaded object and protected local verification copy all match SHA-256 `a70bf90feaaf251e51b07b047e0e45e8abee84fb62fdeb9d2d8b33ca11890f1a`, size 3818 bytes. File sharing confirms owner-only and Restricted. Original backup preserved; no plaintext, credentials, passphrases or GPG keys uploaded. Private receipt contains exact Drive object ID and download paths outside Git. No billing changes, production operation, email or deployment.
+
+Independent backup blocker is resolved for the November 12 snapshot only. Later source writes remain outside its coverage. Temporary MySQL release still requires explicit outage/write-stop, final snapshot/restore, migration and coordinated publication/deployment authorization. PostgreSQL privacy Option C remains unchanged.

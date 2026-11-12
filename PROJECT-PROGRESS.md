@@ -343,3 +343,8 @@ Owner confirms preservation of all eight accounts/associated records. See `docs/
 ## 13 November 2026 — M7–M10 continuation
 
 Owner prefers Google Drive; stop USB troubleshooting. Created empty owner-only Restricted backup folder, verified account/capacity in authenticated UI; exact destination approval pending, no upload. Original ciphertext SHA-256 PASS. Protected local DriveBackupCopy receipt contains destination; do not put personal cloud IDs in public documentation. Existing pinned temporary MySQL package retained; live checklist added to docs/preserved-account-release-gate.md. No compliant sustainable replacement established under Option C. No production changes, emails, push or demo modification.
+
+
+## 13 November 2026 — independent ciphertext protection COMPLETE
+
+Owner-approved private Drive copy uploaded once and downloaded once; expected 3818 bytes/SHA-256 match original. File owner-only/Restricted; private receipt outside Git in DriveBackupCopy. Original and GPG keyring preserved; no decryption or production changes. Initial unreadable path selection failed before upload, corrected only after confirming empty folder. Independent-copy blocker resolved for the November 12 snapshot; release/final snapshot/write-freeze/migrations/deployments still need explicit approval, Option C unchanged.

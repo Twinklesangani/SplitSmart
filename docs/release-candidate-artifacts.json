@@ -56,7 +56,7 @@
     "transport": "local loopback SSL REQUIRED; production VERIFY_IDENTITY remains required"
   },
   "freshProductionBackup": "PASS_EXPORT_AND_ISOLATED_RESTORE",
-  "independentProtectedCopy": "PENDING",
+  "independentProtectedCopy": "VERIFIED_PRIVATE_GOOGLE_DRIVE_DOWNLOAD_SHA256_MATCH",
   "emailBudget": "EXHAUSTED_2_ATTEMPTS_2_ACCEPTED_NO_REPLAY",
   "realBackupRehearsal": {
     "originalCiphertextUnchanged": true,
@@ -96,6 +96,7 @@
   "ownerDataDisposition": "PRESERVE_ALL_EXISTING_ACCOUNTS_AND_RECORDS",
   "recommendedInterimDatabase": "EXISTING_MYSQL_V7_TO_V10_PENDING_RELEASE_APPROVAL",
   "postgresqlRealDataMigration": "BLOCKED_PRIVACY_OPTION_C",
-  "independentCopyWorkflow": "PREPARED_8_SYNTHETIC_TESTS_PASS_NO_USB_DETECTED",
-  "latestReleaseGate": "docs/preserved-account-release-gate.md"
+  "independentCopyWorkflow": "COMPLETED_OWNER_APPROVED_1_UPLOAD_1_DOWNLOAD",
+  "latestReleaseGate": "docs/preserved-account-release-gate.md",
+  "independentCopyVerifiedSha256": "a70bf90feaaf251e51b07b047e0e45e8abee84fb62fdeb9d2d8b33ca11890f1a"
 }
