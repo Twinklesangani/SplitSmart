@@ -44,9 +44,13 @@ Reuse unchanged batches: 34 Java authorization/settlement; 16 Java recovery/conf
 
 README now separates the published fictional offline simulation, older live full-stack application and enhanced local candidate. Added actual API inventory, plaintext architecture, verified synthetic desktop/mobile dashboard screenshots and accurate limitations; updated existing recruiter/resume/LinkedIn kit. Screenshots came from generated `example.test` product fixtures and were visually reviewed; they are not fresh production screenshots. Public links returned 200 over validated HTTPS. No resume/LinkedIn account, GitHub publication or offline-demo artifact changed.
 
+## Latest owner decision — preservation mandatory
+
+Owner now requires preserving all eight accounts and associated records; clean launch is not authorized. Read `docs/preserved-account-release-gate.md` for the narrowed current database/release decision and independent-copy workflow. Earlier pending clean-launch alternatives below are historical, not an active authorization.
+
 ## Next owner decisions / authorization boundary
 
-1. Preserve existing unknown records (recommended default), or explicitly approve archival plus clean active launch and loss of existing active accounts/balances.
+1. Preserve all existing accounts and records (owner decision confirmed). No clean launch, deletion or abandonment authorized.
 2. Retain Privacy Option C, require stronger provider-side guarantees, or expressly accept documented residual PostgreSQL logging risk for future records and separately authorize any historical import.
 3. Confirm an exact independent encrypted-backup copy destination before copying; recovery keys stay separate.
 4. Only after those decisions, approve one exact release scope: any push, database changes, final snapshot/write-freeze, network/secret changes, coordinated deployments and optional production email activation. These remain separate from this read-only/local milestone.

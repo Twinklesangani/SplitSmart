@@ -92,5 +92,10 @@
     "externalCopyStarted": false
   },
   "freshBackupCiphertextSha256": "a70bf90feaaf251e51b07b047e0e45e8abee84fb62fdeb9d2d8b33ca11890f1a",
-  "freshBackupCiphertextFile": "splitsmart-v7-fresh-20261112T163528Z.sql.gpg"
+  "freshBackupCiphertextFile": "splitsmart-v7-fresh-20261112T163528Z.sql.gpg",
+  "ownerDataDisposition": "PRESERVE_ALL_EXISTING_ACCOUNTS_AND_RECORDS",
+  "recommendedInterimDatabase": "EXISTING_MYSQL_V7_TO_V10_PENDING_RELEASE_APPROVAL",
+  "postgresqlRealDataMigration": "BLOCKED_PRIVACY_OPTION_C",
+  "independentCopyWorkflow": "PREPARED_8_SYNTHETIC_TESTS_PASS_NO_USB_DETECTED",
+  "latestReleaseGate": "docs/preserved-account-release-gate.md"
 }

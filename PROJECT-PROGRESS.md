@@ -333,3 +333,8 @@ Approved local-only demo delivered as a separately built offline React simulatio
 ## 13 November 2026 — master M1–M6 continuation
 
 Read `MASTER-CTO-STATUS.md` for the current consolidated outcome. Aggregate-only V7 production audit completed; no records proven synthetic. Default recommendation preserves the dataset. Existing ciphertext checksum verified. Local compatibility/test evidence reused unchanged; README/API/portfolio materials updated with synthetic screenshots and verified public HTTPS links. Production NO-GO: owner data-disposition/privacy decisions, independent protected copy and exact release approval remain pending. No production writes/deployment, new emails, cloud real-data upload or push. Existing unrelated edits retained.
+
+
+## 13 November 2026 — preserved-account blocker resolution
+
+Owner confirms preservation of all eight accounts/associated records. See `docs/preserved-account-release-gate.md`. No USB detected; original ciphertext hash reverified. Prepared guarded USB ciphertext-copy workflow (8 synthetic tests PASS); exact destination approval required. Synthetic cloud read-only settings unchanged; primary-error privacy gate remains BLOCKED/Option C. Recommended interim existing MySQL V7→V10 only after separate approval; no sustainable compliant long-term replacement verified. Pinned artifacts rehashed PASS. No copy/upload, production writes/migration/deploy, email or push.
