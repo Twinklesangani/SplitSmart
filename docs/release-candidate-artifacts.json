@@ -15,7 +15,7 @@
   "packagedMySqlMigrationsMatchSource": true,
   "testHarnessExcludedFromJar": true,
   "newContainerExecution": "PASS_SYNTHETIC_POSTGRESQL_V11",
-  "restoredV7ToV10Rehearsal": "APPROVAL_REQUIRED_REAL_BACKUP",
+  "restoredV7ToV10Rehearsal": "PASS_APPROVED_LOCAL_EXISTING_BACKUP",
   "productionRecommendation": "NO-GO",
   "activeFrontend": {
     "project": "splitsmart",
@@ -57,5 +57,17 @@
   },
   "freshProductionBackup": "APPROVAL_REQUIRED",
   "independentProtectedCopy": "PENDING",
-  "emailBudget": "EXHAUSTED_2_ATTEMPTS_2_ACCEPTED_NO_REPLAY"
+  "emailBudget": "EXHAUSTED_2_ATTEMPTS_2_ACCEPTED_NO_REPLAY",
+  "realBackupRehearsal": {
+    "originalCiphertextUnchanged": true,
+    "restores": 1,
+    "tablesRestored": 9,
+    "originalRecordHashesAndFinancialAggregatesPreserved": true,
+    "originalIndexesAndKeyConstraintsPreserved": true,
+    "legacyAuthVersionZero": true,
+    "pinnedJava21BackendHealth": "PASS_MAINTENANCE_EMAIL_DISABLED",
+    "restoredAccountLogins": "NOT_PERFORMED",
+    "plaintextSqlFilesCreated": false,
+    "freshProductionSnapshot": false
+  }
 }
