@@ -1,0 +1,19 @@
+# Brevo activated — controlled test gate, 12 November 2026
+
+Owner supplies confirmation from Sanchit in ticket #5661752: account SMTP/Transactional capabilities activated on 12 November. Accept this as activation evidence; prior pending/phone/2FA/support-follow-up instructions are superseded. Do not contact support or repeat verification absent a new failure.
+
+Official API: https://developers.brevo.com/docs/send-a-transactional-email ; fixed POST https://api.brevo.com/v3/smtp/email with api-key header and registered verified sender. Existing adapter matches this HTTPS workflow; no SMTP socket/port or fallback. Free transactional allowance is 300/day per official pricing documentation and prior account readback. No purchase/card/domain configuration made. Existing SplitSmart sender was verified; Gmail freemail DKIM/DMARC warning remains a delivery limitation, not disproven by account activation. Actual recipient acceptance/delivery remains untested.
+
+Current process has no BREVO_API_KEY (presence-only check, no values read into output). Configure an existing appropriate API key privately in the isolated test process through protected environment/secret storage, never VITE variables, chat, source, command arguments or logs. API-key creation/entry remains owner-private. Before sends, use GET /v3/account and GET /v3/senders with sanitized status-only output to confirm key/account/sender eligibility; do not print payloads. No credentialed metadata request made this turn because no key is available.
+
+## Exactly approved test required
+
+Owner must name the exact private recipient inbox and approve two messages: one reset email and one post-reset password-change notification. Use a disposable synthetic user in an isolated database, not a production account. Configure sender and trusted HTTPS test origin privately; production delivery flags remain false. Verify synthetic adapter and isolated HTTPS page readiness before enabling only the isolated test process. Avoid third-party request logging, tracking redirects and capture of reset fragments. Take private aggregate snapshots of synthetic groups/expenses/balances.
+
+Request reset once, verify actual inbox receipt/sender/plaintext link without copying token into reports; open the link, submit matching strong password once, observe one security notice, confirm old password and JWT rejection, new login success, replay rejection and unchanged financial snapshots. Existing controlled-clock tests prove expiry without extra email requests. Do not retry failed sends automatically; API 201 is acceptance, not delivery. Stop for unexpected provider restrictions or plaintext/token leakage.
+
+## Pinned coordinated release candidate
+
+Backend and frontend source candidate: 7738e821180484da01fb001f056525df35357142 (includes implementation c42be751f21e5b00209292902dc186d11bc8dce3). Git inspection found no pending backend/frontend changes. This is a source pin, not a newly built/reverified production artifact. Full branch deployment requires the reviewed MySQL V8–V10 package; V8 alone is the recovery schema prerequisite but insufficient for other branch features. PostgreSQL migration unnecessary and Option C preserved.
+
+Release approvals remain separate: fresh encrypted backup/restore and production preflight; exact migration/runtime privileges; reviewed additive V8–V10; compatible Render backend with no old unversioned instance serving; matching Cloudflare production frontend; health/auth/authorization/financial checks while email disabled; explicit final delivery activation after test passes. No offline-demo change. After reset never roll back to V7 or restore stale auth versions; gate traffic and forward-fix with current data. No live migration/deployment authorized. Existing Java21 12 and synthetic adapter 3 tests remain valid; no code changed or unaffected tests repeated.
