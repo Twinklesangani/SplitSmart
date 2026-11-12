@@ -45,6 +45,10 @@ class Capture:
 
 
 def main():
+    try:
+        with socket.create_connection(('127.0.0.1',25432),timeout=3):pass
+    except OSError:
+        raise local.l.Stop('LOCAL_PG_NOT_LISTENING')
     root=local.l.BASE/'AutonomousSyntheticTransfer'
     identity=json.loads((root/'identity.json').read_text())
     local.l.require(identity.get('synthetic_only') is True and identity['database'].startswith('ss_pg_transfer_synthetic_'),'SYNTHETIC_DATABASE_ONLY')
@@ -99,6 +103,10 @@ def main():
             suites += ['e2e/authentication.spec.js','e2e/expense-management.spec.js',
                 'e2e/financial-workflow.spec.js','e2e/group-management.spec.js',
                 'e2e/product-features.spec.js','e2e/responsive-ui.spec.js']
+        if '--suite' in sys.argv:
+            name=sys.argv[sys.argv.index('--suite')+1]
+            local.l.require(name in ('financial-workflow','group-management','responsive-ui'), 'REVIEWED_UX_SUITE')
+            suites=['e2e/'+name+'.spec.js']
         result=sub.run([node,str(local.WORK/'frontend/node_modules/@playwright/test/cli.js'),'test',
             *suites,'--config=playwright.config.js','--reporter=json'],
             cwd=local.WORK/'frontend',env=frontend,capture_output=True,timeout=1200,creationflags=local.l.CREATE_NO_WINDOW)
@@ -106,7 +114,7 @@ def main():
             (output/'failure.dpapi').write_bytes(local.l.protect(result.stdout+result.stderr))
             raise local.l.Stop('SYNTHETIC_PG_BROWSER_FAILED')
         report=json.loads(result.stdout)
-        local.l.require(report['stats']['expected']>=2 and report['stats']['unexpected']==0
+        local.l.require(report['stats']['expected']>=1 and report['stats']['unexpected']==0
             and report['stats'].get('skipped',0)==0,'BROWSER_RESULTS')
     finally:
         for p in reversed(processes):
