@@ -5,7 +5,7 @@ import { useAuth } from '../context/useAuth.js'
 import NotificationBell from '../components/NotificationBell.jsx'
 
 const primaryLinks = [
-  { to: '/dashboard', label: 'Overview', icon: 'home', end: true },
+  { to: '/dashboard', label: 'Dashboard', icon: 'home', end: true },
   { to: '/groups', label: 'My groups', icon: 'group' },
 ]
 
@@ -46,6 +46,10 @@ export default function AppShell() {
   const panelRef = useRef(null)
   const mainRef = useRef(null)
   const wasOpen = useRef(false)
+
+  useEffect(() => {
+    mainRef.current?.focus({ preventScroll: true })
+  }, [location.pathname])
 
   useEffect(() => {
     if (menuOpen) closeRef.current?.focus()

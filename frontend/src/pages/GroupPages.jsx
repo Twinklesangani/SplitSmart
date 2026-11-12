@@ -1,5 +1,6 @@
 
-import { Link, NavLink, useParams } from 'react-router-dom'
+import { useEffect } from 'react'
+import { Link, NavLink, useLocation, useParams } from 'react-router-dom'
 import Icon from '../components/Icon.jsx'
 import { Button, Card, EmptyState, PageHeader } from '../components/UI.jsx'
 import { useAuth } from '../context/useAuth.js'
@@ -18,6 +19,14 @@ export function GroupPageLayout({ group, activeTitle, eyebrow, description, chil
   const { groupId } = useParams()
   const { user } = useAuth()
   const base = `/groups/${groupId}`
+  const location = useLocation()
+  useEffect(() => {
+    if (!['#members', '#invite-members'].includes(location.hash)) return
+    const target = document.getElementById(location.hash.slice(1))
+    if (!target) return
+    target.scrollIntoView?.({ block: 'start' })
+    target.focus({ preventScroll: true })
+  }, [location.key, location.hash])
   return (
     <>
       <div className="breadcrumbs">
@@ -50,6 +59,7 @@ export function GroupPageLayout({ group, activeTitle, eyebrow, description, chil
             <Icon name={tab.icon} size={17} /><span>{tab.label}</span>
           </NavLink>
         ))}
+        <Link className="group-tab" to={`${base}#members`}><Icon name="group" size={17} /><span>Members</span></Link>
       </nav>
       <div className="group-page-content">{children}</div>
     </>
@@ -118,7 +128,7 @@ function GroupOverviewContent({ data, user }) {
         <div className="meta-line"><span>Members</span><strong>{members.length}</strong></div>
         <div className="meta-line"><span>Creator</span><strong>{members.find((member) => String(member.userId) === String(group.createdByUserId))?.name ?? 'Group creator'}</strong></div>
       </Card>
-      <Card className="group-members-card">
+      <Card className="group-members-card" id="members" tabIndex={-1}>
         <div className="section-heading">
           <div><h2>Members</h2><p>{members.length} {members.length === 1 ? 'person' : 'people'} in this group</p></div>
         </div>
