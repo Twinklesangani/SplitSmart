@@ -98,5 +98,18 @@
   "postgresqlRealDataMigration": "BLOCKED_PRIVACY_OPTION_C",
   "independentCopyWorkflow": "COMPLETED_OWNER_APPROVED_1_UPLOAD_1_DOWNLOAD",
   "latestReleaseGate": "docs/preserved-account-release-gate.md",
-  "independentCopyVerifiedSha256": "a70bf90feaaf251e51b07b047e0e45e8abee84fb62fdeb9d2d8b33ca11890f1a"
+  "independentCopyVerifiedSha256": "a70bf90feaaf251e51b07b047e0e45e8abee84fb62fdeb9d2d8b33ca11890f1a",
+  "m8ReadOnlyPreflight": {
+    "date": "2026-11-13",
+    "mysql": "RUNNING_FREE_8_4_11_V7_ORIGINAL_HISTORY_PASS",
+    "runtimeGrant": "SCHEMA_DML_ONLY",
+    "migrationGrant": "MISSING_ALTER_TEMPORARY_GRANT_REQUIRES_APPROVAL",
+    "existingMigrationAndAdminCredentials": "PRIVATELY_AUTHENTICATED_NO_RESET",
+    "renderLiveCommit": "418d757855dd10965c2872176022f93ac5e35a8a",
+    "cloudflareLiveCommit": "bc59921336f148784317550a5f29202edbeda825",
+    "artifactReferenceHashes": "RECHECKED_PASS",
+    "cloudRebuildByteIdentity": "NOT_GUARANTEED_MUTABLE_BASE_AND_BUILD_TIMESTAMPS",
+    "productionOperationsPerformed": false,
+    "recommendation": "NO_GO_UNTIL_EXACT_SCOPE_APPROVED_AND_EXECUTION_GATES_PASS"
+  }
 }

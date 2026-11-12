@@ -151,3 +151,8 @@ Owner prefers Google Drive; stop USB troubleshooting. Created empty owner-only R
 ## 13 November 2026 — independent ciphertext protection COMPLETE
 
 Owner-approved private Drive copy uploaded once and downloaded once; expected 3818 bytes/SHA-256 match original. File owner-only/Restricted; private receipt outside Git in DriveBackupCopy. Original and GPG keyring preserved; no decryption or production changes. Initial unreadable path selection failed before upload, corrected only after confirming empty folder. Independent-copy blocker resolved for the November 12 snapshot; release/final snapshot/write-freeze/migrations/deployments still need explicit approval, Option C unchanged.
+
+
+## 13 November 2026 — M8 final read-only release gate
+
+Current MySQL8.4.11/RUNNING/Free V7 history and nine InnoDB tables verified; active Render418d757 and Pagesbc59921 reverified. Exact candidate artifacts/source inputs unchanged. Existing migration/admin identities authenticate privately; migrator lacks ALTER, so narrowly scoped temporary ALTER requires release approval. Proposed freeze combines Render suspension/drain with temporary runtime DML revoke/regrant, retained until exact new backend maintenance ON is verified. No operation performed. Current Render retains Flyway disabled/no migration secrets. AUTONOMOUS-RELEASE-APPROVAL.md now contains the ONE exact bounded M8 request, hashes, backup/recovery/impact and synthetic-only live-test scope. Independent Drive copy evidence remains PASS. Production NO-GO pending explicit authorization and execution gates; cloud rebuilt binary byte identity is not guaranteed by current mutable-base Dockerfile. No email, push, deploy, migration, grant change or decryption. Preserve unrelated edits.
