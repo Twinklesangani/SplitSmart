@@ -69,5 +69,26 @@
     "restoredAccountLogins": "NOT_PERFORMED",
     "plaintextSqlFilesCreated": false,
     "freshProductionSnapshot": false
+  },
+  "backupProtectionPreflight": {
+    "date": "2026-11-12",
+    "sourceProject": "twinklesangani-9b5e",
+    "sourceService": "splitsmart-mysql",
+    "sourceDatabase": "splitsmart",
+    "serviceState": "RUNNING",
+    "plan": "free-1-1gb",
+    "databasePresenceVerifiedByProviderMetadata": true,
+    "productionRecordsRead": false,
+    "gpgRecipient": "1DC89048D3A259793291B71615557C70D0ADC178",
+    "privateEncryptionKeyAvailable": true,
+    "validEncryptionCapability": true,
+    "backupAndKeyringAcl": "owner_and_SYSTEM_only",
+    "sourceSqlCredentialAcl": "owner_only",
+    "localFreeBytesObserved": 19614097408,
+    "physicalDisksDetected": 1,
+    "externalVolumeDetected": false,
+    "independentDestination": "AWAITING_OWNER_SELECTED_USB_PATH",
+    "freshExportStarted": false,
+    "externalCopyStarted": false
   }
 }
