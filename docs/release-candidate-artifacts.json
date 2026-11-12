@@ -1,0 +1,20 @@
+{
+  "sourceRevision": "a1813f80d9c22e06ae89e2dd7f8b2ba6a0f02c16",
+  "frontendRevision": "a1813f80d9c22e06ae89e2dd7f8b2ba6a0f02c16",
+  "backendRevision": "a1813f80d9c22e06ae89e2dd7f8b2ba6a0f02c16",
+  "backendJarSha256": "e5e8dff1a23b7f409b89709180605796bd5ca99cb2bb5b93ef24af298d09e1b3",
+  "frontend": {
+    "index.html": "5e33d0479622f3e0c46d058f5b15d33c51a2b4223ce54b5d8ff5a3bb46495255",
+    "assets/index-l1jTLbfL.js": "daef039e325063cf582d9917b4924d5140871188264c47c83d932f8d737fff48",
+    "assets/index-BxL7R7ob.css": "e7ff738c31e1548c3edda363ba0d6f0cccbcd116d2a348854e162a9aa6992b63"
+  },
+  "frontendApiOrigin": "https://splitsmart-backend-ydj2.onrender.com",
+  "emailActionsEnabled": false,
+  "javaClassMajor": 65,
+  "originalMySqlV1ToV7Preserved": true,
+  "packagedMySqlMigrationsMatchSource": true,
+  "testHarnessExcludedFromJar": true,
+  "newContainerExecution": "NOT TESTED",
+  "restoredV7ToV10Rehearsal": "BLOCKED_BY_LATEST_OWNER_RESTRICTION",
+  "productionRecommendation": "NO-GO"
+}
