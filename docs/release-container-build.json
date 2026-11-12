@@ -1,0 +1,5 @@
+{
+  "image": "localhost/splitsmart-release:release-79f86fb70693",
+  "id": "3da30b2eb46b0f5e7eb135561c70b9fa17ce0b672a53116b5b9558d9f7a9e3d2",
+  "base": "9d9db0ab4fc478fa22c92a55bf75da66b06dbfe93fbdb63f5e2a2465ff101e28"
+}

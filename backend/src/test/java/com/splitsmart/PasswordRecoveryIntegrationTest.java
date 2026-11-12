@@ -160,10 +160,12 @@ class PasswordRecoveryIntegrationTest {
     @Test
     void configuredLifetimeIsPersistedAndMatchesTheDeliveredLink() throws Exception {
         issue();
-        Map<String, Object> times = jdbc.queryForMap(
-                "SELECT created_at, expires_at FROM password_reset_tokens WHERE user_id = ?", userId);
-        LocalDateTime created = ((java.sql.Timestamp) times.get("created_at")).toLocalDateTime();
-        LocalDateTime stored = ((java.sql.Timestamp) times.get("expires_at")).toLocalDateTime();
+        LocalDateTime[] times = jdbc.queryForObject(
+                "SELECT created_at, expires_at FROM password_reset_tokens WHERE user_id = ?",
+                (rows, index) -> new LocalDateTime[] { rows.getTimestamp("created_at").toLocalDateTime(),
+                        rows.getTimestamp("expires_at").toLocalDateTime() }, userId);
+        LocalDateTime created = times[0];
+        LocalDateTime stored = times[1];
         LocalDateTime expected = created.plusMinutes(recoveryProperties.tokenLifetimeMinutes());
         assertEquals(15, recoveryProperties.tokenLifetimeMinutes());
         assertEquals(expected, stored);

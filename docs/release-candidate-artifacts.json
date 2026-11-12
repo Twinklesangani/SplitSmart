@@ -14,7 +14,48 @@
   "originalMySqlV1ToV7Preserved": true,
   "packagedMySqlMigrationsMatchSource": true,
   "testHarnessExcludedFromJar": true,
-  "newContainerExecution": "NOT TESTED",
-  "restoredV7ToV10Rehearsal": "BLOCKED_BY_LATEST_OWNER_RESTRICTION",
-  "productionRecommendation": "NO-GO"
+  "newContainerExecution": "PASS_SYNTHETIC_POSTGRESQL_V11",
+  "restoredV7ToV10Rehearsal": "APPROVAL_REQUIRED_REAL_BACKUP",
+  "productionRecommendation": "NO-GO",
+  "activeFrontend": {
+    "project": "splitsmart",
+    "url": "https://splitsmart-92b.pages.dev",
+    "deploymentId": "0294158a-95e6-4b55-9757-237afb3bfb28",
+    "commit": "bc59921336f148784317550a5f29202edbeda825",
+    "productionBranch": "codex/product-completion",
+    "autoDeploy": false,
+    "root": "frontend",
+    "command": "npm run build",
+    "output": "dist",
+    "nodeVersion": "24",
+    "apiOrigin": "https://splitsmart-backend-ydj2.onrender.com"
+  },
+  "activeBackend": {
+    "service": "splitsmart-backend",
+    "serviceId": "srv-dbkvpt6gekts73fa6gug",
+    "deploymentId": "dep-dbm583k9v7es738tqjng",
+    "commit": "418d757855dd10965c2872176022f93ac5e35a8a"
+  },
+  "containerImage": "sha256:3da30b2eb46b0f5e7eb135561c70b9fa17ce0b672a53116b5b9558d9f7a9e3d2",
+  "containerBase": "sha256:9d9db0ab4fc478fa22c92a55bf75da66b06dbfe93fbdb63f5e2a2465ff101e28",
+  "containerJarHashMatches": true,
+  "containerNonrootUid": 10001,
+  "containerScenarios": {
+    "maintenanceHealthSecurity": "PASS",
+    "protectedApiEmailDisabled": "PASS",
+    "invalidCARejected": "PASS",
+    "hostnameMismatchRejected": "PASS"
+  },
+  "syntheticMySql": {
+    "version": "8.4.13",
+    "java": "21",
+    "migration": "V7_TO_V10_PASS",
+    "originalHistoryPreserved": true,
+    "fixtureFinancialValuesPreserved": true,
+    "recoveryCasesPassed": 9,
+    "transport": "local loopback SSL REQUIRED; production VERIFY_IDENTITY remains required"
+  },
+  "freshProductionBackup": "APPROVAL_REQUIRED",
+  "independentProtectedCopy": "PENDING",
+  "emailBudget": "EXHAUSTED_2_ATTEMPTS_2_ACCEPTED_NO_REPLAY"
 }

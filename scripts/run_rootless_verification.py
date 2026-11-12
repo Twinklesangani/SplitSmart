@@ -5,6 +5,7 @@ from pathlib import Path
 import secrets
 import socket
 import subprocess
+import sys
 import prepare_postgres_target as t
 from migration_transfer import checksums
 from verify_linux_native import synthetic_url
@@ -38,6 +39,11 @@ def main():
             'APP_CORS_ALLOWED_ORIGINS':'http://127.0.0.1:15173','RECOVERY_EMAIL_ENABLED':'false',
             'RECOVERY_EMAIL_DELIVERY_VERIFIED':'false','JAVA_TOOL_OPTIONS':'-Xmx256m',
             'DB_TLS_CA_BASE64':base64.b64encode(t.CA.read_bytes()).decode()}}
+    if sys.argv[1:]==['--pinned-release']:
+        receipt=json.loads((t.WORK/'docs/release-container-build.json').read_text())
+        payload['image']=receipt['id']
+        payload['runid']='ssverify-release-'+secrets.token_hex(6)
+    elif sys.argv[1:]:raise RuntimeError('UNREVIEWED_MODE')
     code=(Path(__file__).with_name('rootless_container_checks.py')).read_text(encoding='utf-8')
     # Never pass executable Python containing shell syntax through WSL -c.
     # Install PUBLIC source separately; only JSON with private values uses stdin.
@@ -62,7 +68,8 @@ def main():
         if c.query('SELECT version,checksum,success FROM public.flyway_schema_history ORDER BY installed_rank')!=expected:
             raise RuntimeError('POST_CONTAINER_FLYWAY_DRIFT')
     finally:c.close()
-    (t.ROOT/'rootless-check-result.json').write_text(json.dumps(report,indent=2),encoding='utf-8')
+    filename=('release-'+payload['runid']+'.json') if sys.argv[1:] else 'rootless-check-result.json'
+    (t.ROOT/filename).write_text(json.dumps(report,indent=2),encoding='utf-8')
     print(json.dumps(report))
 
 if __name__=='__main__':
