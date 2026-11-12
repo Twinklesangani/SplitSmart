@@ -19,3 +19,7 @@ Path B: use baseline 4222dca frontend/backend plus subsequent reviewed tooling/d
 
 Blocking release gates: synthetic local PostgreSQL authentication, broad browser journeys, exact current hosting revisions, dedicated V7 candidate if Path A selected, fresh backup approval and coordinated release authorization. No migration/deployment/push performed.
 Updated gate: local synthetic authentication and selected8 real-stack browser scenarios PASS. Current frontend includes mobile wrapping fix in the forthcoming local commit. V7 frontend-only candidate remains NOT READY: source-port/build/API verification still required before any separate V7 release. Combined V8–V10 candidate also remains NO-GO pending exact live baseline, fresh backup/restore, approved email inbox test and coordinated deployment authorization. No PostgreSQL migration needed for MySQL UX release.
+frontend\dist\index.html SHA256 D759525A9551EDDFFF8DFA5DD826778766A6A1B36E714D9F838ABFBE98E0F45C
+frontend\dist\assets\index-CT2Ck627.js SHA256 193C3B469E36327C1D98B65DF7BD0F9C6987C3507A0FEDCD12D6FF0F7CA1EC47
+frontend\dist\assets\index-BxL7R7ob.css SHA256 E7FF738C31E1548C3EDDA363BA0D6F0CCCBCD116D2A348854E162A9AA6992B63
+Candidate source d9a2992e8965db576c86edf137b2b93501fed17e includes verified Settings. Backend source identical toc42be75. Authoritative consolidated gate/approvals in UX-IMPLEMENTATION-PROGRESS.md. Production remains NO-GO; no actual email delivery test or live deployment approval.
