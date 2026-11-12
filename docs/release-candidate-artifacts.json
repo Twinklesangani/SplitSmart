@@ -111,5 +111,28 @@
     "cloudRebuildByteIdentity": "NOT_GUARANTEED_MUTABLE_BASE_AND_BUILD_TIMESTAMPS",
     "productionOperationsPerformed": false,
     "recommendation": "NO_GO_UNTIL_EXACT_SCOPE_APPROVED_AND_EXECUTION_GATES_PASS"
+  },
+  "m8Stage1": {
+    "status": "COMPLETE_PRODUCTION_FROZEN_AWAITING_STAGE2",
+    "releaseBranch": "codex/release-mysql-v10-a1813f8",
+    "publishedSource": "a1813f80d9c22e06ae89e2dd7f8b2ba6a0f02c16",
+    "productionFlyway": "7",
+    "renderSuspended": true,
+    "runtimeDmlRevoked": true,
+    "accountsPreserved": 8,
+    "exports": 1,
+    "localRestores": 1,
+    "allNineTableCanonicalHashesMatch": true,
+    "financialIntegrity": true,
+    "ciphertextFile": "splitsmart-v7-m8-stage1-20261112T203553Z.sql.gpg",
+    "ciphertextSha256": "ed947417394d6e5c7336ca80b9da6f1a7f63d12cc44aaeaa6bcb666bcea70f2f",
+    "ciphertextBytes": 3816,
+    "independentDriveDownloadHashVerified": true,
+    "temporaryCredentialFileRemoved": true,
+    "alterGranted": false,
+    "migrationsExecuted": false,
+    "deploymentsExecuted": false,
+    "emailsSent": 0,
+    "reopeningAuthorized": false
   }
 }

@@ -1,3 +1,25 @@
+# CURRENT: M8 Stage1 COMPLETE — production remains FROZEN
+
+Owner explicitly approved Stage1 only. New release ref `codex/release-mysql-v10-a1813f8` is published at `a1813f80d9c22e06ae89e2dd7f8b2ba6a0f02c16`; no merge or deploy. Cloudflare production AND preview autodeploys were verified disabled, Render autoDeploy=no. Active deployed sources remain backend418d757/frontendbc59921.
+
+Render service `srv-dbkvpt6gekts73fa6gug` is **suspended**. `splitsmart_app` retains SELECT only; INSERT/UPDATE/DELETE on the existing `splitsmart` schema were revoked under the approved freeze. Original exact grants are in the protected Stage1 receipt. MySQL remains RUNNING/Free/V7, no schema changes. Zero transactions/runtime sessions were verified at freeze. All eight accounts and every original table hash remain unchanged through final verification. **Do not resume the service or restore write privileges without owner approval.**
+
+ONE fresh frozen AES-256 GPG export and ONE isolated local restore PASS. Snapshot `splitsmart-v7-m8-stage1-20261112T203553Z.sql.gpg` (UTC filename), 3816 bytes; SHA-256 `ed947417394d6e5c7336ca80b9da6f1a7f63d12cc44aaeaa6bcb666bcea70f2f`. Local database `ss_m8_stage1_restore_20261112t203553z` on verified loopback23307 retained. All nine table counts/all-column canonical record hashes, V1–V7 checksums, indexes/constraints/FKs, split reconciliation and financial-aggregate hashes PASS against the frozen source. Original backup and older restored databases preserved; temporary credential option file removed, no plaintext SQL file. The local server's general/slow/bin logs were verified off. Admin-visible views/triggers/routines/events counted zero; export remains explicitly nine-base-tables scope, not a general guarantee beyond authorized metadata visibility.
+
+ONE additional final-ciphertext upload and ONE download/hash verification PASS in the previously approved private Drive folder; file verified owner-only/Restricted. No key/passphrase/plaintext transfer or billing change. Exact Drive object and protected download paths are in `%LOCALAPPDATA%/SplitSmart/M8Stage1Checkpoint/receipt.json`, outside Git. The receipt also records the freeze, attempt counters, original grants and reconciliation hashes. Storage Protection ON/fully encrypted/TPM+recovery protectors verified via the single read-only UAC helper; synthetic GPG recovery PASS. Four local mocked controller guard tests PASS. Application suites were not replayed.
+
+Artifact references below remain unchanged and rehashed PASS; the remote branch contains only the original pinned application commit, not this operational handoff. Current Render rebuild-byte-identity limitation remains as documented. Local Stage1 controller relies on the existing private Windows/MySQL/GPG recovery tooling and credentials; it is not production app code or a clean-machine bootstrap. Permanent attempt markers prohibit replay. Do not rerun export/restore/freeze commands.
+
+## ONE remaining Stage2 authorization requested
+
+Approve temporary schema-scoped ALTER for existing `splitsmart_migrate`; validate/apply ONLY V8→V9→V10 and revoke that extra privilege; switch manual Render/Pages source to the already published exact release ref and deploy the pinned candidate with MySQL TLS/JWT protections, Flyway disabled in Render, maintenance ON and email OFF; retain the runtime DML fence until the exact new backend is verified; restore the recorded runtime grants while gated; deploy the matching frontend; explicitly reopen writes; execute only the bounded synthetic live checks specified below. No further push/merge, email, PostgreSQL import, deletion or paid action. Any safety failure stops in a fenced state; inspect partial MySQL DDL and recover forward, never assume V7 rollback is safe after migration.
+
+Before any ALTER, reverify source hashes/history/fence and private backup recovery evidence. No new snapshot is authorized or necessary merely because Stage2 approval is delayed while the source remains demonstrably frozen; any unexpected source change invalidates this checkpoint and requires a new decision. Before DDL, an alternative return to unchanged V7 could restore exact runtime grants/resume after verification, but that requires separate explicit owner authorization and was NOT performed. After DDL, do not use that V7 reopening path.
+
+---
+
+# M8 package retained below (Stage1 operations now executed as recorded above)
+
 # M8 final production release authorization — 13 November 2026
 
 **Recommendation: NO-GO until the bounded scope below is explicitly approved and all execution-time gates pass. Read-only preflight/local preparation complete; no production changes made.** This section supersedes historical privacy/release requests below. Preserve all eight accounts and every associated record. Email remains disabled; PostgreSQL Option C and the offline demo remain untouched.
