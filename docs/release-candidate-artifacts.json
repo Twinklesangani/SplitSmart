@@ -55,7 +55,7 @@
     "recoveryCasesPassed": 9,
     "transport": "local loopback SSL REQUIRED; production VERIFY_IDENTITY remains required"
   },
-  "freshProductionBackup": "APPROVAL_REQUIRED",
+  "freshProductionBackup": "PASS_EXPORT_AND_ISOLATED_RESTORE",
   "independentProtectedCopy": "PENDING",
   "emailBudget": "EXHAUSTED_2_ATTEMPTS_2_ACCEPTED_NO_REPLAY",
   "realBackupRehearsal": {
@@ -90,5 +90,7 @@
     "independentDestination": "AWAITING_OWNER_SELECTED_USB_PATH",
     "freshExportStarted": false,
     "externalCopyStarted": false
-  }
+  },
+  "freshBackupCiphertextSha256": "a70bf90feaaf251e51b07b047e0e45e8abee84fb62fdeb9d2d8b33ca11890f1a",
+  "freshBackupCiphertextFile": "splitsmart-v7-fresh-20261112T163528Z.sql.gpg"
 }
