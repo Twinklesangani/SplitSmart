@@ -94,14 +94,20 @@ def main():
         wait('http://127.0.0.1:18081/actuator/health/readiness',55)
         start([node,str(local.WORK/'frontend/node_modules/vite/bin/vite.js'),'--host','127.0.0.1','--port','15173','--strictPort'],local.WORK/'frontend',frontend)
         wait('http://127.0.0.1:15173',15)
+        suites=['e2e/invitations.spec.js']
+        if '--ux' in sys.argv:
+            suites += ['e2e/authentication.spec.js','e2e/expense-management.spec.js',
+                'e2e/financial-workflow.spec.js','e2e/group-management.spec.js',
+                'e2e/product-features.spec.js','e2e/responsive-ui.spec.js']
         result=sub.run([node,str(local.WORK/'frontend/node_modules/@playwright/test/cli.js'),'test',
-            'e2e/invitations.spec.js','--config=playwright.config.js','--reporter=json'],
-            cwd=local.WORK/'frontend',env=frontend,capture_output=True,timeout=240,creationflags=local.l.CREATE_NO_WINDOW)
+            *suites,'--config=playwright.config.js','--reporter=json'],
+            cwd=local.WORK/'frontend',env=frontend,capture_output=True,timeout=1200,creationflags=local.l.CREATE_NO_WINDOW)
         if result.returncode:
             (output/'failure.dpapi').write_bytes(local.l.protect(result.stdout+result.stderr))
             raise local.l.Stop('SYNTHETIC_PG_BROWSER_FAILED')
         report=json.loads(result.stdout)
-        local.l.require(report['stats']['expected']==2 and report['stats']['unexpected']==0,'BROWSER_RESULTS')
+        local.l.require(report['stats']['expected']>=2 and report['stats']['unexpected']==0
+            and report['stats'].get('skipped',0)==0,'BROWSER_RESULTS')
     finally:
         for p in reversed(processes):
             if p.poll() is None:
@@ -117,9 +123,9 @@ def main():
         for port in (18081,15173):free(port)
         print('OWNED_TEST_PROCESSES_STOPPED_PORTS_FREE_DATABASE_RETAINED',flush=True)
     # Publish PASS only after cleanup and streaming credential scan passed.
-    (output/'result.json').write_text(json.dumps({'status':'PASS','tests':2,'backend':'Java21','database':'synthetic local PostgreSQL','real_data_used':False,'email_enabled':False},indent=2))
+    (output/'result.json').write_text(json.dumps({'status':'PASS','tests':report['stats']['expected'],'backend':'Java21','database':'synthetic local PostgreSQL','real_data_used':False,'email_enabled':False},indent=2))
     latest.write_text(json.dumps({'status':'PASS','report':str(output/'result.json')}))
-    print('TWO_REAL_LOCAL_POSTGRES_BROWSER_FLOWS_PASS',flush=True)
+    print('REAL_LOCAL_POSTGRES_BROWSER_FLOWS_PASS',flush=True)
 
 
 if __name__=='__main__':
