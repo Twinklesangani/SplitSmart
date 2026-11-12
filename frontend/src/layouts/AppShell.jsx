@@ -7,6 +7,7 @@ import NotificationBell from '../components/NotificationBell.jsx'
 const primaryLinks = [
   { to: '/dashboard', label: 'Dashboard', icon: 'home', end: true },
   { to: '/groups', label: 'My groups', icon: 'group' },
+  { to: '/settings', label: 'Settings', icon: 'settings' },
 ]
 
 function Sidebar({ user, onNavigate, closeRef, onLogout }) {
@@ -31,6 +32,7 @@ function Sidebar({ user, onNavigate, closeRef, onLogout }) {
 }
 
 function currentTitle(pathname) {
+  if (pathname === '/settings') return 'Settings'
   if (pathname.startsWith('/groups')) return 'Groups'
   return 'Workspace'
 }

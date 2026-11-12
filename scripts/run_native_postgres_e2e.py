@@ -105,7 +105,7 @@ def main():
                 'e2e/product-features.spec.js','e2e/responsive-ui.spec.js']
         if '--suite' in sys.argv:
             name=sys.argv[sys.argv.index('--suite')+1]
-            local.l.require(name in ('financial-workflow','group-management','responsive-ui'), 'REVIEWED_UX_SUITE')
+            local.l.require(name in ('financial-workflow','group-management','responsive-ui','settings'), 'REVIEWED_UX_SUITE')
             suites=['e2e/'+name+'.spec.js']
         result=sub.run([node,str(local.WORK/'frontend/node_modules/@playwright/test/cli.js'),'test',
             *suites,'--config=playwright.config.js','--reporter=json'],

@@ -4,6 +4,7 @@ import AppShell from './layouts/AppShell.jsx'
 import AuthLayout from './layouts/AuthLayout.jsx'
 import DashboardPage from './pages/DashboardPage.jsx'
 import GroupsPage from './pages/GroupsPage.jsx'
+import SettingsPage from './pages/SettingsPage.jsx'
 import { GroupOverviewPage } from './pages/GroupPages.jsx'
 import { GroupBalancesPage, GroupSettlementsPage } from './pages/FinancePages.jsx'
 import LoginPage from './pages/LoginPage.jsx'
@@ -21,6 +22,7 @@ function App() {
         <Route element={<AppShell />}>
           <Route path="/dashboard" element={<DashboardPage />} />
           <Route path="/groups" element={<GroupsPage />} />
+          <Route path="/settings" element={<SettingsPage />} />
           <Route path="/groups/:groupId" element={<GroupOverviewPage />} />
           <Route path="/groups/:groupId/expenses" element={<GroupExpensesPage />} />
           <Route path="/groups/:groupId/expenses/new" element={<ExpenseCreatePage />} />
