@@ -1,0 +1,22 @@
+{
+  "sourceProject": "twinklesangani-9b5e",
+  "service": "splitsmart-mysql",
+  "database": "splitsmart",
+  "state": "RUNNING",
+  "plan": "free-1-1gb",
+  "flyway": "7",
+  "counts": {
+    "users": 8,
+    "expense_groups": 4,
+    "group_members": 6,
+    "expenses": 3,
+    "expense_splits": 5,
+    "settlements": 1,
+    "group_invitations": 0,
+    "notifications": "NOT_PRESENT"
+  },
+  "confirmedSyntheticUsers": 0,
+  "unknownUsers": 8,
+  "classificationReason": "No production creation-provenance ledger proves synthetic ownership. No identities or records retrieved.",
+  "freshCiphertextIntact": true
+}

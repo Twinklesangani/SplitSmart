@@ -1,6 +1,6 @@
 # SplitSmart portfolio application kit
 
-Prepared 9 November 2026. Source and hosting are unchanged. The public link is a static, fictional simulation; the separately developed full-stack application is not connected to it.
+Updated 13 November 2026. Source and hosting are unchanged. The public link is a static, fictional simulation; the separately developed full-stack application is not connected to it.
 
 ## Project summary
 
@@ -58,10 +58,10 @@ Show the notification panel and the recovery section. Clarify that these are sim
 
 ## Separate production application: actions still needed
 
-- **Data preservation:** Aiven MySQL is the existing production source and is scheduled for retirement on 21 December 2026. Existing encrypted backups and tested local restores are valuable but stale against ongoing production writes. Before any transition, obtain separate approval for a fresh consistent encrypted snapshot and restore rehearsal; keep the GPG recovery key protected and maintain an independently recoverable encrypted copy. Do not assume provider backups survive service retirement.
+- **Data preservation:** Aiven MySQL is the existing production source and is scheduled for retirement on 21 December 2026. Existing encrypted backups and tested local restores are valuable but stale against ongoing production writes. A fresh encrypted V7 snapshot and isolated restore passed on 12 November 2026; subsequent writes are outside that snapshot. Obtain separate approval for the final frozen snapshot; keep the GPG recovery key protected and establish an independently recoverable encrypted copy. Do not assume provider backups survive service retirement.
 - **Privacy:** Production data migration to PostgreSQL remains NO-GO under Option C. PostgreSQL primary errors may echo values into provider logs; local validation reduces but cannot eliminate this risk. Do not upload real records until the owner changes the policy or a stronger supported protection is verified.
 - **Monitoring and access:** Review Aiven service retirement/plan notices, service health and quota; restrict access to Render, Aiven and Cloudflare logs; verify application log retention and that reset tokens, credentials and financial details are never logged. Platform request/error telemetry exists independently of app analytics.
-- **Release state:** No production migration or deployment occurred in this milestone. Brevo/email remains disabled. Production release needs its separate privacy, backup, migration-window and deployment approvals.
+- **Release state:** No production migration or deployment occurred in this milestone. The approved two-email synthetic recovery test passed; production email remains disabled. Production release needs its separate privacy, backup, migration-window and deployment approvals.
 
 ## Handoff
 
