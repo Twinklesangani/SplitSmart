@@ -141,3 +141,8 @@ Read `MASTER-CTO-STATUS.md` for the current consolidated outcome. Aggregate-only
 ## 13 November 2026 — preserved-account blocker resolution
 
 Owner confirms preservation of all eight accounts/associated records. See `docs/preserved-account-release-gate.md`. No USB detected; original ciphertext hash reverified. Prepared guarded USB ciphertext-copy workflow (8 synthetic tests PASS); exact destination approval required. Synthetic cloud read-only settings unchanged; primary-error privacy gate remains BLOCKED/Option C. Recommended interim existing MySQL V7→V10 only after separate approval; no sustainable compliant long-term replacement verified. Pinned artifacts rehashed PASS. No copy/upload, production writes/migration/deploy, email or push.
+
+
+## 13 November 2026 — M7–M10 continuation
+
+Owner prefers Google Drive; stop USB troubleshooting. Created empty owner-only Restricted backup folder, verified account/capacity in authenticated UI; exact destination approval pending, no upload. Original ciphertext SHA-256 PASS. Protected local DriveBackupCopy receipt contains destination; do not put personal cloud IDs in public documentation. Existing pinned temporary MySQL package retained; live checklist added to docs/preserved-account-release-gate.md. No compliant sustainable replacement established under Option C. No production changes, emails, push or demo modification.

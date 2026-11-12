@@ -50,3 +50,33 @@ C. **No technically/privacy-verified sustainable alternative currently establish
 3. Before any long-term cloud migration, resolve privacy policy/protection and explicitly authorize full-data import/cutover preserving accounts. Option C remains until changed. No request to accept risk silently.
 
 Safest immediate operation is the independent encrypted USB copy after exact-destination approval. Production NO-GO; all existing data, source, backups, GPG keyring and public offline demo remain unchanged.
+
+
+## M7–M10 owner update — Google Drive destination prepared
+
+USB troubleshooting stopped at owner direction. Created ONE empty folder named **SplitSmart Encrypted Backups** in the owner's authenticated personal Google Drive. Sharing dialog verifies only the owner has access; general access Restricted. UI shows 22.05 GB used of 5 TB, sufficient for the 3818-byte ciphertext. This verifies current capacity, not that the 5 TB entitlement itself is a free plan; no subscription, payment, trial or billing change was made. Use existing permitted capacity only; any payment requirement stops the workflow. Exact account/folder URL and owner-only receipt are in protected local `DriveBackupCopy/destination-preflight.json`, outside Git. A precise upload/download approval request is pending. No backup uploaded.
+
+Original SHA-256 rechecked PASS on 13 November. Exact file is the already verified AES-256 GPG ciphertext; no new decryption or encryption-key operation. After approval: recheck account/folder owner-only access and source hash; upload only that one `.sql.gpg` without conversion/preview/sharing or replacing any existing object; record the Drive object ID; download that exact object into a new private local verification path; compare size and SHA-256 with the source; preserve both originals and recovery keys. No automatic upload retries on ambiguous outcomes: inspect exact folder/object first. A successful upload alone is NOT independently verified backup protection. If any unexpected permission/quota/payment state appears, stop. Google sees ciphertext plus filename/size/upload metadata; key recovery stays separately protected.
+
+M8: smallest coordinated release remains the pinned MySQL package above, **BLOCKED pending independent-copy verification and explicit production authorization**. No unrelated feature, new email test, PostgreSQL operation or broad suite rerun. Existing checks remain valid; no deployed-code change in this continuation. Release approval must explicitly cover source publication/branch choice, planned outage and stopping ALL writers, final backup/isolated verification, V8–V10, exact Render/Pages deployments, config changes and gated reopening. It does not authorize production email activation. Do not assume setting maintenance on old V7 code freezes writes; confirm a platform-level stop before the fresh snapshot or DDL.
+
+## M9 — Short live checklist (prepared, not executed)
+
+Use a disposable synthetic account only after release/write reopening is approved. Preserve real accounts and record all test IDs for later separately approved cleanup.
+
+1. HTTPS, liveness/readiness, intended CORS origin; confirm actual backend/frontend source metadata.
+2. Register/login synthetic account; invalid login generic; existing owner's account access only with private owner authentication. Old token/version rejection remains enforced.
+3. Dashboard totals agree with known synthetic obligations; empty/loading/error states remain usable.
+4. Create synthetic group; members visible only to authorized users; copy-link invitation requires acceptance, rejects expired/revoked/reused links and unauthorized access.
+5. Add equal/custom splits with exact totals; refresh history before retrying any uncertain mutation; idempotency behavior intact.
+6. Verify owed/receivable/net balances, settlement suggestions and settlement recording against the synthetic fixture. Circular obligations do not delete source expenses.
+7. Notifications recipient isolation/unread status; Settings read-only account information; keyboard focus/mobile navigation at narrow and desktop widths.
+8. Cross-account attempts against groups/expenses/invites/notifications denied; no secret-bearing response/error output.
+9. Recovery WITHOUT sending: email flags/UI remain disabled, honest temporary-unavailability state, no enumeration, no Brevo attempt. Reuse completed two-email proof for enabled-mode behavior; do not trigger live reset or change real-user passwords. Production email activation requires separate approval.
+10. Compare pre/post production financial reconciliation privately; any unexplained change means stop/maintenance and forward investigation. Retain backup and preserve authentication revocation fences.
+
+## M10 — Sustainable database check
+
+Official current [Aiven PostgreSQL Free](https://aiven.io/docs/products/postgresql/concepts/pg-free-tier) supports no-card persistent relational storage (1 GB disk, 20 connections, no SLA), but does not establish the required primary-error payload protection. [Neon plans](https://neon.com/docs/introduction/plans) show a $0 tier, 1 GB/project and 100 CU-hours/project; plan availability does not demonstrate guaranteed sensitive-primary-error redaction. No real records were sent to either provider.
+
+[Render Free documentation](https://render.com/docs/free) confirms local SQLite/files are lost on restart/spindown/redeploy, Free services cannot attach persistent disks, and Free Render PostgreSQL expires after 30 days. Therefore neither local Render SQLite nor expiring Render PostgreSQL is an acceptable long-term preservation substitute. Local encrypted recovery remains a safety copy, not a verified public hosting replacement. No sustainable end-to-end ₹0 architecture meeting the unchanged privacy policy and continued-account-access requirement is verified. Keep Option C, preserve MySQL/data and escalate before its December 21 deletion deadline; do not disguise archival as preserved live access.
