@@ -1,5 +1,12 @@
-// UI gate only. Server-side delivery configuration remains the security boundary.
-// Enable only after real delivery verification and a separately approved release.
-export function emailActionsEnabled() {
-  return import.meta.env.VITE_EMAIL_ACTIONS_ENABLED === 'true'
+// UI gates only; server-side channel configuration remains authoritative.
+export function recoveryEmailEnabled() {
+  return import.meta.env.VITE_RECOVERY_EMAIL_ENABLED === 'true'
+}
+
+export function invitationEmailEnabled() {
+  return import.meta.env.VITE_INVITATION_EMAIL_ENABLED === 'true'
+}
+
+export function verificationEmailEnabled() {
+  return import.meta.env.VITE_VERIFICATION_EMAIL_ENABLED === 'true'
 }

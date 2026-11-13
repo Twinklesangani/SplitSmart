@@ -1,11 +1,11 @@
 import { Link } from 'react-router-dom'
 import { Card, PageHeader } from '../components/UI.jsx'
 import { useAuth } from '../context/useAuth.js'
-import { emailActionsEnabled } from '../services/emailAvailability.js'
+import { recoveryEmailEnabled } from '../services/emailAvailability.js'
 
 export default function SettingsPage() {
   const { user } = useAuth()
-  const recoveryAvailable = emailActionsEnabled()
+  const recoveryAvailable = recoveryEmailEnabled()
   return <>
     <PageHeader eyebrow="YOUR ACCOUNT" title="Settings" description="Your profile and account security." />
     <Card>

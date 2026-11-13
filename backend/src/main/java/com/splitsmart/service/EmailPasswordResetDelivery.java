@@ -7,8 +7,15 @@ import java.time.Instant;
 public final class EmailPasswordResetDelivery implements PasswordResetDelivery {
     private final TransactionalEmailClient emails;
     private final String origin;
+    private final boolean invitationsEnabled;
+    private final boolean verificationEnabled;
 
     public EmailPasswordResetDelivery(TransactionalEmailClient emails, String origin) {
+        this(emails, origin, false, false);
+    }
+
+    public EmailPasswordResetDelivery(TransactionalEmailClient emails, String origin,
+            boolean invitationsEnabled, boolean verificationEnabled) {
         URI uri;
         try { uri = URI.create(origin); }
         catch (RuntimeException invalid) { throw new IllegalArgumentException("A trusted HTTPS frontend origin is required."); }
@@ -19,18 +26,22 @@ public final class EmailPasswordResetDelivery implements PasswordResetDelivery {
         }
         this.origin = origin.endsWith("/") ? origin.substring(0, origin.length() - 1) : origin;
         this.emails = emails;
+        this.invitationsEnabled = invitationsEnabled;
+        this.verificationEnabled = verificationEnabled;
     }
 
     @Override public boolean isAvailable() { return emails.isAvailable(); }
     @Override public boolean isConfigured() { return true; }
 
     @Override public void sendVerification(String recipient, String token, Instant expiresAt) {
+        if (!verificationEnabled) throw new IllegalStateException("Email verification delivery is disabled.");
         if (token == null || !token.matches("[A-Za-z0-9_-]{43}")) throw new IllegalArgumentException("Invalid verification token.");
         emails.send(recipient, "Verify your SplitSmart email", "Confirm ownership of your SplitSmart email:\n"
                 + origin + "/verify-email#token=" + token + "\nExpires at " + expiresAt
                 + ". Sign in to the account that requested this email, then confirm. Ignore this if you did not request it.");
     }
     @Override public void sendInvitation(String recipient, String groupName) {
+        if (!invitationsEnabled) throw new IllegalStateException("Invitation email delivery is disabled.");
         emails.send(recipient, "SplitSmart group invitation", "You have been invited to " + groupName
                 + ". Sign in or register with this email, verify mailbox ownership, then accept in My groups:\n"
                 + origin + "/groups\nAn invitation expires after seven days. Joining requires your acceptance.");

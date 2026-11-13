@@ -41,7 +41,8 @@ public class PasswordRecoveryConfig {
         var transport = new com.splitsmart.service.BrevoTransactionalEmailClient(
                 org.springframework.web.client.RestClient.builder().requestFactory(factory).build(),
                 settings.apiKey(), settings.senderEmail());
-        return new com.splitsmart.service.EmailPasswordResetDelivery(transport, settings.frontendOrigin());
+        return new com.splitsmart.service.EmailPasswordResetDelivery(transport, settings.frontendOrigin(),
+                settings.invitationsEnabled(), settings.verificationEnabled());
     }
 
     // Kept separate so tests can verify there is no debug-token fallback.

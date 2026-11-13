@@ -14,6 +14,23 @@ import static org.springframework.test.web.client.response.MockRestResponseCreat
 
 class RecoveryEmailTest {
     @Test
+    void recoveryCanSendSecurityNoticesWithoutEnablingInvitationsOrVerification() {
+        var sent = new java.util.ArrayList<String>();
+        TransactionalEmailClient transport = (to, subject, text) -> sent.add(subject);
+        var recoveryOnly = new EmailPasswordResetDelivery(transport, "https://splitsmart.example");
+        recoveryOnly.sendReset("recipient@example.invalid", "A".repeat(43), Instant.parse("2026-11-06T12:00:00Z"));
+        recoveryOnly.sendPasswordChanged("recipient@example.invalid");
+        assertThrows(IllegalStateException.class, () -> recoveryOnly.sendInvitation("recipient@example.invalid", "Synthetic group"));
+        assertThrows(IllegalStateException.class, () -> recoveryOnly.sendVerification("recipient@example.invalid", "A".repeat(43), Instant.now()));
+        assertEquals(java.util.List.of("Reset your SplitSmart password", "Your SplitSmart password changed"), sent);
+
+        var explicitlyEnabled = new EmailPasswordResetDelivery(transport, "https://splitsmart.example", true, true);
+        explicitlyEnabled.sendInvitation("recipient@example.invalid", "Synthetic group");
+        explicitlyEnabled.sendVerification("recipient@example.invalid", "A".repeat(43), Instant.now());
+        assertEquals(4, sent.size());
+    }
+
+    @Test
     void compositionUsesOnlyTrustedOriginAndFragmentWithoutProviderCoupling() {
         var captured = new AtomicReference<String>();
         TransactionalEmailClient transport = (to, subject, text) -> captured.set(text);

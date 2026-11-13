@@ -49,7 +49,7 @@ function creatorMember() {
 }
 
 beforeEach(() => {
-  vi.stubEnv('VITE_EMAIL_ACTIONS_ENABLED', 'true')
+  vi.stubEnv('VITE_INVITATION_EMAIL_ENABLED', 'true')
   vi.stubGlobal('fetch', vi.fn())
 })
 

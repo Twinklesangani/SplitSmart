@@ -4,6 +4,7 @@ import java.time.Clock;
 import java.time.LocalDateTime;
 import java.time.ZoneOffset;
 import java.util.concurrent.Executor;
+import com.splitsmart.config.RecoveryEmailProperties;
 import com.splitsmart.repository.UserRepository;
 import org.springframework.beans.factory.annotation.Qualifier;
 import org.springframework.jdbc.core.JdbcTemplate;
@@ -19,16 +20,18 @@ public class EmailVerificationService {
     private final UserRepository users;
     private final JdbcTemplate jdbc;
     private final PasswordResetDelivery delivery;
+    private final RecoveryEmailProperties emailSettings;
     private final Executor worker;
     private final TransactionTemplate tx;
     private final Clock clock;
     public EmailVerificationService(UserRepository users, JdbcTemplate jdbc, PasswordResetDelivery delivery,
-            @Qualifier("passwordRecoveryExecutor") Executor worker, PlatformTransactionManager manager, Clock clock) {
-        this.users=users; this.jdbc=jdbc; this.delivery=delivery; this.worker=worker;
+            @Qualifier("passwordRecoveryExecutor") Executor worker, PlatformTransactionManager manager, Clock clock,
+            RecoveryEmailProperties emailSettings) {
+        this.users=users; this.jdbc=jdbc; this.delivery=delivery; this.worker=worker; this.emailSettings=emailSettings;
         this.tx=new TransactionTemplate(manager); this.clock=clock;
     }
     public void request(String subject) {
-        if (!delivery.isConfigured()) throw new ResponseStatusException(HttpStatus.SERVICE_UNAVAILABLE, "Email verification is currently unavailable. Use a private group link instead.");
+        if (!emailSettings.verificationEnabled() || !delivery.isConfigured()) throw new ResponseStatusException(HttpStatus.SERVICE_UNAVAILABLE, "Email verification is currently unavailable. Use a private group link instead.");
         try { worker.execute(() -> {
             try {
                 if (!delivery.isAvailable()) return;

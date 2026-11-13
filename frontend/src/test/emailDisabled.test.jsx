@@ -7,7 +7,9 @@ import { InviteForm, InvitationInbox } from '../pages/Invitations.jsx'
 import { apiRequest } from '../services/apiClient.js'
 
 beforeEach(() => {
-  vi.stubEnv('VITE_EMAIL_ACTIONS_ENABLED', 'false')
+  vi.stubEnv('VITE_RECOVERY_EMAIL_ENABLED', 'false')
+  vi.stubEnv('VITE_INVITATION_EMAIL_ENABLED', 'false')
+  vi.stubEnv('VITE_VERIFICATION_EMAIL_ENABLED', 'false')
   vi.stubGlobal('fetch', vi.fn())
 })
 
@@ -43,6 +45,20 @@ it('disables mailbox verification without disabling existing authorized invitati
   render(<InvitationInbox userId={7} onAccepted={vi.fn()} />)
   expect(screen.getByRole('button', { name: 'Verify my email' })).toBeDisabled()
   expect(screen.getByRole('button', { name: 'Check invitations' })).toBeEnabled()
+  expect(fetch).not.toHaveBeenCalled()
+})
+
+it('can expose recovery while invitation and verification email actions remain disabled', () => {
+  vi.stubEnv('VITE_RECOVERY_EMAIL_ENABLED', 'true')
+  render(<MemoryRouter><>
+    <ForgotPasswordPage />
+    <InviteForm groupId={42} />
+    <InvitationInbox userId={7} onAccepted={vi.fn()} />
+  </></MemoryRouter>)
+  expect(screen.getByRole('heading', { name: 'Forgot your password?' })).toBeInTheDocument()
+  expect(screen.getByLabelText('Email address')).toBeInTheDocument()
+  expect(screen.queryByLabelText('Invitation email address')).not.toBeInTheDocument()
+  expect(screen.getByRole('button', { name: 'Verify my email' })).toBeDisabled()
   expect(fetch).not.toHaveBeenCalled()
 })
 

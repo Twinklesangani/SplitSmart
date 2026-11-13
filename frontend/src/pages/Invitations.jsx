@@ -2,7 +2,7 @@ import { useEffect, useRef, useState } from 'react'
 import { Button, Card, FormField } from '../components/UI.jsx'
 import { apiRequest } from '../services/apiClient.js'
 import { useRefreshOnReturn } from './useRefreshOnReturn.js'
-import { emailActionsEnabled } from '../services/emailAvailability.js'
+import { invitationEmailEnabled, verificationEmailEnabled } from '../services/emailAvailability.js'
 
 export function InviteForm({ groupId }) {
   const [email, setEmail] = useState('')
@@ -66,8 +66,8 @@ export function InviteForm({ groupId }) {
     {link && <div className="invite-link-copy"><label htmlFor="private-invite-link">Private invitation link</label>
       <input id="private-invite-link" readOnly value={link} onFocus={event => event.target.select()} />
       <Button type="button" variant="secondary" onClick={async () => { try { await navigator.clipboard.writeText(link); setMessage('Link copied. Share privately.') } catch { setMessage('Copy is unavailable. Select and copy the link above.') } }}>Copy link</Button></div>}
-    {!emailActionsEnabled() && <p>Email invitations are temporarily unavailable. Create a private invite link and share it directly. Existing invitations can still be managed below.</p>}
-    {emailActionsEnabled() && <form onSubmit={invite}>
+    {!invitationEmailEnabled() && <p>Email invitations are temporarily unavailable. Create a private invite link and share it directly. Existing invitations can still be managed below.</p>}
+    {invitationEmailEnabled() && <form onSubmit={invite}>
       <FormField id="invite-email" label="Invitation email address" type="email" required
         maxLength={255} value={email} onChange={event => setEmail(event.target.value)} />
       <Button type="submit" disabled={busy}>Create invitation</Button>
@@ -134,8 +134,8 @@ export function InvitationInbox({ userId, onAccepted }) {
     <h2>Group invitations</h2>
     <Button type="button" variant="secondary" onClick={() => { setOpen(true); setAttempt(value => value + 1) }}>Check invitations</Button>
     <p>Email invitations require mailbox verification. Private group links do not require email delivery.</p>
-    {!emailActionsEnabled() && <p>Email verification is temporarily unavailable. Ask the group owner for a private invite link.</p>}
-    <Button type="button" variant="secondary" disabled={busy || !emailActionsEnabled()} onClick={verifyEmail}>Verify my email</Button>
+    {!verificationEmailEnabled() && <p>Email verification is temporarily unavailable. Ask the group owner for a private invite link.</p>}
+    <Button type="button" variant="secondary" disabled={busy || !verificationEmailEnabled()} onClick={verifyEmail}>Verify my email</Button>
     {loading && <p role="status">Loading invitations…</p>}
     {open && !loading && !message && invitations.length === 0 && <p>No pending invitations.</p>}
     {invitations.map(invitation => <article key={invitation.id}>

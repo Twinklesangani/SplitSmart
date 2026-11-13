@@ -4,6 +4,6 @@ import org.springframework.boot.context.properties.ConfigurationProperties;
 
 @ConfigurationProperties("app.recovery.email")
 public record RecoveryEmailProperties(boolean enabled, boolean deliveryVerified, String apiKey,
-        String senderEmail, String frontendOrigin) {
+        String senderEmail, String frontendOrigin, boolean invitationsEnabled, boolean verificationEnabled) {
     @Override public String toString() { return "RecoveryEmailProperties[redacted]"; }
 }

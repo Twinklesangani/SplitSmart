@@ -16,6 +16,11 @@ export default defineConfig({
     command: 'npm run dev -- --host 127.0.0.1 --port 15176 --strictPort',
     url: 'http://127.0.0.1:15176',
     reuseExistingServer: false,
-    env: { VITE_API_BASE_URL: 'http://127.0.0.1:15176', VITE_EMAIL_ACTIONS_ENABLED: 'false' },
+    env: {
+      VITE_API_BASE_URL: 'http://127.0.0.1:15176',
+      VITE_RECOVERY_EMAIL_ENABLED: 'false',
+      VITE_INVITATION_EMAIL_ENABLED: 'false',
+      VITE_VERIFICATION_EMAIL_ENABLED: 'false',
+    },
   },
 })

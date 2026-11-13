@@ -10,6 +10,7 @@ import org.springframework.transaction.annotation.Transactional;
 import org.springframework.transaction.annotation.Isolation;
 import org.springframework.web.server.ResponseStatusException;
 import com.splitsmart.dto.AddGroupMemberRequest;
+import com.splitsmart.config.RecoveryEmailProperties;
 import com.splitsmart.dto.InvitationResponse;
 import com.splitsmart.entity.GroupInvitation;
 import com.splitsmart.entity.GroupMember;
@@ -29,6 +30,7 @@ public class InvitationService {
     private final GroupMemberRepository members;
     private final GroupInvitationRepository invitations;
     @org.springframework.beans.factory.annotation.Autowired private PasswordResetDelivery delivery;
+    @org.springframework.beans.factory.annotation.Autowired private RecoveryEmailProperties emailSettings;
     @org.springframework.beans.factory.annotation.Autowired
     @org.springframework.beans.factory.annotation.Qualifier("passwordRecoveryExecutor") private java.util.concurrent.Executor mailWorker;
 
@@ -73,7 +75,7 @@ public class InvitationService {
                 new org.springframework.transaction.support.TransactionSynchronization() {
                     @Override public void afterCommit() {
                         try { mailWorker.execute(() -> {
-                            if(!delivery.isAvailable()) return;
+                            if(!emailSettings.invitationsEnabled() || !delivery.isAvailable()) return;
                             try { delivery.sendInvitation(saved.getEmail(), group.getName()); }
                             catch(RuntimeException ignored) { org.slf4j.LoggerFactory.getLogger(InvitationService.class).warn("Invitation email processing failed."); }
                         }); } catch(java.util.concurrent.RejectedExecutionException ignored) { /* In-app invitation remains available. */ }

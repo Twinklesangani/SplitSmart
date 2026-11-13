@@ -29,6 +29,10 @@ import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.
 @SpringBootTest
 @AutoConfigureMockMvc(print=MockMvcPrint.NONE)
 @ActiveProfiles("test")
+@org.springframework.test.context.TestPropertySource(properties = {
+        "app.recovery.email.invitations-enabled=true",
+        "app.recovery.email.verification-enabled=true"
+})
 class InvitationSecurityTest {
     @Autowired MockMvc mvc;
     @Autowired ObjectMapper json;
